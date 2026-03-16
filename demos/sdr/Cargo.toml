@@ -1,0 +1,13 @@
+[package]
+name = "sdr"
+version.workspace = true
+edition.workspace = true
+
+[features]
+default = ["usb"]
+usb = ["dep:rtl-sdr-rs"]
+
+[dependencies]
+anyhow.workspace = true
+num-complex.workspace = true
+rtl-sdr-rs = { version = "0.3", features = ["rtl_sdr_blog"], optional = true }

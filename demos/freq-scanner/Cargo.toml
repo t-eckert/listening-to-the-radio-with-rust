@@ -1,0 +1,14 @@
+[package]
+name = "freq-scanner"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sdr = { path = "../sdr" }
+anyhow.workspace = true
+clap.workspace = true
+num-complex.workspace = true
+rustfft = "6"
+ratatui = "0.29"
+crossterm = "0.28"
+signal-hook = "0.3"

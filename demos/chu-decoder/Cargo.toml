@@ -1,0 +1,12 @@
+[package]
+name = "chu-decoder"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sdr = { path = "../sdr" }
+anyhow.workspace = true
+clap.workspace = true
+num-complex.workspace = true
+chrono = "0.4"
+signal-hook = "0.3"

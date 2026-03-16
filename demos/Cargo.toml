@@ -1,0 +1,12 @@
+[workspace]
+members = ["sdr", "fm-receiver", "chu-decoder", "freq-scanner"]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+
+[workspace.dependencies]
+anyhow = "1"
+clap = { version = "4", features = ["derive"] }
+num-complex = "0.4"

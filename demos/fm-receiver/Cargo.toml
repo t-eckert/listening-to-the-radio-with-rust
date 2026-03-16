@@ -1,0 +1,12 @@
+[package]
+name = "fm-receiver"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sdr = { path = "../sdr" }
+anyhow.workspace = true
+clap.workspace = true
+num-complex.workspace = true
+cpal = "0.15"
+signal-hook = "0.3"
