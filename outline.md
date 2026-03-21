@@ -1,7 +1,7 @@
 # Listening to the Radio with Rust — Talk Outline
 
 **Title:** Listening to the Radio with Rust
-**Duration:** 25 minutes + open discussion
+**Duration:** 35 minutes + open discussion
 **Throughline:** "What's hiding in plain sight?"
 
 ---
@@ -14,15 +14,23 @@ The talk moves from the familiar to the invisible to the revelatory:
 2. Pull back and show the spectrum is teeming with signals → what else is out there?
 3. Land on CHU — a 1938 atomic clock broadcasting the time from 10 miles away, decoded live
 
-The audience should leave thinking: "the air around me is full of data I've never noticed,
-and I could build something to read it this weekend."
+The audience should leave thinking: "the air around me is full of data I've never noticed, and I could build something to read it this weekend."
 
 ---
 
-## 1. The Hook — FM from 50 Lines of Rust (3 min)
+## Personal Intro
 
-**Open cold.** No title slide, no intro. Audio starts playing — a local FM station
-coming through the laptop speakers.
+Hello, my name is Thomas Eckert. I am a software engineer at Redpanda. My background is in physics. I am always picking up new hobbies and interests. 
+
+I'm very excited to share with you today about a new hobby that I've picked up: software defined radio. I am not an expert, this is something I've been playing with for the past few months.
+
+When I find something cool, my first instinct is to want to share it with others. This is a technology that is super accessible.
+
+---
+
+## The Hook — FM from 50 Lines of Rust (3 min)
+
+Audio starts playing — a local FM station coming through the laptop speakers.
 
 - Pause. Let it play for a few seconds.
 - "This is live. That's an antenna plugged into a $30 USB dongle, and about 50 lines of

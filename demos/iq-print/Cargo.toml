@@ -1,0 +1,11 @@
+[package]
+name = "iq-print"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+sdr = { path = "../sdr" }
+anyhow.workspace = true
+clap.workspace = true
+num-complex.workspace = true
+signal-hook = "0.3"

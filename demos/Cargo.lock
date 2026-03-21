@@ -3,6 +3,17 @@
 version = 4
 
 [[package]]
+name = "adsb-decoder"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "num-complex",
+ "sdr",
+ "signal-hook",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -37,6 +48,18 @@ checksum = "db8fee663d06c4e303404ef5f40488a53e062f89ba8bfed81f42325aafad1527"
 dependencies = [
  "libc",
  "pkg-config",
+]
+
+[[package]]
+name = "am-receiver"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "cpal",
+ "num-complex",
+ "sdr",
+ "signal-hook",
 ]
 
 [[package]]
@@ -638,6 +661,17 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.116",
+]
+
+[[package]]
+name = "iq-print"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap",
+ "num-complex",
+ "sdr",
+ "signal-hook",
 ]
 
 [[package]]
