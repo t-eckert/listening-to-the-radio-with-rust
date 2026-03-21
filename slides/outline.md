@@ -1,9 +1,7 @@
-# Ottawa Systems — Talk Outline
+# Listening to the Radio with Rust — Talk Outline
 
 **Title:** Listening to the Radio with Rust
-**Date:** 2026-03-24
 **Duration:** 25 minutes + open discussion
-**Audience:** Systems programmers, likely familiar with Rust or C/C++
 **Throughline:** "What's hiding in plain sight?"
 
 ---
@@ -23,7 +21,7 @@ and I could build something to read it this weekend."
 
 ## 1. The Hook — FM from 50 Lines of Rust (3 min)
 
-**Open cold.** No title slide, no intro. Audio starts playing — a local Ottawa FM station
+**Open cold.** No title slide, no intro. Audio starts playing — a local FM station
 coming through the laptop speakers.
 
 - Pause. Let it play for a few seconds.
@@ -44,12 +42,12 @@ if FM radio is this simple, what else can you do?
 
 **Transition:** "FM is the obvious one. But the spectrum doesn't stop at 108 MHz."
 
-Show a spectrum view (pre-captured or live from the scanner) of what's in the Ottawa
-airwaves right now. Walk through it:
+Show a spectrum view (pre-captured or live from the scanner) of what's in the airwaves
+right now. Walk through it:
 
 - **88–108 MHz** — FM broadcast. The thing we just heard.
-- **118–137 MHz** — Aviation AM. YOW tower, ground, approach. Planes talking to
-  controllers a few km from here.
+- **118–137 MHz** — Aviation AM. Tower, ground, approach. Planes talking to
+  controllers nearby.
 - **144–148 MHz** — 2-meter ham band. Local repeaters, maybe someone chatting right now.
 - **1090 MHz** — ADS-B. Every aircraft in the sky broadcasting its position, altitude,
   and speed. Unencrypted. Your phone can't hear it, but this dongle can.
@@ -71,8 +69,7 @@ between hearing it and not is whether you have the right tool. An SDR is that to
 
 ## 3. How the Data Flows — Antenna to Iterator (5 min)
 
-This is the systems-depth section. The Ottawa Systems audience will appreciate seeing
-the full path from antenna to Rust code.
+The systems-depth section. The full path from antenna to Rust code.
 
 ### The hardware path (2 min)
 
@@ -107,8 +104,6 @@ Path A: USB direct (rtl-sdr-rs)     Path B: Network (rtl_tcp)
 
 - rtl_tcp is a ~80-line client. Dead simple protocol: 12-byte header, 5-byte commands,
   then a firehose of IQ bytes.
-- This is how the demo is running right now: dongle on a Pi, Rust code on the laptop.
-  (Or: dongle plugged directly in. Whichever is true on the day.)
 
 ---
 
