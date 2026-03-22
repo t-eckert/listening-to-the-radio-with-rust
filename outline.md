@@ -1,26 +1,28 @@
 # Listening to the Radio with Rust — Talk Outline
 
 **Title:** Listening to the Radio with Rust
-**Duration:** 35 minutes + open discussion
-**Throughline:** "What's hiding in plain sight?"
+**Duration:** 35–40 minutes
+**Venue:** Ottawa Systems, 24 March 2026
+**Goal:** Introduce technical folks to SDR in a way that enables them to go experiment themselves.
 
 ---
 
 ## Narrative Arc
 
-The talk moves from the familiar to the invisible to the revelatory:
+The talk builds understanding layer by layer:
 
-1. Start with something everyone knows (FM radio) → make it tangible with code
-2. Pull back and show the spectrum is teeming with signals → what else is out there?
-3. Land on CHU — a 1938 atomic clock broadcasting the time from 10 miles away, decoded live
+1. **Physics** — what is physically happening in an antenna
+2. **Instrumentation** — how the RTL-SDR digitizes that physical phenomenon
+3. **Interpretation** — how different demodulation methods extract meaning from the same data
+4. **Application** — live demos of increasing complexity, culminating in ADS-B aircraft tracking
 
-The audience should leave thinking: "the air around me is full of data I've never noticed, and I could build something to read it this weekend."
+The audience should leave understanding *why* SDR works, not just *that* it works.
 
 ---
 
-## Personal Intro
+## Personal Intro (1 min)
 
-Hello, my name is Thomas Eckert. I am a software engineer at Redpanda. My background is in physics. I am always picking up new hobbies and interests. 
+Hello, my name is Thomas Eckert. I am a software engineer at Redpanda. My background is in physics. I am always picking up new hobbies and interests.
 
 I'm very excited to share with you today about a new hobby that I've picked up: software defined radio. I am not an expert, this is something I've been playing with for the past few months.
 
@@ -28,207 +30,212 @@ When I find something cool, my first instinct is to want to share it with others
 
 ---
 
-## The Hook — FM from 50 Lines of Rust (3 min)
+## 1. The Physics — EM Waves (5 min)
 
-Audio starts playing — a local FM station coming through the laptop speakers.
+### The bobber metaphor
 
-- Pause. Let it play for a few seconds.
-- "This is live. That's an antenna plugged into a $30 USB dongle, and about 50 lines of
-  Rust reading IQ samples and doing one line of math."
-- Show the dongle. Show the code. The entire FM demodulation pipeline fits on one screen.
-- The key line: `let audio = (sample * prev.conj()).arg();`
-- "That's it. That's FM demodulation. Multiply by the conjugate of the previous sample,
-  take the angle. The audio IS the rate of phase change."
+Imagine a bobber sitting in a pool of water. You push it up and down — it oscillates and creates waves that radiate outward across the surface.
 
-**Why this works as an opener:** Immediate proof that this isn't theoretical. The audience
-hears real radio. The code is short enough to be believable. And you've planted the hook:
-if FM radio is this simple, what else can you do?
+This is what happens when charged particles accelerate. An electron moving up and down in a wire creates electromagnetic waves that radiate outward through space.
+
+### The receiver
+
+Now imagine a second bobber sitting in the same pool, some distance away. The waves reach it. It begins to oscillate too — driven by the energy carried in the waves.
+
+This is the receiving antenna. Electrons in the metal are pushed up and down by the incoming EM wave. The antenna converts the wave back into electrical current.
+
+### Grounding the audience
+
+The audience should be able to picture this: electrons moving up and down in a transmitting antenna create waves; those waves push electrons up and down in a receiving antenna. Everything that follows in this talk is about measuring and interpreting that movement.
 
 ---
 
-## 2. What's in the Air Right Now (5 min)
+## 2. The RTL-SDR — Two Chips (3 min)
 
-**Transition:** "FM is the obvious one. But the spectrum doesn't stop at 108 MHz."
-
-Show a spectrum view (pre-captured or live from the scanner) of what's in the airwaves
-right now. Walk through it:
-
-- **88–108 MHz** — FM broadcast. The thing we just heard.
-- **118–137 MHz** — Aviation AM. Tower, ground, approach. Planes talking to
-  controllers nearby.
-- **144–148 MHz** — 2-meter ham band. Local repeaters, maybe someone chatting right now.
-- **1090 MHz** — ADS-B. Every aircraft in the sky broadcasting its position, altitude,
-  and speed. Unencrypted. Your phone can't hear it, but this dongle can.
-- **3.33 / 7.85 / 14.67 MHz** — Shortwave. Tease this: "We'll come back to these."
-
-**The point:** All of this is in the air in this room right now. The only difference
-between hearing it and not is whether you have the right tool. An SDR is that tool.
-
-### What is SDR? (1 min, folded in)
+### What is SDR?
 
 - Traditional radio: one hardware circuit, one purpose
-- SDR: digitize a wide chunk of spectrum, do everything else in software
-- Same dongle receives FM, aviation, ADS-B, shortwave — just change the frequency
-  and the processing code
-- Originally a $20 DVB-T TV tuner. Hackers figured out you could grab raw samples
-  from the ADC. The RTL-SDR was born.
+- SDR: digitize a chunk of spectrum, do everything else in software
+- Same dongle receives FM, AM, aviation, ADS-B — just change the frequency and the code
+
+### The hardware path
+
+```
+Antenna → R828D tuner → RTL2832U → USB → your code
+```
+
+- **R828D tuner**: Takes the high-frequency RF signal and shifts it down to a lower frequency the ADC can handle. It's the "ear" — selects which frequency range to listen to.
+- **RTL2832U**: An 8-bit analog-to-digital converter. Samples the signal and sends digital data over USB. Originally a DVB-T TV tuner chip — hackers figured out you could grab raw samples from the ADC. The RTL-SDR was born.
+
+Keep this high-level. Two chips, one job each: tune and digitize.
 
 ---
 
-## 3. How the Data Flows — Antenna to Iterator (5 min)
+## 3. IQ Samples — Points on the Complex Plane (5 min)
 
-The systems-depth section. The full path from antenna to Rust code.
+### What comes out of the dongle
 
-### The hardware path (2 min)
+The RTL2832U outputs pairs of bytes: I, Q, I, Q, ...
 
-```
-Antenna → R828D tuner (amplify, downconvert) → RTL2832U (8-bit ADC, USB) → your code
-```
+Each pair is a point on the complex plane: `I + jQ`.
 
-- R828D tuner: LNA + mixer + PLL. Shifts RF down to baseband. Controlled via I2C.
-- RTL2832U: 8-bit ADC sampling at 28.8 MHz internally, decimates to your requested
-  rate (typically 2.4 MS/s). Outputs interleaved unsigned bytes: I, Q, I, Q, ...
-- USB bulk transfers: 15 in-flight buffers of 256 KB each. Your callback must keep up
-  or you drop samples.
-- **8 bits is the constraint.** ~40 dB dynamic range. This is why gain control matters
-  and why you can't hear a weak signal next to a strong one.
+### The rotation
 
-### The data (2 min)
+These points trace rotation around the origin.
 
-- Each byte pair is one complex sample: `I + jQ`
-- Raw: unsigned u8 [0, 255]. Convert: `(raw as f32 - 127.5) / 127.5` → [-1.0, 1.0]
-- At 2.4 MS/s: 4.8 MB/s of IQ data flowing through your Rust code
-- Show the conversion code. Highlight `chunks_exact(2)` + `map` — this is an iterator
-  pipeline, zero allocation, processes millions of samples per second.
+- **Speed of rotation** → proportional to the frequency of the wave
+- **Distance from the origin** → proportional to the amplitude of the wave
 
-### The connection model (1 min)
+This is the key insight. Frequency is rotation speed. Amplitude is distance from center. Everything we do with SDR is about measuring these two properties.
 
-Show two paths — both produce the same `&[u8]` stream:
+### The explicit omission
 
-```
-Path A: USB direct (rtl-sdr-rs)     Path B: Network (rtl_tcp)
-  RTL-SDR → USB → read_async()       RTL-SDR → USB → Pi → TCP → read()
-```
+"We won't go into the deep mathematical detail of how the hardware produces these values — that involves mixing, downconversion, and the Hilbert transform. What matters for us is what the values *mean*."
 
-- rtl_tcp is a ~80-line client. Dead simple protocol: 12-byte header, 5-byte commands,
-  then a firehose of IQ bytes.
+### Demo: iq-print (2 min)
+
+Show raw IQ values streaming in from the dongle. The audience sees the data they've been hearing about.
 
 ---
 
-## 4. Scanning the Spectrum (4 min)
+## 4. Demodulation — Many Signals, One Idea (3 min)
 
-**Transition:** "So we heard FM. Let's see what else is out there."
+### The framing
 
-### Live demo: freq-scanner
+All of the different signals sent over radio are interpreted through different methods of demodulation. But they all come back to measuring either the rotation speed or the distance from the origin — or both.
 
-Run the scanner TUI. It sweeps a frequency range and shows signal power at each step.
+### The chart
 
-- Sweep the FM band (88–108 MHz). Bars light up where stations are.
-- Sweep the aviation band (118–137 MHz). Maybe catch a transmission.
-- The scanner uses FFT (rustfft) to compute power spectral density per step.
-  1024-point FFT, Hamming window, magnitude squared.
+Show the two tables: magnitude-based signals and phase-based signals.
 
-### Show the code briefly
+**Magnitude-based (distance from origin):**
 
-- The sweep loop: retune → discard stale buffer → collect → FFT → measure power
-- Highlight: this is retuning the hardware hundreds of times per second. The PLL
-  settling time (~5 ms) is the bottleneck, not the Rust code.
+| Signal | Frequency | What you get |
+|--------|-----------|-------------|
+| AM broadcast | 530–1700 kHz | Audio |
+| ADS-B | 1090 MHz | Aircraft position, altitude, speed |
+| OOK | 315/433 MHz | Garage doors, weather stations |
+| NOAA APT | 137 MHz | Satellite weather images |
 
-**Purpose of this demo:** It's a bridge. The scanner makes the invisible visible. It
-shows there are signals everywhere. And it naturally raises the question: what ARE those
-signals? Which leads to...
+**Phase-based (rotation speed):**
+
+| Signal | Frequency | What you get |
+|--------|-----------|-------------|
+| FM broadcast | 88–108 MHz | Audio |
+| FSK (CHU, pagers) | Various | Digital bits |
+| AIS (ships) | 162 MHz | Ship position and identity |
+| POCSAG pagers | 148/152 MHz | Text messages |
 
 ---
 
-## 5. The Reveal — CHU, Ottawa's Atomic Clock (8 min)
+## 5. Demo: FM Radio (3 min)
 
-**Transition:** "Remember those shortwave frequencies I skipped? 3.33, 7.85, 14.67 MHz.
-Let's go back to them."
+### The demo
 
-### The story of CHU (2 min)
+Play a local FM station live through the laptop speakers.
+
+- Show the code. The entire FM demodulation pipeline fits on one screen.
+- The key line: `let audio = (sample * prev.conj()).arg();`
+- "That's FM demodulation. Multiply by the conjugate of the previous sample, take the angle. The audio IS the rate of phase change — the rotation speed."
+
+### Tie it back
+
+This is a phase-based signal. We're measuring how fast the point rotates around the origin. The speed of rotation encodes the audio.
+
+---
+
+## 6. Demo: AM Radio (3 min)
+
+### The demo
+
+Tune to an AM station and play the audio.
+
+- The key operation: `sqrt(I² + Q²)` — just take the magnitude.
+- "AM is even simpler. The audio is the distance from the origin. The amplitude of the wave IS the signal."
+
+### The contrast
+
+"Both FM and AM produce audio. But FM uses the variation of speed in rotation around the origin to encode the audio. AM uses the distance from the origin. Same IQ data, different interpretation."
+
+---
+
+## 7. Antenna Length — Why It Matters (4 min)
+
+**Staging note:** During this section, swap the long dipole antenna for the short 7cm ADS-B antenna. The physical act of changing antennas reinforces the point.
+
+### The physics
+
+- An antenna works best when its length is related to the wavelength of the signal.
+- The sweet spot: **1/4 of the wavelength**. At this length, the antenna resonates — the electrons oscillate with maximum efficiency.
+
+### Why not longer?
+
+- If the antenna is too long relative to the wavelength, **eddy currents** form. Parts of the antenna work against each other — current flows in opposing directions, canceling out the signal.
+- This is why you don't use the same antenna for FM (88 MHz, ~3.4m wavelength) and ADS-B (1090 MHz, ~27cm wavelength). The FM dipole is useless at 1090 MHz.
+
+### The practical point
+
+"I'm swapping antennas right now. This short antenna is about 7cm — roughly a quarter wavelength at 1090 MHz. It's optimized for ADS-B."
+
+---
+
+## 8. Demo: ADS-B — Aircraft Tracking (5 min)
+
+### The demo
+
+Run the ADS-B decoder with the short antenna. Show aircraft appearing on screen with callsign, altitude, position, and speed.
+
+- ADS-B is a magnitude-based signal — on/off keying at 1090 MHz.
+- Every aircraft with a transponder broadcasts its position, altitude, speed, and callsign. Unencrypted. Twice per second.
+- Show the Ottawa area map overlay with aircraft positions.
+
+### The impact
+
+"Every plane in the sky above us is announcing itself right now. With a $30 dongle and a 7cm antenna, we can see them all."
+
+---
+
+## 9. CHU — Ottawa's Atomic Clock (5 min, if working)
+
+**Note:** CHU decoder had issues earlier. Include if working, skip gracefully if not.
+
+### The story
 
 - CHU is a shortwave time signal station operated by NRC Canada.
-- Broadcasting continuously since 1938. Three frequencies, three antennas, three
-  cesium atomic clocks.
-- Transmitter site: Barrhaven. About 10 miles from here.
-- Every second: a 1000 Hz tick. Every minute: a bilingual voice announcement
-  ("At the tone, Eastern Daylight Time will be..."). Every second from 31-39:
-  a 300-baud FSK data burst encoding the exact time in BCD.
-- The carrier frequency is accurate to 5 parts per trillion. Derived from cesium.
-- This signal is in the air in this room right now.
+- Broadcasting continuously since 1938. Transmitter site in Barrhaven, about 10 miles from here.
+- Three frequencies, three cesium atomic clocks.
+- Every second: a 1000 Hz tick. Every minute: a bilingual voice announcement. Every second from 31-39: a 300-baud FSK data burst encoding the exact time.
 
-### How the decoder works (3 min)
+### The demo
 
-Walk through the decoding chain — this is where the systems depth shines:
+Run the CHU decoder. Show ticks accumulating, then the time appearing.
 
-```
-7.850 MHz RF → AM demod (envelope detection) → audio stream
-  → bandpass filter (2025–2225 Hz) → FSK discriminator
-  → UART framing (8N2 @ 300 baud) → nibble swap → BCD parse → UTC time
-```
+"That time came from a cesium clock in Barrhaven, through the air, into a $30 dongle, through a few hundred lines of Rust. No internet. No GPS. No NTP. Just radio waves and math."
 
-- AM demod is simpler than FM: just `sqrt(I² + Q²)`. Take the magnitude.
-- FSK discrimination: Goertzel filter at 2025 Hz (space/0) and 2225 Hz (mark/1).
-  Compare magnitudes. That's Bell 103 modem decoding — a 1960s protocol.
-- UART framing: detect start bit, sample 8 data bits, check 2 stop bits.
-  You're building a software modem.
-- Each burst: 10 bytes, transmitted twice for redundancy. Nibble-swap, parse BCD.
-  One burst gives you year, day-of-year, hour, minute, second.
-- 8 bursts per minute. You get a valid time in under 10 seconds.
+### If it doesn't work
 
-Show key code: the Goertzel filter (10 lines), the state machine enum, the BCD parser.
-
-### Live demo (3 min)
-
-Run the CHU decoder. The terminal shows:
-
-```
-CHU Time Signal Decoder — 7.850 MHz
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Listening...
-  ● Tick detected (1000 Hz, 300ms)
-  ● Tick detected
-  ...
-  ◆ Data burst received (second 32)
-    Format A: Day 083, 01:47:32 UTC
-
-  UTC:   2026-03-24 01:47:32
-  Local: 2026-03-23 21:47:32 EDT
-
-  Source: CHU Ottawa (NRC cesium clock)
-  Accuracy: ±100 μs (broadcast) + propagation
-```
-
-Let it run. Let the ticks accumulate. Let the time appear.
-
-**The landing:** "That time came from a cesium clock in Barrhaven, through the air,
-into a $30 dongle, through a few hundred lines of Rust. No internet. No GPS. No NTP.
-Just radio waves and math."
+"CHU operates on shortwave at 7.85 MHz — reception depends on atmospheric conditions and the antenna. I've decoded it successfully from home, but live RF is unpredictable. That's part of the fun."
 
 ---
 
-## 6. Closing + Discussion (open-ended)
+## 10. Closing (2 min)
 
-### Quick recap (1 min)
+### What we covered
 
-- We heard FM radio from one line of phase math
-- We scanned the spectrum and saw the invisible
-- We decoded atomic time from a signal that's been broadcasting since 1938
-- All of it: one USB dongle, pure Rust, no frameworks, no C dependencies
+- EM waves: electrons oscillating in antennas, creating and receiving waves
+- The RTL-SDR: two chips that digitize radio into IQ samples
+- IQ samples: points on the complex plane where rotation speed is frequency and distance is amplitude
+- Demodulation: FM (phase), AM (magnitude), ADS-B (magnitude), CHU (FSK/phase)
+- Antenna design: why length matters and quarter-wavelength resonance
 
-### "What else could you build?" (transition to discussion)
+### The invitation
 
-Seed ideas:
-- ADS-B aircraft tracker (1090 MHz, there are Rust decoders)
-- NOAA weather satellite image decoder (137 MHz APT)
-- Pager decoding (POCSAG/FLEX)
-- LoRa packet sniffer
-- Your own ham radio transceiver (with a HackRF or similar TX-capable SDR)
+"Everything I showed you today costs about $30 in hardware and runs on any laptop. The RTL-SDR Blog V4 dongle, a few Rust crates, and curiosity. Go listen to what's in the air."
 
 ### Open discussion
 
 - Pass around the hardware
-- Questions, war stories, ideas
+- Questions, ideas, war stories
 - "Has anyone here done amateur radio or SDR?"
 
 ---
@@ -236,29 +243,24 @@ Seed ideas:
 ## Production Notes
 
 ### Equipment to bring
-- RTL-SDR Blog V4 dongle + dipole antenna
+- RTL-SDR Blog V4 dongle
+- Long dipole antenna (FM/AM/CHU)
+- Short 7cm antenna (ADS-B)
 - Laptop (primary demo machine)
-- Optional: Raspberry Pi 4 B running rtl_tcp (backup / network demo)
 - USB-C adapter if needed for venue display
 
 ### Demo risk mitigation
-- **Pre-record IQ samples** for all three demos. The code reads from a file source
-  identically to a live source — swap one line.
+- **Pre-record IQ samples** for all demos. The code reads from a file source identically to a live source — swap one line.
 - **Pre-record terminal sessions** (asciinema) as last-resort backup.
-- **Test at the venue** if possible — RF environment varies. Some venues have heavy
-  RF shielding.
+- **Test at the venue** if possible — RF environment varies.
 - **Build release binaries** ahead of time. Don't compile on stage.
 
 ### If time is tight
-- Cut the scanner demo (section 4). Go directly from "what's in the air" to CHU.
-  Show a pre-captured spectrum screenshot instead of a live scan.
-- The talk works as: Hook (3 min) → Context (5 min) → Systems depth (5 min) →
-  CHU (8 min) → Close (2 min) = 23 min without the scanner.
+- Cut CHU (section 9). The talk stands without it.
+- Shorten the antenna theory section — state the 1/4 wavelength rule without the eddy current detail.
+- Core path: Physics (5) → SDR (3) → IQ (5) → Demod (3) → FM (3) → AM (3) → Antenna (2) → ADS-B (5) → Close (2) = 31 min
 
 ### If time is generous
-- Let the CHU decoder run longer. Each tick is satisfying.
-- Deeper dive into the rtl_tcp protocol (show the 5-byte command format, the 12-byte
-  header parsing).
-- Show the Rust crate ecosystem honestly: rtl-sdr-rs is solid, DSP crates are thin,
-  you end up writing the interesting parts yourself (which is a feature, not a bug,
-  for this audience).
+- Let ADS-B run longer. Watching aircraft accumulate is satisfying.
+- Deeper dive into the IQ → complex plane connection with visuals.
+- Show the Rust crate ecosystem: rtl-sdr-rs, rustfft, cpal. You end up writing the interesting parts yourself — which is a feature, not a bug, for this audience.
