@@ -2,10 +2,12 @@ use anyhow::Result;
 use clap::Parser;
 use num_complex::Complex;
 use sdr::source::parse_source_arg;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::Instant;
 
+mod db;
 mod decode;
 mod demod;
 
@@ -26,6 +28,10 @@ struct Args {
     /// Tuner gain in dB. Omit for auto gain.
     #[arg(short, long)]
     gain: Option<f64>,
+
+    /// SQLite database path for storing aircraft positions
+    #[arg(long, default_value = "adsb.db")]
+    db: String,
 }
 
 /// Tracked state for a single aircraft.
@@ -40,9 +46,11 @@ struct Aircraft {
     heading: Option<f32>,
     messages: u32,
     // CPR state for position decoding
-    cpr_even: Option<(u32, u32)>,
-    cpr_odd: Option<(u32, u32)>,
+    cpr_even: Option<(u32, u32, Instant)>,
+    cpr_odd: Option<(u32, u32, Instant)>,
     last_cpr_odd: bool,
+    /// Set to true when a new position fix is resolved, cleared after DB write
+    new_position: bool,
 }
 
 impl Aircraft {
@@ -60,6 +68,7 @@ impl Aircraft {
             cpr_even: None,
             cpr_odd: None,
             last_cpr_odd: false,
+            new_position: false,
         }
     }
 
@@ -78,22 +87,32 @@ impl Aircraft {
                 if let Some(alt) = altitude_ft {
                     self.altitude_ft = Some(*alt);
                 }
+                let now = Instant::now();
                 if *cpr_odd {
-                    self.cpr_odd = Some((*cpr_lat, *cpr_lon));
+                    self.cpr_odd = Some((*cpr_lat, *cpr_lon, now));
                     self.last_cpr_odd = true;
                 } else {
-                    self.cpr_even = Some((*cpr_lat, *cpr_lon));
+                    self.cpr_even = Some((*cpr_lat, *cpr_lon, now));
                     self.last_cpr_odd = false;
                 }
                 // Try to resolve position if we have both even and odd
-                if let (Some((lat_e, lon_e)), Some((lat_o, lon_o))) =
+                // Only use the pair if both frames are less than 10 seconds old
+                if let (Some((lat_e, lon_e, t_e)), Some((lat_o, lon_o, t_o))) =
                     (self.cpr_even, self.cpr_odd)
                 {
-                    if let Some((lat, lon)) =
-                        decode_cpr_global(lat_e, lon_e, lat_o, lon_o, self.last_cpr_odd)
-                    {
-                        self.lat = Some(lat);
-                        self.lon = Some(lon);
+                    let age = if self.last_cpr_odd {
+                        now.duration_since(t_e)
+                    } else {
+                        now.duration_since(t_o)
+                    };
+                    if age.as_secs() < 10 {
+                        if let Some((lat, lon)) =
+                            decode_cpr_global(lat_e, lon_e, lat_o, lon_o, self.last_cpr_odd)
+                        {
+                            self.lat = Some(lat);
+                            self.lon = Some(lon);
+                            self.new_position = true;
+                        }
                     }
                 }
             }
@@ -140,8 +159,12 @@ fn main() -> Result<()> {
         println!("  Gain: {gain:.1} dB");
     }
 
+    let db = db::AdsbDb::open(&args.db)?;
+    println!("  Database: {}", args.db);
+
     let demod = AdsbDemodulator::new(args.sample_rate);
     let mut aircraft: HashMap<u32, Aircraft> = HashMap::new();
+    let mut verified_icaos: HashSet<u32> = HashSet::new(); // ICAOs confirmed by DF17/18 CRC
     let mut total_messages: u64 = 0;
     let mut total_preambles: u64 = 0;
     let mut total_crc_fail: u64 = 0;
@@ -175,12 +198,42 @@ fn main() -> Result<()> {
 
         for bits in &raw_messages {
             if let Some(msg) = decode_message(bits) {
+                // DF17/18 are CRC-validated — always trust them
+                if msg.df == 17 || msg.df == 18 {
+                    verified_icaos.insert(msg.icao);
+                } else if !verified_icaos.contains(&msg.icao) {
+                    // Short messages: only accept if ICAO was seen in a DF17/18
+                    total_crc_fail += 1;
+                    continue;
+                }
+
                 total_messages += 1;
 
                 let ac = aircraft
                     .entry(msg.icao)
                     .or_insert_with(|| Aircraft::new(msg.icao));
                 ac.update(&msg);
+
+                // Write to database
+                let _ = db.update_aircraft(
+                    ac.icao,
+                    ac.callsign.as_deref(),
+                    ac.messages,
+                );
+                if ac.new_position {
+                    if let (Some(lat), Some(lon)) = (ac.lat, ac.lon) {
+                        let _ = db.insert_position(
+                            ac.icao,
+                            lat,
+                            lon,
+                            ac.altitude_ft,
+                            ac.ground_speed_kt,
+                            ac.vertical_rate_fpm,
+                            ac.heading,
+                        );
+                    }
+                    ac.new_position = false;
+                }
 
                 // Print updated aircraft info
                 print_aircraft(ac);
