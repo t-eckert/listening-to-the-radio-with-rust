@@ -23,8 +23,8 @@ cd listening-to-the-radio-with-rust/demos
 # Start the RTL-SDR TCP server (in a separate terminal)
 rtl_tcp
 
-# Listen to FM radio (replace 100.3 with a local station)
-cargo run -p fm-receiver -- --frequency 100300000
+# Listen to FM radio (replace 100.3 with a local station's MHz)
+cargo run -p fm-receiver -- --frequency 100.3
 ```
 
 You should hear a local FM station through your speakers.

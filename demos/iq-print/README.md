@@ -9,7 +9,7 @@ Prints raw IQ samples from the SDR to the terminal so you can see the actual dat
 rtl_tcp
 
 # Print 10 IQ samples from a local FM station
-cargo run -p iq-print -- --frequency 100300000
+cargo run -p iq-print -- --frequency 100.3
 ```
 
 ### Options
@@ -17,7 +17,7 @@ cargo run -p iq-print -- --frequency 100300000
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--source` | `tcp:127.0.0.1:1234` | SDR source (tcp, usb, or file) |
-| `--frequency` | `100300000` (100.3 MHz) | Center frequency in Hz |
+| `--frequency` | `100.3` | Center frequency in MHz |
 | `--sample-rate` | `2048000` | Sample rate in Hz |
 | `-c, --count` | `10` | Number of samples to print |
 | `-d, --delay` | `500` | Delay between prints in ms |

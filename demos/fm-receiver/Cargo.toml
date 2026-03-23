@@ -9,4 +9,5 @@ anyhow.workspace = true
 clap.workspace = true
 num-complex.workspace = true
 cpal = "0.15"
+hound = "3.5"
 signal-hook = "0.3"

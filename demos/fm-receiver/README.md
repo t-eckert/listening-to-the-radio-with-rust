@@ -8,8 +8,8 @@ Demodulates FM radio and plays it through your speakers. This is the simplest "u
 # Start rtl_tcp in another terminal first
 rtl_tcp
 
-# Listen to an FM station (replace with a local frequency)
-cargo run -p fm-receiver -- --frequency 100300000
+# Listen to an FM station (replace with a local frequency in MHz)
+cargo run -p fm-receiver -- --frequency 100.3
 ```
 
 You should hear a local FM station through your laptop speakers.
@@ -19,7 +19,7 @@ You should hear a local FM station through your laptop speakers.
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--source` | `tcp:127.0.0.1:1234` | SDR source |
-| `--frequency` | `100300000` (100.3 MHz) | Station frequency in Hz |
+| `--frequency` | `100.3` | Station frequency in MHz |
 | `--sample-rate` | `2048000` | Sample rate in Hz |
 | `--audio-rate` | `48000` | Audio output sample rate in Hz |
 

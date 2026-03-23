@@ -8,8 +8,8 @@ Demodulates AM radio and plays it through your speakers. AM demodulation is even
 # Start rtl_tcp in another terminal first
 rtl_tcp
 
-# Listen to an AM station (replace with a local frequency)
-cargo run -p am-receiver -- --frequency 1310000
+# Listen to an AM station (replace with a local frequency in MHz)
+cargo run -p am-receiver -- --frequency 121.5
 ```
 
 ### Options
@@ -17,7 +17,7 @@ cargo run -p am-receiver -- --frequency 1310000
 | Flag | Default | Description |
 |------|---------|-------------|
 | `--source` | `tcp:127.0.0.1:1234` | SDR source |
-| `--frequency` | `7850000` (7.85 MHz) | Station frequency in Hz |
+| `--frequency` | `7.85` | Station frequency in MHz |
 | `--sample-rate` | `1024000` | Sample rate in Hz |
 | `--audio-rate` | `48000` | Audio output sample rate in Hz |
 | `--gain` | auto | Tuner gain in dB |

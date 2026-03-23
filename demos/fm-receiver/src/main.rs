@@ -4,7 +4,6 @@ use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use num_complex::Complex;
 use sdr::dsp::{deemphasis::DeEmphasisFilter, filter::LowPassFilter, fm::FmDemodulator};
 use sdr::source::parse_source_arg;
-use std::sync::mpsc;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
@@ -26,6 +25,10 @@ struct Args {
     /// Audio output sample rate in Hz
     #[arg(long, default_value_t = 48_000)]
     audio_rate: u32,
+
+    /// Write audio to a WAV file instead of (in addition to) speakers
+    #[arg(short, long)]
+    output: Option<String>,
 }
 
 fn main() -> Result<()> {
@@ -52,33 +55,55 @@ fn main() -> Result<()> {
     source.set_sample_rate(sdr_rate)?;
 
     // DSP chain:
-    // 1. Low-pass filter the IQ signal to the FM channel bandwidth (~200 kHz)
-    //    cutoff = 100kHz / sdr_rate = fraction of sample rate
-    let fm_cutoff = 100_000.0 / sdr_rate as f32;
-    let mut iq_filter = LowPassFilter::new(fm_cutoff, 51, 1);
+    // 1. Low-pass filter IQ to FM channel bandwidth (~200 kHz) and
+    //    decimate to an intermediate rate. This removes adjacent channels
+    //    and noise before FM demodulation.
+    let intermediate_rate = 256_000u32; // 256 kHz — enough for WBFM
+    let iq_cutoff = 100_000.0 / sdr_rate as f32;
+    let iq_decimation = (sdr_rate / intermediate_rate) as usize; // 8x
+    let mut iq_filter = LowPassFilter::new(iq_cutoff, 51, iq_decimation);
 
-    // 2. FM demodulate (75 kHz deviation for WBFM)
-    let mut fm_demod = FmDemodulator::new(75_000.0, sdr_rate as f32);
+    // 2. FM demodulate at the intermediate rate
+    let mut fm_demod = FmDemodulator::new(75_000.0, intermediate_rate as f32);
 
     // 3. Low-pass filter audio to ~15 kHz and decimate to audio rate
-    let audio_cutoff = 15_000.0 / sdr_rate as f32;
-    let decimation = sdr_rate / audio_rate;
-    let mut audio_filter = LowPassFilter::new(audio_cutoff, 101, decimation as usize);
+    let audio_cutoff = 15_000.0 / intermediate_rate as f32;
+    let audio_decimation = (intermediate_rate / audio_rate) as usize;
+    let mut audio_filter = LowPassFilter::new(audio_cutoff, 31, audio_decimation);
 
-    // 4. De-emphasis (75 μs for North America)
+    // 3. De-emphasis (75 μs for North America)
     let mut deemphasis = DeEmphasisFilter::new(75e-6, audio_rate as f32);
 
-    // Audio output channel
-    let (audio_tx, audio_rx) = mpsc::sync_channel::<Vec<f32>>(8);
+    // Ring buffer for audio output — large enough to absorb timing jitter
+    let ring_size = audio_rate as usize * 2; // 2 seconds of buffer
+    let ring = Arc::new(RingBuffer::new(ring_size));
+    let ring_producer = ring.clone();
 
     // Start audio output
-    let audio_stream = start_audio_output(audio_rate, audio_rx)?;
+    let audio_stream = start_audio_output(audio_rate, ring)?;
     audio_stream.play().context("starting audio stream")?;
 
+    // Optional WAV output
+    let mut wav_writer = if let Some(ref path) = args.output {
+        let spec = hound::WavSpec {
+            channels: 1,
+            sample_rate: audio_rate,
+            bits_per_sample: 32,
+            sample_format: hound::SampleFormat::Float,
+        };
+        let writer = hound::WavWriter::create(path, spec)
+            .with_context(|| format!("creating WAV file: {path}"))?;
+        println!("  Writing to: {path}");
+        Some(writer)
+    } else {
+        None
+    };
+
+    println!();
     println!("Receiving... Press Ctrl-C to stop.");
 
-    // Main processing loop
-    let buf_size = 65536;
+    // Main processing loop — smaller reads for smoother flow
+    let buf_size = 16384;
     let mut iq_buf = vec![Complex::new(0.0f32, 0.0); buf_size];
 
     while !stop.load(Ordering::Relaxed) {
@@ -87,10 +112,9 @@ fn main() -> Result<()> {
             println!("End of input.");
             break;
         }
-        let iq = &iq_buf[..n];
 
-        // Filter IQ
-        let filtered_iq = iq_filter.process(iq);
+        // Filter IQ and decimate to intermediate rate
+        let filtered_iq = iq_filter.process(&iq_buf[..n]);
 
         // FM demodulate
         let audio_raw = fm_demod.process(&filtered_iq);
@@ -101,8 +125,29 @@ fn main() -> Result<()> {
         // De-emphasis
         deemphasis.process(&mut audio);
 
-        // Send to audio output (drop if buffer full — avoids blocking)
-        let _ = audio_tx.try_send(audio);
+        // Scale output to a comfortable listening level.
+        // The FM demod gain produces values well outside [-1, 1] for
+        // strong stations. Apply a volume reduction and soft clamp.
+        for s in &mut audio {
+            *s *= 0.30;
+            *s = s.clamp(-1.0, 1.0);
+        }
+
+        // Write to WAV if requested
+        if let Some(ref mut writer) = wav_writer {
+            for &s in &audio {
+                writer.write_sample(s)?;
+            }
+        }
+
+        // Push to ring buffer (never blocks)
+        ring_producer.push(&audio);
+    }
+
+    // Finalize WAV file
+    if let Some(writer) = wav_writer {
+        writer.finalize()?;
+        println!("WAV file written.");
     }
 
     println!("Shutting down.");
@@ -110,9 +155,41 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// Lock-free single-producer single-consumer ring buffer for audio.
+struct RingBuffer {
+    buf: std::sync::Mutex<std::collections::VecDeque<f32>>,
+    capacity: usize,
+}
+
+impl RingBuffer {
+    fn new(capacity: usize) -> Self {
+        Self {
+            buf: std::sync::Mutex::new(std::collections::VecDeque::with_capacity(capacity)),
+            capacity,
+        }
+    }
+
+    fn push(&self, samples: &[f32]) {
+        let mut buf = self.buf.lock().unwrap();
+        for &s in samples {
+            if buf.len() >= self.capacity {
+                buf.pop_front(); // drop oldest if full
+            }
+            buf.push_back(s);
+        }
+    }
+
+    fn pop(&self, out: &mut [f32]) {
+        let mut buf = self.buf.lock().unwrap();
+        for sample in out.iter_mut() {
+            *sample = buf.pop_front().unwrap_or(0.0);
+        }
+    }
+}
+
 fn start_audio_output(
     sample_rate: u32,
-    rx: mpsc::Receiver<Vec<f32>>,
+    ring: Arc<RingBuffer>,
 ) -> Result<cpal::Stream> {
     let host = cpal::default_host();
     let device = host
@@ -125,29 +202,10 @@ fn start_audio_output(
         buffer_size: cpal::BufferSize::Default,
     };
 
-    let mut pending: Vec<f32> = Vec::new();
-    let mut pos = 0;
-
     let stream = device.build_output_stream(
         &config,
         move |data: &mut [f32], _: &cpal::OutputCallbackInfo| {
-            for sample in data.iter_mut() {
-                // Refill pending buffer if needed
-                if pos >= pending.len() {
-                    match rx.try_recv() {
-                        Ok(buf) => {
-                            pending = buf;
-                            pos = 0;
-                        }
-                        Err(_) => {
-                            *sample = 0.0;
-                            continue;
-                        }
-                    }
-                }
-                *sample = pending[pos];
-                pos += 1;
-            }
+            ring.pop(data);
         },
         |err| eprintln!("Audio output error: {err}"),
         None,
@@ -155,5 +213,3 @@ fn start_audio_output(
 
     Ok(stream)
 }
-
-

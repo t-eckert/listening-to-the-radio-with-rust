@@ -20,15 +20,15 @@ tasks:
     silent: true
 
   fm:
-    desc: Listen to FM radio (set FREQ to your local station in Hz)
+    desc: Listen to FM radio (set FREQ to your local station in MHz, e.g. 100.3)
     cmds:
-      - cargo run -p fm-receiver -- --frequency {{.FREQ | default "100300000"}}
+      - cargo run -p fm-receiver -- --frequency {{.FREQ | default "100.3"}}
     dir: demos
 
   am:
-    desc: Listen to AM radio (set FREQ in Hz)
+    desc: Listen to AM radio (set FREQ in MHz, e.g. 121.5 for aviation)
     cmds:
-      - cargo run -p am-receiver -- --frequency {{.FREQ | default "1310000"}}
+      - cargo run -p am-receiver -- --frequency {{.FREQ | default "121.5"}}
     dir: demos
 
   adsb:
@@ -46,7 +46,7 @@ tasks:
   iq-print:
     desc: Print raw IQ samples from the SDR
     cmds:
-      - cargo run -p iq-print -- --frequency {{.FREQ | default "100300000"}}
+      - cargo run -p iq-print -- --frequency {{.FREQ | default "100.3"}}
     dir: demos
 
   wave:
