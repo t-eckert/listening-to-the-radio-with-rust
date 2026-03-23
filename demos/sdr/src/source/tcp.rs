@@ -6,6 +6,7 @@ use std::net::TcpStream;
 // rtl_tcp command bytes
 const CMD_SET_FREQ: u8 = 0x01;
 const CMD_SET_SAMPLE_RATE: u8 = 0x02;
+const CMD_SET_DIRECT_SAMPLING: u8 = 0x09;
 
 pub struct TcpSource {
     stream: TcpStream,
@@ -65,5 +66,9 @@ impl SdrSource for TcpSource {
 
     fn sample_rate(&self) -> u32 {
         self.sample_rate
+    }
+
+    fn set_direct_sampling(&mut self, mode: u32) -> Result<()> {
+        self.send_command(CMD_SET_DIRECT_SAMPLING, mode)
     }
 }

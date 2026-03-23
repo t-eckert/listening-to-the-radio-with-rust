@@ -30,6 +30,12 @@ pub trait SdrSource: Send {
     fn set_gain(&mut self, _gain: Option<i32>) -> Result<()> {
         Ok(()) // No-op for sources that don't support gain control
     }
+
+    /// Enable direct sampling mode for receiving below ~24 MHz.
+    /// Mode: 0 = off, 1 = I-branch, 2 = Q-branch.
+    fn set_direct_sampling(&mut self, _mode: u32) -> Result<()> {
+        Ok(()) // No-op for sources that don't support direct sampling
+    }
 }
 
 pub enum SourceConfig {

@@ -195,37 +195,14 @@ Run the ADS-B decoder with the short antenna. Show aircraft appearing on screen 
 
 ---
 
-## 9. CHU — Ottawa's Atomic Clock (5 min, if working)
-
-**Note:** CHU decoder had issues earlier. Include if working, skip gracefully if not.
-
-### The story
-
-- CHU is a shortwave time signal station operated by NRC Canada.
-- Broadcasting continuously since 1938. Transmitter site in Barrhaven, about 10 miles from here.
-- Three frequencies, three cesium atomic clocks.
-- Every second: a 1000 Hz tick. Every minute: a bilingual voice announcement. Every second from 31-39: a 300-baud FSK data burst encoding the exact time.
-
-### The demo
-
-Run the CHU decoder. Show ticks accumulating, then the time appearing.
-
-"That time came from a cesium clock in Barrhaven, through the air, into a $30 dongle, through a few hundred lines of Rust. No internet. No GPS. No NTP. Just radio waves and math."
-
-### If it doesn't work
-
-"CHU operates on shortwave at 7.85 MHz — reception depends on atmospheric conditions and the antenna. I've decoded it successfully from home, but live RF is unpredictable. That's part of the fun."
-
----
-
-## 10. Closing (2 min)
+## 9. Closing (2 min)
 
 ### What we covered
 
 - EM waves: electrons oscillating in antennas, creating and receiving waves
 - The RTL-SDR: two chips that digitize radio into IQ samples
 - IQ samples: points on the complex plane where rotation speed is frequency and distance is amplitude
-- Demodulation: FM (phase), AM (magnitude), ADS-B (magnitude), CHU (FSK/phase)
+- Demodulation: FM (phase), AM (magnitude), ADS-B (magnitude)
 - Antenna design: why length matters and quarter-wavelength resonance
 
 ### The invitation
@@ -244,7 +221,7 @@ Run the CHU decoder. Show ticks accumulating, then the time appearing.
 
 ### Equipment to bring
 - RTL-SDR Blog V4 dongle
-- Long dipole antenna (FM/AM/CHU)
+- Long dipole antenna (FM/AM)
 - Short 7cm antenna (ADS-B)
 - Laptop (primary demo machine)
 - USB-C adapter if needed for venue display
@@ -256,7 +233,6 @@ Run the CHU decoder. Show ticks accumulating, then the time appearing.
 - **Build release binaries** ahead of time. Don't compile on stage.
 
 ### If time is tight
-- Cut CHU (section 9). The talk stands without it.
 - Shorten the antenna theory section — state the 1/4 wavelength rule without the eddy current detail.
 - Core path: Physics (5) → SDR (3) → IQ (5) → Demod (3) → FM (3) → AM (3) → Antenna (2) → ADS-B (5) → Close (2) = 31 min
 

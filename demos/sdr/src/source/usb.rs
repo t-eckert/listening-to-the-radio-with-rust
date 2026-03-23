@@ -1,6 +1,6 @@
 use crate::source::{IqSample, SdrSource};
 use anyhow::{Context, Result};
-use rtl_sdr_rs::{RtlSdr, TunerGain};
+use rtl_sdr_rs::{DirectSampleMode, RtlSdr, TunerGain};
 
 pub struct UsbSource {
     dev: RtlSdr,
@@ -77,6 +77,21 @@ impl SdrSource for UsbSource {
             None => self.dev.set_tuner_gain(TunerGain::Auto),
         }
         .context("setting gain")?;
+        Ok(())
+    }
+
+    fn set_direct_sampling(&mut self, mode: u32) -> Result<()> {
+        let ds_mode = match mode {
+            0 => DirectSampleMode::Off,
+            1 => DirectSampleMode::On,
+            2 => DirectSampleMode::OnSwap,
+            _ => DirectSampleMode::Off,
+        };
+        self.dev
+            .set_direct_sampling(ds_mode)
+            .context("setting direct sampling mode")?;
+        // Reset the buffer after changing sampling mode to flush stale data
+        self.dev.reset_buffer().context("resetting buffer after direct sampling")?;
         Ok(())
     }
 }

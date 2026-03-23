@@ -399,51 +399,6 @@ With a $30 dongle and a 7 cm antenna, we can see them all.
 
 ---
 
-CHU — Ottawa's Atomic Clock
-============================
-
-<!-- speaker_note: If CHU decoder is working, run it here. If not, show the slide and explain that shortwave reception depends on conditions. -->
-
-Shortwave time signal station, operated by NRC Canada.
-
-Broadcasting continuously since **1938**.
-
-<!-- pause -->
-
-Transmitter site: Barrhaven. About 10 miles from here.
-
-Three frequencies. Three antennas. Three cesium atomic clocks.
-
-<!-- pause -->
-
-Every second: a 1000 Hz tick.
-Every minute: _"At the tone, Eastern Daylight Time will be..."_
-Seconds 31–39: a 300-baud FSK data burst encoding the exact time.
-
-<!-- pause -->
-
-Carrier accuracy: **5 parts per trillion.** Derived from cesium.
-
----
-
-<!-- jump_to_middle -->
-
-<!-- speaker_note: Let the CHU decoder run if working. Let the ticks accumulate. Let the time appear. If not working, skip to next slide. -->
-
-Let's listen.
-
----
-
-<!-- jump_to_middle -->
-
-No internet. No GPS. No NTP.
-
-<!-- pause -->
-
-Just radio waves and math.
-
----
-
 What We Covered
 ===============
 
@@ -466,6 +421,8 @@ Getting Started
 
 **Software:**
 - `rtl-sdr-rs`, `rustfft`, `cpal`, `num-complex`
+
+**All code from this talk:**
 - `github.com/t-eckert/listening-to-the-radio-with-rust`
 
 <!-- pause -->

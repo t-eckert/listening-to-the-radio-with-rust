@@ -30,6 +30,16 @@ struct Args {
     #[arg(short, long)]
     gain: Option<f64>,
 
+    /// Enable direct sampling for shortwave reception below ~24 MHz.
+    /// Use Q-branch (2) for the RTL-SDR Blog V4.
+    #[arg(long, default_value_t = 2)]
+    direct_sampling: u32,
+
+    /// Skip sending setup commands to the SDR source.
+    /// Use when rtl_tcp is already configured with the correct settings.
+    #[arg(long)]
+    no_setup: bool,
+
     /// Show diagnostic output (tone power levels)
     #[arg(long)]
     debug: bool,
@@ -49,13 +59,30 @@ fn main() -> Result<()> {
 
     let config = parse_source_arg(&args.source, args.sample_rate)?;
     let mut source = sdr::open_source(config)?;
-    source.set_frequency(args.frequency)?;
-    source.set_sample_rate(args.sample_rate)?;
 
-    // Use manual gain for weak HF signals — maximize sensitivity
-    let gain = args.gain.unwrap_or(49.6);
-    source.set_gain(Some((gain * 10.0) as i32))?;
-    println!("  Gain: {gain:.1} dB");
+    if args.no_setup {
+        println!("  Skipping SDR setup (--no-setup)");
+    } else if args.direct_sampling > 0 {
+        // For direct sampling via rtl_tcp: set freq first, then enable
+        // direct sampling LAST. Do NOT send sample_rate — it resets the
+        // device and clears direct sampling mode.
+        source.set_frequency(args.frequency)?;
+        source.set_direct_sampling(args.direct_sampling)?;
+        println!("  Direct sampling: mode {}", args.direct_sampling);
+
+        // Wait for direct sampling to take effect, then flush stale data
+        std::thread::sleep(std::time::Duration::from_secs(1));
+        let mut flush_buf = vec![Complex::new(0.0f32, 0.0); 16384];
+        for _ in 0..20 {
+            let _ = source.read(&mut flush_buf);
+        }
+    } else {
+        source.set_frequency(args.frequency)?;
+        source.set_sample_rate(args.sample_rate)?;
+        let gain = args.gain.unwrap_or(49.6);
+        source.set_gain(Some((gain * 10.0) as i32))?;
+        println!("  Gain: {gain:.1} dB");
+    }
     println!();
 
     let sdr_rate = args.sample_rate;
@@ -93,6 +120,7 @@ fn main() -> Result<()> {
     let mut audio_accumulator: Vec<f32> = Vec::new();
     let mut tick_count = 0u64;
     let mut bit_count = 0u64;
+    let mut block_count = 0u64;
 
     while !stop.load(Ordering::Relaxed) {
         let n = source.read(&mut iq_buf)?;
@@ -101,6 +129,16 @@ fn main() -> Result<()> {
             break;
         }
         let iq = &iq_buf[..n];
+
+        // Debug: print raw IQ signal level every ~1 second
+        block_count += 1;
+        if args.debug && block_count % 60 == 1 {
+            let max_mag = iq.iter().map(|s| s.norm()).fold(0.0f32, f32::max);
+            let avg_mag: f32 = iq.iter().map(|s| s.norm()).sum::<f32>() / n as f32;
+            println!(
+                "  [raw IQ] block={block_count} samples={n} avg_mag={avg_mag:.6} max_mag={max_mag:.6}"
+            );
+        }
 
         // AM demodulate
         let envelope = am_demod.process_ac_coupled(iq);
