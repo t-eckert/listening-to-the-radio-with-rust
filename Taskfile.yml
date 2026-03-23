@@ -1,17 +1,68 @@
 # https://taskfile.dev
 version: '3'
-vars:
-  GREETING: Hello, World!
+
 tasks:
   default:
     cmds:
       - task --list-all
     silent: true
+
   present:
+    desc: Run the slide deck with presenterm
     cmds:
       - presenterm slides.md
     silent: true
+
   rtl-tcp:
+    desc: Start the RTL-SDR TCP server
     cmds:
       - rtl_tcp -a 127.0.0.1
     silent: true
+
+  fm:
+    desc: Listen to FM radio (set FREQ to your local station in Hz)
+    cmds:
+      - cargo run -p fm-receiver -- --frequency {{.FREQ | default "100300000"}}
+    dir: demos
+
+  am:
+    desc: Listen to AM radio (set FREQ in Hz)
+    cmds:
+      - cargo run -p am-receiver -- --frequency {{.FREQ | default "1310000"}}
+    dir: demos
+
+  adsb:
+    desc: Decode ADS-B aircraft signals at 1090 MHz
+    cmds:
+      - cargo run -p adsb-decoder
+    dir: demos
+
+  tracker:
+    desc: Show tracked aircraft on a map (run adsb task first)
+    cmds:
+      - cargo run -p flight-tracker
+    dir: demos
+
+  iq-print:
+    desc: Print raw IQ samples from the SDR
+    cmds:
+      - cargo run -p iq-print -- --frequency {{.FREQ | default "100300000"}}
+    dir: demos
+
+  wave:
+    desc: Visualize EM wave propagation (no hardware needed)
+    cmds:
+      - cargo run -p wave-demo
+    dir: demos
+
+  iq:
+    desc: Interactive IQ complex plane visualization (no hardware needed)
+    cmds:
+      - cargo run -p iq-demo
+    dir: demos
+
+  build:
+    desc: Build all demos
+    cmds:
+      - cargo build --release
+    dir: demos
