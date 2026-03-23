@@ -25,5 +25,8 @@ target
 *.db-shm
 *.db-wal
 
+# Aliased binaries
+demos/bin/
+
 # Superpowers
 .superpowers/

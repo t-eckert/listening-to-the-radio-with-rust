@@ -66,3 +66,18 @@ tasks:
     cmds:
       - cargo build --release
     dir: demos
+
+  alias:
+    desc: Symlink release binaries to short names in demos/bin/
+    deps: [build]
+    cmds:
+      - mkdir -p bin
+      - ln -sf ../target/release/wave-demo bin/wave
+      - ln -sf ../target/release/iq-demo bin/iq
+      - ln -sf ../target/release/iq-print bin/iq-print
+      - ln -sf ../target/release/fm-receiver bin/fm
+      - ln -sf ../target/release/am-receiver bin/am
+      - ln -sf ../target/release/adsb-decoder bin/adsb
+      - ln -sf ../target/release/flight-tracker bin/tracker
+      - echo "Binaries linked in demos/bin/"
+    dir: demos
