@@ -83,6 +83,8 @@ The antenna converts the wave back into electrical current.
 
 <!-- jump_to_middle -->
 
+<!-- speaker_note: Run wave-demo here. Let the animation play while you narrate the summary. -->
+
 Electrons moving up and down in a transmitting antenna create waves.
 
 <!-- pause -->
@@ -133,10 +135,18 @@ It selects which part of the spectrum to listen to.
 An 8-bit analog-to-digital converter.
 Samples the signal and sends digital data over USB.
 
-<!-- pause -->
+---
+
+<!-- jump_to_middle -->
 
 Originally a DVB-T TV tuner chip.
+
+<!-- pause -->
+
 Hackers figured out you could grab raw samples from the ADC.
+
+<!-- pause -->
+
 The RTL-SDR was born.
 
 ---
@@ -147,34 +157,16 @@ So what comes out of the dongle?
 
 ---
 
-IQ Samples
-==========
-
-The RTL2832U outputs pairs of bytes: **I, Q, I, Q, ...**
-
-<!-- pause -->
-
-Each pair is a point on the complex plane: `I + jQ`
-
-```rust
-pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
-    raw.chunks_exact(2)
-        .map(|pair| {
-            IqSample::new(
-                (pair[0] as f32 - 127.5) / 127.5,
-                (pair[1] as f32 - 127.5) / 127.5,
-            )
-        })
-        .collect()
-}
-```
-
----
-
 Points on the Complex Plane
 ============================
 
 <!-- speaker_note: This is the key conceptual slide. Make sure the audience gets this before moving on. -->
+
+The dongle outputs pairs of bytes: **I, Q, I, Q, ...**
+
+Each pair is a point on the complex plane.
+
+<!-- pause -->
 
 These points trace rotation around the origin.
 
@@ -195,6 +187,36 @@ Everything we do with SDR is about measuring these two properties.
 
 <!-- jump_to_middle -->
 
+<!-- speaker_note: Run iq-demo here. Use arrow keys to change frequency and amplitude. Show how faster rotation = higher frequency, larger circle = higher amplitude. -->
+
+Let's see this.
+
+---
+
+IQ Samples in Code
+==================
+
+```rust
+pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
+    raw.chunks_exact(2)
+        .map(|pair| {
+            IqSample::new(
+                (pair[0] as f32 - 127.5) / 127.5,
+                (pair[1] as f32 - 127.5) / 127.5,
+            )
+        })
+        .collect()
+}
+```
+
+<!-- pause -->
+
+Raw bytes in, complex numbers out. Each pair becomes a point on the plane.
+
+---
+
+<!-- jump_to_middle -->
+
 We won't go into the deep mathematical detail of how
 the hardware produces these values.
 
@@ -206,9 +228,9 @@ What matters is what they _mean_.
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Switch to iq-print demo. Let the audience see raw IQ data streaming in. -->
+<!-- speaker_note: Switch to iq-print demo. Let the audience see raw IQ data streaming in from the dongle. -->
 
-Let's see them.
+Let's see the real thing.
 
 ---
 
@@ -247,7 +269,7 @@ How fast is the point rotating? → `(s * prev.conj()).arg()`
 | Signal | Frequency | What you get |
 |--------|-----------|-------------|
 | FM broadcast | 88–108 MHz | Audio |
-| FSK (CHU, pagers) | Various | Digital bits |
+| FSK (pagers, telemetry) | Various | Digital bits |
 | AIS (ships) | 162 MHz | Ship position and identity |
 | POCSAG pagers | 148/152 MHz | Text messages |
 | DMR/P25 | Various | Digital voice |
@@ -258,7 +280,7 @@ How fast is the point rotating? → `(s * prev.conj()).arg()`
 
 Let's hear some signals.
 
-<!-- speaker_note: Start FM receiver demo. Audio should play through laptop speakers. -->
+<!-- speaker_note: Start FM receiver demo. Audio should play through laptop speakers. Try 106.1 (CHEZ) or 100.3 (Majic). -->
 
 ---
 
@@ -303,7 +325,7 @@ pub fn process(&self, input: &[Complex<f32>]) -> Vec<f32> {
 
 The audio _is_ the distance from the origin — the **amplitude**.
 
-<!-- speaker_note: Switch to AM receiver demo. -->
+<!-- speaker_note: Switch to AM receiver demo. Tune to 118.8 MHz (YOW tower). Vertical antenna. You may hear ATC in English or French — Ottawa is bilingual. -->
 
 ---
 
@@ -420,7 +442,7 @@ Getting Started
 - Dipole antenna kit (~$10)
 
 **Software:**
-- `rtl-sdr-rs`, `rustfft`, `cpal`, `num-complex`
+- `rtl-sdr-rs`, `cpal`, `num-complex`, `ratatui`
 
 **All code from this talk:**
 - `github.com/t-eckert/listening-to-the-radio-with-rust`
