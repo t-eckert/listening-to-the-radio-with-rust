@@ -37,6 +37,18 @@ This is a technology that is _super_ accessible.
 
 ---
 
+What We'll Cover
+================
+
+<!-- incremental_lists: true -->
+
+1. **Physics** — what is physically happening in an antenna
+2. **Instrumentation** — how a $30 dongle digitizes radio waves
+3. **Interpretation** — how different math extracts different signals
+4. **Application** — live demos: FM, AM, and aircraft tracking
+
+---
+
 <!-- jump_to_middle -->
 
 Let's start with the physics.
