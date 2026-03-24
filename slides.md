@@ -172,20 +172,6 @@ you're sliding the window so your station lands at zero.
 
 ---
 
-<!-- jump_to_middle -->
-
-Originally a DVB-T TV tuner chip.
-
-<!-- pause -->
-
-Hackers figured out you could grab raw samples from the ADC.
-
-<!-- pause -->
-
-The RTL-SDR was born.
-
----
-
 rtl_tcp
 =======
 
