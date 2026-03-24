@@ -10,13 +10,15 @@ options:
 
 <!-- jump_to_middle -->
 
+<!-- speaker_note: PANIC CARD - If you lose your place, say one of these. (1) "So, what does this mean practically?" to transition to the next demo. (2) "Let me show you." to switch to any demo. (3) "The key idea is..." rotation speed is frequency, distance is amplitude. (4) "Let's go back to the IQ plane." to re-anchor on the core concept. You know this material. You built every demo. The audience is on your side. -->
+
 # Listening to the Radio with Rust
 
 Thomas Eckert
 
 ---
 
-<!-- speaker_note: Keep this casual. You're sharing a hobby, not lecturing. -->
+<!-- speaker_note: Keep this casual. You are sharing a hobby, not lecturing. Anchor quote - "I'm not an expert. This is something I've been playing with for a few months. When I find something cool, my first instinct is to share it." If you drift - You are here to share something cool. That is it. -->
 
 About Me
 ========
@@ -55,10 +57,10 @@ Let's start with the physics.
 
 ---
 
+<!-- speaker_note: Anchor quote - "Imagine a bobber in a pool of still water." Use the bobber metaphor. Slow down here. Let the audience build the mental image. If you drift - Two bobbers. One makes waves, one receives them. Electrons up and down. -->
+
 The Transmitter
 ===============
-
-<!-- speaker_note: Use the bobber metaphor. Slow down here. Let the audience build the mental image. -->
 
 Imagine a bobber sitting in a pool of still water.
 
@@ -109,10 +111,10 @@ Everything that follows is about measuring and interpreting that movement.
 
 ---
 
+<!-- speaker_note: Anchor quote - "Traditional radio, one circuit, one purpose. SDR, digitize the spectrum, do everything else in software." Show the dongle here. Hold it up. If you drift - Two chips. One tunes, one digitizes. That is the whole dongle. -->
+
 The RTL-SDR
 ===========
-
-<!-- speaker_note: Show the dongle here. Hold it up. -->
 
 **Traditional radio:** one hardware circuit, one purpose.
 
@@ -199,10 +201,10 @@ What does this digital signal look like?
 
 ---
 
+<!-- speaker_note: Anchor quote - "The dongle gives you pairs of bytes. Each pair is a point on the complex plane." The phase changes over time. At each instant, we project the signal onto two axes, cosine and sine. That gives us two numbers, I and Q. That is why they come in pairs. If you drift - Points on a plane. Speed equals frequency. Distance equals amplitude. That is the whole game. -->
+
 I and Q
 =======
-
-<!-- speaker_note: Pause here. The phase changes over time. At each instant, we project the signal onto two axes, cosine and sine. That gives us two numbers, I and Q. That is why they come in pairs. -->
 
 A radio signal at a single frequency is a cosine wave:
 
@@ -228,7 +230,7 @@ both the **amplitude** and the **phase** of the signal at each moment.
 Points on the Complex Plane
 ============================
 
-<!-- speaker_note: This is the key conceptual slide. Make sure the audience gets this before moving on. -->
+<!-- speaker_note: This is the key conceptual slide. Make sure the audience gets this before moving on. Frequency is rotation speed. Amplitude is distance from center. Everything we do with SDR is about measuring these two properties. -->
 
 The dongle outputs pairs of bytes: **I, Q, I, Q, ...**
 
@@ -255,7 +257,7 @@ Everything we do with SDR is about measuring these two properties.
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Run iq-demo here. Use arrow keys to change frequency and amplitude. Show how faster rotation = higher frequency, larger circle = higher amplitude. -->
+<!-- speaker_note: Run iq-demo here. Use arrow keys to change frequency and amplitude. Show how faster rotation equals higher frequency, larger circle equals higher amplitude. Let the audience see the connection. -->
 
 Let's see this.
 
@@ -295,6 +297,8 @@ pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
 Let's see the real thing.
 
 ---
+
+<!-- speaker_note: Anchor quote - "All demodulation comes back to measuring rotation speed or distance from the origin." If you drift - Two columns. Magnitude or phase. Everything fits in one of them. -->
 
 Many Signals, One Idea
 =======================
@@ -402,9 +406,9 @@ But writing it yourself is how you _understand_ what's happening.
 
 <!-- jump_to_middle -->
 
-Let's hear some signals.
+<!-- speaker_note: Anchor quote - "Multiply by the conjugate of the previous sample. Take the angle. That is FM demodulation." Start FM receiver demo. Try 106.1 (CHEZ) or 100.3 (Majic). Let it play for a few seconds. Let the audience hear it. If you drift - One line of math. Phase change is audio. Play the music, show the code. -->
 
-<!-- speaker_note: Start FM receiver demo. Audio should play through laptop speakers. Try 106.1 (CHEZ) or 100.3 (Majic). -->
+Let's hear some signals.
 
 ---
 
@@ -496,6 +500,8 @@ That's the whole FM receiver.
 
 ---
 
+<!-- speaker_note: Anchor quote - "AM is even simpler. Just take the magnitude. sqrt of I squared plus Q squared. That is it." If you drift - Magnitude equals AM. One function call. Then contrast with FM. -->
+
 AM Radio — The Pipeline
 =======================
 
@@ -579,10 +585,10 @@ Same IQ data, different interpretation.
 
 ---
 
+<!-- speaker_note: Anchor quote - "An antenna resonates at a quarter of the wavelength." Swap the antenna during this section. The physical act reinforces the point. If you drift - Quarter wavelength. Too long equals destructive interference. Show the short antenna. -->
+
 Antenna Length
 ==============
-
-<!-- speaker_note: Start swapping the antenna here. Remove the long dipole, attach the short 7cm antenna. Talk through this while your hands are busy. -->
 
 An antenna works best when its length is related to the wavelength of the signal.
 
@@ -621,7 +627,7 @@ This short one is about 7 cm — a quarter wavelength at 1090 MHz.
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Start ADS-B decoder demo. Show the Ottawa area map with aircraft appearing. -->
+<!-- speaker_note: Anchor quote - "Every plane in the sky is announcing itself right now." Start ADS-B decoder demo. Run adsb-decoder, then flight-tracker in a second terminal. Aircraft appear on the Ottawa map with callsign, altitude, speed. Let it accumulate. Each new dot is satisfying. If you drift - Same math as AM, different protocol on top. Show the map. Let it fill in. -->
 
 Let's see what's flying overhead.
 
@@ -701,6 +707,8 @@ Every plane in the sky above us is announcing itself right now.
 With a $30 dongle and a 7 cm antenna, we can see them all.
 
 ---
+
+<!-- speaker_note: Anchor quote - "Everything I showed you today costs about $30 and runs on any laptop." Invitation - "The airwaves are public. The signals are free. The tools are open source. Go listen." Open discussion - pass around the hardware, ask if anyone has done amateur radio or SDR. If you drift - $30 dongle, a few crates, curiosity. Go listen. -->
 
 Getting Started
 ===============
