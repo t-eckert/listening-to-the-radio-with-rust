@@ -354,7 +354,7 @@ At 2.4 million samples per second, every sample gets **~400 ns** of processing t
 
 <!-- pause -->
 
-The code looks like the math, and it runs like C.
+Performance comparable to C, with convenience and readability I prefer.
 
 ---
 
