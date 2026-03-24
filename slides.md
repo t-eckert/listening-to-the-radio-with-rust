@@ -33,7 +33,7 @@ When I find something cool, my first instinct is to share it.
 
 <!-- pause -->
 
-This is a technology that is _super_ accessible.
+This is a technology that is at a _super_ accessible price point, but has a bit of a learning curve to get started.
 
 ---
 
@@ -150,6 +150,25 @@ Two Chips
 <!-- pause -->
 
 **RTL2832U** — 8-bit ADC, sends digital data over USB.
+
+---
+
+The Tuner
+=========
+
+The antenna picks up _everything_ — FM, AM, aviation, cell towers, Wi-Fi — all at once.
+
+<!-- pause -->
+
+The R828D's job is to select a narrow slice of that spectrum.
+
+It shifts your chosen frequency down to **baseband** — a low frequency
+centered around zero that the ADC can sample.
+
+<!-- pause -->
+
+Think of it like a radio dial: you're not filtering out other stations,
+you're sliding the window so your station lands at zero.
 
 ---
 
