@@ -78,7 +78,7 @@ Antenna → R828D tuner → RTL2832U → USB → your code
 ---
 
 ## 3. IQ Samples — Points on the Complex Plane (5 min)
-
+ 
 > "The dongle gives you pairs of bytes. Each pair is a point on the complex plane."
 
 ### The concept — this is the key slide
@@ -189,7 +189,7 @@ Antenna → R828D tuner → RTL2832U → USB → your code
 ### The physics
 
 - Antenna works best at 1/4 of the wavelength
-- Too long → eddy currents → parts of the antenna cancel each other out
+- Too long → destructive interference → parts of the antenna cancel each other out
 
 ### The examples
 
@@ -291,7 +291,7 @@ You know this material. You built every demo. The audience is on your side.
 - **Build release binaries** ahead of time. Don't compile on stage.
 
 ### If time is tight
-- Shorten the antenna theory section — state the 1/4 wavelength rule without the eddy current detail.
+- Shorten the antenna theory section — state the 1/4 wavelength rule without the destructive interference detail.
 - Core path: Physics (5) → SDR (3) → IQ (5) → Demod (3) → FM (3) → AM (3) → Antenna (2) → ADS-B (5) → Close (2) = 31 min
 
 ### If time is generous

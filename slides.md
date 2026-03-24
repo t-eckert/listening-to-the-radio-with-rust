@@ -373,6 +373,12 @@ The Ecosystem
 
 No C dependencies. Everything compiles with `cargo build`.
 
+<!-- pause -->
+
+Tools like GNURadio and SDR++ are more capable than what I've built.
+
+But writing it yourself is how you _understand_ what's happening.
+
 ---
 
 Every SDR Application
@@ -524,6 +530,13 @@ pub fn process(&self, input: &[Complex<f32>]) -> Vec<f32> {
 
 That's it. The audio _is_ the distance from the origin — the **amplitude**.
 
+<!-- pause -->
+
+Let's tune to 118.8 MHz — Ottawa airport tower.
+
+In Canada, receiving is legal. The law restricts transmitting
+and sharing private communications, but ATC is a public broadcast.
+
 <!-- speaker_note: Switch to AM receiver demo. Tune to 118.8 MHz (YOW tower). Vertical antenna. You may hear ATC in English or French — Ottawa is bilingual. -->
 
 ---
@@ -586,12 +599,12 @@ Why Not Longer?
 ===============
 
 If the antenna is too long relative to the wavelength,
-**eddy currents** form.
+you get **destructive interference**.
 
 <!-- pause -->
 
-Parts of the antenna work against each other — current flows
-in opposing directions, canceling out the signal.
+Current flows in opposite directions in different parts of the antenna —
+their radiated fields cancel each other out.
 
 <!-- pause -->
 
