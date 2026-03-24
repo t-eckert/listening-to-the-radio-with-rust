@@ -425,7 +425,10 @@ The antenna hears every station at once.
 We filter to just our channel (~200 kHz wide) and decimate 8x.
 
 ```rust
-// Keep only our station, drop from 2 MHz to 256 kHz
+// The antenna picks up everything — all stations at once.
+// Filter to just our channel (~200 kHz wide),
+// then keep every 8th sample (2 MHz → 256 kHz).
+// Fewer samples = less work for every step after this.
 let filtered_iq = iq_filter.process(&iq_buf[..n]);
 ```
 
@@ -443,8 +446,14 @@ pub fn process(&mut self, input: &[Complex<f32>]) -> Vec<f32> {
     let mut output = Vec::with_capacity(input.len());
 
     for &sample in input {
+        // Multiply by the conjugate of the previous sample.
+        // This gives us the phase *difference* between them.
         let product = sample * self.prev.conj();
+
+        // Extract the angle — that's the instantaneous frequency.
         let phase = product.im.atan2(product.re);
+
+        // Scale it. This is now an audio sample.
         output.push(phase * self.gain);
         self.prev = sample;
     }
@@ -455,8 +464,6 @@ pub fn process(&mut self, input: &[Complex<f32>]) -> Vec<f32> {
 
 <!-- pause -->
 
-Multiply by the conjugate of the previous sample. Take the angle.
-
 The audio _is_ the rate of phase change — the **rotation speed**.
 
 ---
@@ -465,17 +472,23 @@ FM — Step 3: Filter and Play
 =============================
 
 ```rust
-// Decimate from 256 kHz to 48 kHz audio rate
+// We have 256,000 audio samples per second,
+// but speakers only need 48,000.
+// Filter out frequencies above 15 kHz (human hearing),
+// then keep every 5th sample.
 let mut audio = audio_filter.process_real(&audio_raw);
 
-// De-emphasis: FM stations pre-emphasize high frequencies.
-// We undo that here.
+// FM stations boost high frequencies before transmitting.
+// De-emphasis undoes that, restoring the original balance.
 deemphasis.process(&mut audio);
+
+// Send to speakers.
+ring_buffer.push(&audio);
 ```
 
 <!-- pause -->
 
-Then push the samples to the speakers. That's the whole FM receiver.
+That's the whole FM receiver.
 
 ---
 
