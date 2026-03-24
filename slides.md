@@ -404,8 +404,39 @@ Let's hear some signals.
 
 ---
 
-FM Demodulation
-===============
+FM Radio — The Pipeline
+=======================
+
+```
+IQ samples (2 MHz)
+  → low-pass filter + decimate 8x (256 kHz)
+  → FM demodulate
+  → low-pass filter + decimate to 48 kHz
+  → de-emphasis
+  → speakers
+```
+
+---
+
+FM — Step 1: Filter
+====================
+
+The antenna hears every station at once.
+We filter to just our channel (~200 kHz wide) and decimate 8x.
+
+```rust
+// Keep only our station, drop from 2 MHz to 256 kHz
+let filtered_iq = iq_filter.process(&iq_buf[..n]);
+```
+
+<!-- pause -->
+
+2 million samples per second → 256 thousand. Much less work for the next steps.
+
+---
+
+FM — Step 2: Demodulate
+========================
 
 ```rust
 pub fn process(&mut self, input: &[Complex<f32>]) -> Vec<f32> {
@@ -427,6 +458,24 @@ pub fn process(&mut self, input: &[Complex<f32>]) -> Vec<f32> {
 Multiply by the conjugate of the previous sample. Take the angle.
 
 The audio _is_ the rate of phase change — the **rotation speed**.
+
+---
+
+FM — Step 3: Filter and Play
+=============================
+
+```rust
+// Decimate from 256 kHz to 48 kHz audio rate
+let mut audio = audio_filter.process_real(&audio_raw);
+
+// De-emphasis: FM stations pre-emphasize high frequencies.
+// We undo that here.
+deemphasis.process(&mut audio);
+```
+
+<!-- pause -->
+
+Then push the samples to the speakers. That's the whole FM receiver.
 
 ---
 
