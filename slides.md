@@ -375,6 +375,27 @@ No C dependencies. Everything compiles with `cargo build`.
 
 ---
 
+Every SDR Application
+=====================
+
+```
+IQ samples → demodulate → process
+```
+
+<!-- pause -->
+
+The demodulation step extracts a meaningful signal from the IQ data.
+
+The processing step does something with it.
+
+<!-- pause -->
+
+- FM radio: demodulate phase → **play audio**
+- AM radio: demodulate magnitude → **play audio**
+- ADS-B: demodulate magnitude → **decode aircraft positions**
+
+---
+
 <!-- jump_to_middle -->
 
 Let's hear some signals.
