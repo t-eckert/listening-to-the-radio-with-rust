@@ -340,6 +340,25 @@ How fast is the point rotating? → `(s * prev.conj()).arg()`
 
 ---
 
+Why Rust?
+=========
+
+At 2.4 million samples per second, every sample gets **~400 ns** of processing time.
+
+<!-- pause -->
+
+- **No garbage collector** — no surprise pauses that drop samples
+- **Zero-cost iterators** — the DSP pipeline compiles to tight loops
+- **`num-complex`** — complex math feels native: `sample * prev.conj()`
+- **Fearless concurrency** — read samples on one thread, play audio on another
+
+<!-- pause -->
+
+Rust lets you write code that _reads_ like a textbook
+and _runs_ like hand-tuned C.
+
+---
+
 <!-- jump_to_middle -->
 
 Let's hear some signals.
