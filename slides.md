@@ -354,8 +354,7 @@ At 2.4 million samples per second, every sample gets **~400 ns** of processing t
 
 <!-- pause -->
 
-Rust lets you write code that _reads_ like a textbook
-and _runs_ like hand-tuned C.
+The code looks like the math, and it runs like C.
 
 ---
 
