@@ -119,21 +119,25 @@ Two Chips
 =========
 
 ```
-Antenna → R828D tuner → RTL2832U → USB → your code
+    ┌─────────────────────────────────────────────────┐
+    │                  RTL-SDR Dongle                 │
+    │                                                 │
+    │   ┌───────────┐          ┌──────────────┐       │
+  ──┤   │   R828D   │─────────▶│  RTL2832U    │──── USB ──▶  your code
+    │   │  (tuner)  │  analog  │   (ADC)      │       │
+    │   └───────────┘          └──────────────┘       │
+    │    shift freq              sample to            │
+    │    to baseband             digital bytes        │
+    └─────────────────────────────────────────────────┘
 ```
 
 <!-- pause -->
 
-**R828D tuner**
-Takes the high-frequency RF signal and shifts it down
-to a frequency the ADC can handle.
-It selects which part of the spectrum to listen to.
+**R828D tuner** — selects which part of the spectrum to listen to.
 
 <!-- pause -->
 
-**RTL2832U**
-An 8-bit analog-to-digital converter.
-Samples the signal and sends digital data over USB.
+**RTL2832U** — 8-bit ADC, sends digital data over USB.
 
 ---
 
