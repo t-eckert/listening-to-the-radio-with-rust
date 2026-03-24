@@ -202,7 +202,7 @@ What does this digital signal look like?
 I and Q
 =======
 
-<!-- speaker_note: Pause here. Say: "The phase changes over time. At each instant, we project the signal onto two axes — cosine and sine. That gives us two numbers: I and Q. That's why they come in pairs." -->
+<!-- speaker_note: Pause here. The phase changes over time. At each instant, we project the signal onto two axes, cosine and sine. That gives us two numbers, I and Q. That is why they come in pairs. -->
 
 A radio signal at a single frequency is a cosine wave:
 
@@ -290,7 +290,7 @@ pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Switch to iq-print demo. Keep it brief — 5-10 seconds. "These are the actual numbers coming off the dongle right now. Every demo that follows processes these." Then move on. -->
+<!-- speaker_note: Switch to iq-print demo. Keep it brief, 5-10 seconds. These are the actual numbers coming off the dongle right now. Every demo that follows processes these. Then move on. -->
 
 Let's see the real thing.
 
@@ -535,7 +535,7 @@ Let's tune to 118.8 MHz — Ottawa airport tower.
 In Canada, receiving is legal. The law restricts transmitting
 and sharing private communications, but ATC is a public broadcast.
 
-<!-- speaker_note: Switch to AM receiver demo. Tune to 118.8 MHz (YOW tower). Vertical antenna. You may hear ATC in English or French — Ottawa is bilingual. If tower is silent for 10+ seconds, say: "ATC is bursty — they only transmit when they have something to say. Let me show you the code while we wait." Then move to the AM code slides. -->
+<!-- speaker_note: Switch to AM receiver demo. Tune to 118.8 MHz (YOW tower). Vertical antenna. You may hear ATC in English or French. If tower is silent for 10+ seconds, explain that ATC is bursty and move to the AM code slides while waiting. -->
 
 ---
 
