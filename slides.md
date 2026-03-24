@@ -199,6 +199,30 @@ What does this digital signal look like?
 
 ---
 
+I and Q
+=======
+
+A radio signal at a single frequency is a cosine wave:
+
+`signal(t) = A · cos(2π·f·t + φ)`
+
+<!-- pause -->
+
+The tuner shifts this to baseband. To capture both the amplitude _and_ the phase,
+it samples the signal on **two axes**:
+
+<!-- pause -->
+
+- **I (in-phase)** — the cosine component: `A · cos(φ)`
+- **Q (quadrature)** — the sine component: `A · sin(φ)`
+
+<!-- pause -->
+
+Together, `I + jQ` is a complex number that encodes
+both the **amplitude** and the **phase** of the signal at each moment.
+
+---
+
 Points on the Complex Plane
 ============================
 
