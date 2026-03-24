@@ -167,6 +167,27 @@ The RTL-SDR was born.
 
 ---
 
+rtl_tcp
+=======
+
+The dongle streams raw bytes over USB.
+
+`rtl_tcp` is a small server that forwards those bytes over TCP.
+
+<!-- pause -->
+
+```
+RTL-SDR → USB → rtl_tcp → TCP → your code
+```
+
+<!-- pause -->
+
+This means any program on the network can connect and receive samples.
+
+All the demos tonight read from `rtl_tcp`.
+
+---
+
 <!-- jump_to_middle -->
 
 So what comes out of the dongle?
