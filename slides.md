@@ -492,22 +492,62 @@ That's the whole FM receiver.
 
 ---
 
-AM Demodulation
-===============
+AM Radio — The Pipeline
+=======================
+
+```
+IQ samples (1 MHz)
+  → low-pass filter + keep every 8th sample (128 kHz)
+  → AM demodulate
+  → low-pass filter + keep every 3rd sample (48 kHz)
+  → speakers
+```
+
+<!-- pause -->
+
+Same structure as FM. Different demodulation.
+
+---
+
+AM — Demodulation
+=================
 
 ```rust
 pub fn process(&self, input: &[Complex<f32>]) -> Vec<f32> {
-    input.iter().map(|s| s.norm()).collect()
+    input.iter()
+        .map(|s| s.norm())  // sqrt(I² + Q²) — distance from origin
+        .collect()
 }
 ```
 
 <!-- pause -->
 
-`sqrt(I² + Q²)`. Just take the magnitude.
-
-The audio _is_ the distance from the origin — the **amplitude**.
+That's it. The audio _is_ the distance from the origin — the **amplitude**.
 
 <!-- speaker_note: Switch to AM receiver demo. Tune to 118.8 MHz (YOW tower). Vertical antenna. You may hear ATC in English or French — Ottawa is bilingual. -->
+
+---
+
+AM — The Full Loop
+==================
+
+```rust
+// Filter to just our channel, keep every 8th sample
+let filtered_iq = iq_filter.process(&iq_buf[..n]);
+
+// AM demodulate — magnitude of each IQ sample
+let audio_raw = am_demod.process_ac_coupled(&filtered_iq);
+
+// Keep every 3rd sample to get to 48 kHz for speakers
+let mut audio = audio_filter.process_real(&audio_raw);
+
+// Send to speakers
+ring_buffer.push(&audio);
+```
+
+<!-- pause -->
+
+Compare to FM: the only difference is one line — `s.norm()` instead of `(s * prev.conj()).arg()`.
 
 ---
 
@@ -581,15 +621,62 @@ ADS-B
 Every aircraft with a transponder broadcasts its position,
 altitude, speed, and callsign. **Twice per second. Unencrypted.**
 
+---
+
+ADS-B — The Pipeline
+=====================
+
+```
+IQ samples (2.4 MHz)
+  → magnitude (same s.norm() as AM)
+  → detect preamble pattern
+  → extract 112 bits from pulse positions
+  → CRC check
+  → decode: callsign, lat, lon, altitude, speed
+  → store in database
+```
+
+---
+
+ADS-B — Demodulation
+=====================
+
+```rust
+// Same operation as AM — just take the magnitude.
+// ADS-B is on/off keying: high magnitude = 1, low = 0.
+let mag: Vec<f32> = iq_buf[..n].iter()
+    .map(|s| s.norm())
+    .collect();
+```
+
 <!-- pause -->
 
-ADS-B is a magnitude-based signal — on/off keying at 1090 MHz.
+Same `s.norm()` as AM. But instead of audio, the pattern of
+high and low values encodes digital data.
 
-A 120 μs burst → magnitude → pulse positions → lat, lon, altitude.
+---
+
+ADS-B — Decode
+==============
+
+```rust
+// Look for the ADS-B preamble pattern in the magnitude data
+let raw_messages = demod.process(&mag);
+
+for bits in &raw_messages {
+    // Try to decode the 112-bit message
+    if let Some(msg) = decode_message(bits) {
+        // Extract position, altitude, callsign, speed...
+        // and store in a SQLite database
+        db.upsert(&aircraft)?;
+    }
+}
+```
 
 <!-- pause -->
 
-Same `s.norm()` as AM. Different protocol on top.
+Each message is a 120 μs burst — blink and you'd miss it.
+But at 2.4 million samples per second, we catch every one.
 
 ---
 
