@@ -358,6 +358,23 @@ Performance comparable to C, with convenience and readability I prefer.
 
 ---
 
+The Ecosystem
+=============
+
+| Crate | What it does |
+|-------|-------------|
+| `rtl-sdr-rs` | Pure Rust driver for the RTL-SDR dongle |
+| `num-complex` | Complex number types — `I + jQ` just works |
+| `rustfft` | Fast Fourier Transform for spectrum analysis |
+| `cpal` | Cross-platform audio output |
+| `ratatui` | Terminal UIs for visualizations |
+
+<!-- pause -->
+
+No C dependencies. Everything compiles with `cargo build`.
+
+---
+
 <!-- jump_to_middle -->
 
 Let's hear some signals.
