@@ -190,7 +190,7 @@ All the demos tonight read from `rtl_tcp`.
 
 <!-- jump_to_middle -->
 
-So what comes out of the dongle?
+What does this digital signal look like?
 
 ---
 
