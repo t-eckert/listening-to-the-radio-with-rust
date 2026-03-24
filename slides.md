@@ -269,11 +269,11 @@ We just need to center and scale:
 
 ```rust
 pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
-    raw.chunks_exact(2)
+    raw.chunks_exact(2)        // take pairs: [I, Q], [I, Q], ...
         .map(|pair| {
             IqSample::new(
-                (pair[0] as f32 - 127.5) / 127.5,
-                (pair[1] as f32 - 127.5) / 127.5,
+                (pair[0] as f32 - 127.5) / 127.5,  // I: center and scale
+                (pair[1] as f32 - 127.5) / 127.5,  // Q: center and scale
             )
         })
         .collect()
