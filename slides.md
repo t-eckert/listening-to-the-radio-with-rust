@@ -259,8 +259,13 @@ Let's see this.
 
 ---
 
-IQ Samples in Code
-==================
+Reading the Bytes
+=================
+
+The IQ data is already there — but the ADC encodes it as
+unsigned 8-bit integers (0–255), not floats.
+
+We just need to center and scale:
 
 ```rust
 pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
@@ -277,14 +282,7 @@ pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
 
 <!-- pause -->
 
-Raw bytes in, complex numbers out. Each pair becomes a point on the plane.
-
----
-
-<!-- jump_to_middle -->
-
-We won't go into the deep mathematical detail of how
-the hardware produces these values.
+`127` → `0.0`. `255` → `1.0`. `0` → `-1.0`.
 
 <!-- pause -->
 
