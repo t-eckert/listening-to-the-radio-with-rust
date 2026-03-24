@@ -202,6 +202,8 @@ What does this digital signal look like?
 I and Q
 =======
 
+<!-- speaker_note: Pause here. Say: "The phase changes over time. At each instant, we project the signal onto two axes — cosine and sine. That gives us two numbers: I and Q. That's why they come in pairs." -->
+
 A radio signal at a single frequency is a cosine wave:
 
 `signal(t) = A · cos(2π·f·t + φ)`
@@ -284,15 +286,11 @@ pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
 
 `127` → `0.0`. `255` → `1.0`. `0` → `-1.0`.
 
-<!-- pause -->
-
-What matters is what they _mean_.
-
 ---
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Switch to iq-print demo. Let the audience see raw IQ data streaming in from the dongle. -->
+<!-- speaker_note: Switch to iq-print demo. Keep it brief — 5-10 seconds. "These are the actual numbers coming off the dongle right now. Every demo that follows processes these." Then move on. -->
 
 Let's see the real thing.
 
@@ -340,6 +338,27 @@ How fast is the point rotating? → `(s * prev.conj()).arg()`
 
 ---
 
+Every SDR Application
+=====================
+
+```
+IQ samples → demodulate → process
+```
+
+<!-- pause -->
+
+The demodulation step extracts a meaningful signal from the IQ data.
+
+The processing step does something with it.
+
+<!-- pause -->
+
+- FM radio: demodulate phase → **play audio**
+- AM radio: demodulate magnitude → **play audio**
+- ADS-B: demodulate magnitude → **decode aircraft positions**
+
+---
+
 Why Rust?
 =========
 
@@ -378,27 +397,6 @@ No C dependencies. Everything compiles with `cargo build`.
 Tools like GNURadio and SDR++ are more capable than what I've built.
 
 But writing it yourself is how you _understand_ what's happening.
-
----
-
-Every SDR Application
-=====================
-
-```
-IQ samples → demodulate → process
-```
-
-<!-- pause -->
-
-The demodulation step extracts a meaningful signal from the IQ data.
-
-The processing step does something with it.
-
-<!-- pause -->
-
-- FM radio: demodulate phase → **play audio**
-- AM radio: demodulate magnitude → **play audio**
-- ADS-B: demodulate magnitude → **decode aircraft positions**
 
 ---
 
@@ -537,7 +535,7 @@ Let's tune to 118.8 MHz — Ottawa airport tower.
 In Canada, receiving is legal. The law restricts transmitting
 and sharing private communications, but ATC is a public broadcast.
 
-<!-- speaker_note: Switch to AM receiver demo. Tune to 118.8 MHz (YOW tower). Vertical antenna. You may hear ATC in English or French — Ottawa is bilingual. -->
+<!-- speaker_note: Switch to AM receiver demo. Tune to 118.8 MHz (YOW tower). Vertical antenna. You may hear ATC in English or French — Ottawa is bilingual. If tower is silent for 10+ seconds, say: "ATC is bursty — they only transmit when they have something to say. Let me show you the code while we wait." Then move to the AM code slides. -->
 
 ---
 
@@ -548,8 +546,9 @@ AM — The Full Loop
 // Filter to just our channel, keep every 8th sample
 let filtered_iq = iq_filter.process(&iq_buf[..n]);
 
-// AM demodulate — magnitude of each IQ sample
-let audio_raw = am_demod.process_ac_coupled(&filtered_iq);
+// AM demodulate — magnitude of each IQ sample,
+// with DC offset removed so audio centers on zero
+let audio_raw = am_demod.process(&filtered_iq);
 
 // Keep every 3rd sample to get to 48 kHz for speakers
 let mut audio = audio_filter.process_real(&audio_raw);
@@ -703,19 +702,6 @@ With a $30 dongle and a 7 cm antenna, we can see them all.
 
 ---
 
-What We Covered
-===============
-
-<!-- incremental_lists: true -->
-
-- **EM waves**: electrons oscillating in antennas, creating and receiving waves
-- **The RTL-SDR**: two chips that digitize radio into IQ samples
-- **IQ samples**: points on the complex plane — rotation speed is frequency, distance is amplitude
-- **Demodulation**: FM (phase), AM (magnitude), ADS-B (magnitude)
-- **Antennas**: why length matters and quarter-wavelength resonance
-
----
-
 Getting Started
 ===============
 
@@ -723,8 +709,8 @@ Getting Started
 - RTL-SDR Blog V4 (~$30)
 - Dipole antenna kit (~$10)
 
-**Software:**
-- `rtl-sdr-rs`, `cpal`, `num-complex`, `ratatui`
+**No hardware yet?** Try `wave-demo` and `iq-demo` — they visualize
+the core concepts with no dongle needed.
 
 **All code from this talk:**
 - `github.com/t-eckert/listening-to-the-radio-with-rust`
