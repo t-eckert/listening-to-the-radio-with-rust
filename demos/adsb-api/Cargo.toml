@@ -1,0 +1,13 @@
+[package]
+name = "adsb-api"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+anyhow.workspace = true
+clap.workspace = true
+rusqlite = { version = "0.31", features = ["bundled"] }
+axum = "0.7"
+tokio = { version = "1", features = ["rt-multi-thread", "macros", "signal"] }
+serde = { version = "1", features = ["derive"] }
+tower-http = { version = "0.5", features = ["cors"] }

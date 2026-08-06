@@ -42,6 +42,7 @@ All demos live in the `demos/` directory. Each one has its own README with detai
 | [am-receiver](demos/am-receiver/) | Demodulates and plays AM radio | Yes |
 | [adsb-decoder](demos/adsb-decoder/) | Decodes aircraft positions from ADS-B signals | Yes |
 | [flight-tracker](demos/flight-tracker/) | TUI map showing aircraft tracked by adsb-decoder | No (reads from adsb-decoder's database) |
+| [adsb-api](demos/adsb-api/) | Serves tracked aircraft over HTTP as JSON | No (reads from adsb-decoder's database) |
 
 **Start here:** If you don't have hardware yet, try `wave-demo` and `iq-demo` — they visualize the core concepts with no dongle needed.
 

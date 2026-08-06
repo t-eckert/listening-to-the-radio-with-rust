@@ -43,6 +43,12 @@ tasks:
       - cargo run -p flight-tracker
     dir: demos
 
+  adsb-api:
+    desc: Serve tracked aircraft over HTTP as JSON (run adsb task first)
+    cmds:
+      - cargo run -p adsb-api -- --bind {{.BIND | default "0.0.0.0:8080"}}
+    dir: demos
+
   iq-print:
     desc: Print raw IQ samples from the SDR
     cmds:
@@ -79,5 +85,6 @@ tasks:
       - ln -sf ../target/release/am-receiver bin/am
       - ln -sf ../target/release/adsb-decoder bin/adsb
       - ln -sf ../target/release/flight-tracker bin/tracker
+      - ln -sf ../target/release/adsb-api bin/adsb-api
       - echo "Binaries linked in demos/bin/"
     dir: demos

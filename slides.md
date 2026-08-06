@@ -23,13 +23,15 @@ Thomas Eckert
 About Me
 ========
 
-Software engineer at Redpanda. Background in physics.
+Software engineer at Redpanda Data. Background in physics.
 
-I'm always picking up new hobbies.
+I'm always picking up new hobbies: cycling, climbing, homelab, watercolor, and now...
 
 <!-- pause -->
 
-A few months ago I got into software-defined radio.
+software-defined radio.
+
+<!-- pause -->
 
 When I find something cool, my first instinct is to share it.
 
@@ -111,18 +113,10 @@ Everything that follows is about measuring and interpreting that movement.
 
 ---
 
-<!-- speaker_note: Anchor quote - "Traditional radio, one circuit, one purpose. SDR, digitize the spectrum, do everything else in software." Show the dongle here. Hold it up. If you drift - Two chips. One tunes, one digitizes. That is the whole dongle. -->
-
 The RTL-SDR
 ===========
 
-**Traditional radio:** one hardware circuit, one purpose.
-
-<!-- pause -->
-
 **Software-defined radio:** digitize a chunk of spectrum, do everything else in software.
-
-<!-- pause -->
 
 Same dongle receives FM, AM, aviation, ADS-B —
 just change the frequency and the code.
