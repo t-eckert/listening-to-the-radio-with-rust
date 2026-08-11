@@ -8,6 +8,22 @@ All delivery notes, anchor quotes, and speaker notes are in `slides.md`.
 
 ---
 
+## How These Files Are Used
+
+**`slides.md` is a prototype, not the deck.** The real slides are rebuilt in Figma and
+exported to run locally at the venue. So:
+
+- `slides.md` is the **source of truth for content** — wording, ordering, what each slide
+  says, and what to say out loud. Write talking points into it, not into chat.
+- Speaker notes carry two things: the delivery cue (anchor quote, what to say if you drift)
+  and, where useful, a `FIGMA -` line describing what the slide wants to look like.
+- Slide count and ordering are a design signal. One idea per slide; do not pack.
+- It still has to render in presenterm, since that is the prototyping loop. Keep the syntax
+  valid: no bare double-dashes inside speaker note comments, `---` only as a slide
+  separator, setext headers (title over `=====`).
+
+---
+
 ## Equipment
 
 - RTL-SDR Blog V4 dongle
@@ -34,6 +50,7 @@ task present     # open slides
 | IQ visualization (arrow keys) | `task iq` |
 | Raw IQ from dongle | `task iq-print` |
 | FM radio | `task fm FREQ=97.7` |
+| FM radio, single file (the one the slides show) | `task fm-single FREQ=97.7` |
 | AM aviation | `task am FREQ=119.9` |
 | WWV time signal (spectrum) | see below — needs `-D` direct sampling |
 | ADS-B decoder | `task adsb` |
@@ -111,13 +128,13 @@ The talk works even if every live demo fails. The physics, the concepts, and the
 | IQ samples + demos | 5 |
 | Demodulation tables | 3 |
 | Why Rust + ecosystem | 3 |
-| FM demo + pipeline | 3 |
+| FM demo + pipeline (now 6 slides, single-file walkthrough) | 5 |
 | AM demo + pipeline | 3 |
 | Time signals (CHU story + WWV) | 4 |
 | Antenna theory + swap | 4 |
 | ADS-B demo + pipeline | 5 |
 | Closing | 2 |
-| **Total** | **~42 min** |
+| **Total** | **~44 min** |
 
 Runs long for a 40-minute slot on purpose — carry the surplus and cut from a real
 run-through rather than trimming on paper. The cut list below is pre-decided so the

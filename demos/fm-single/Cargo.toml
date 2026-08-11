@@ -1,0 +1,10 @@
+[package]
+name = "fm-single"
+version.workspace = true
+edition.workspace = true
+
+# Deliberately minimal: no `sdr` crate, no clap, no num-complex. The point of
+# this binary is that the entire radio fits in one readable file.
+[dependencies]
+cpal = "0.15"
+hound = "3.5"

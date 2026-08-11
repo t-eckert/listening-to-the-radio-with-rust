@@ -406,61 +406,99 @@ Let's hear some signals.
 
 ---
 
+<!-- speaker_note: FIGMA - this slide wants to be a vertical flow diagram, one box per rate, arrows down. The three rates are the whole design. Say - "Each rate divides evenly into the one above it. 960 over 4 is 240. 240 over 5 is 48. Pick numbers that do not divide evenly and you get a slow drift between how fast you make audio and how fast the sound card eats it." If you drift - three rates, two divisions, both whole numbers. -->
+
 FM Radio — The Pipeline
 =======================
 
 ```
-IQ samples (2 MHz)
-  → low-pass filter + decimate 8x (256 kHz)
-  → FM demodulate
-  → low-pass filter + decimate to 48 kHz
-  → de-emphasis
-  → speakers
-```
-
----
-
-FM — Step 1: Filter
-====================
-
-The antenna hears every station at once.
-We filter to just our channel (~200 kHz wide) and decimate 8x.
-
-```rust
-// The antenna picks up everything — all stations at once.
-// Filter to just our channel (~200 kHz wide),
-// then keep every 8th sample (2 MHz → 256 kHz).
-// Fewer samples = less work for every step after this.
-let filtered_iq = iq_filter.process(&iq_buf[..n]);
+IQ samples          960 kHz
+  ↓  low-pass, keep every 4th sample
+intermediate        240 kHz
+  ↓  FM demodulate
+raw audio           240 kHz
+  ↓  low-pass, keep every 5th sample
+audio                48 kHz
+  ↓  de-emphasis
+speakers
 ```
 
 <!-- pause -->
 
-2 million samples per second → 256 thousand. Much less work for the next steps.
+Three rates. Every division is a whole number.
 
 ---
+
+<!-- speaker_note: FIGMA - show the file as a single tall column of collapsed sections, like a minimap, with the four step bands highlighted. The point is scale - the audience should see that the whole radio is smaller than they expected. Say - "This is the entire receiver. Not a sketch, not pseudocode. It compiles, it runs, and everything you are about to see is in this one file." If you drift - one file, four steps, no library doing the interesting part. -->
+
+The Whole Radio
+===============
+
+Everything that follows lives in **one file**.
+
+```
+fm-single/src/main.rs
+
+  rates and constants        the whole design in three numbers
+  Step 1  low-pass filter    pick one station out of the noise
+  Step 2  FM demodulate      turn rotation into sound
+  Step 3  de-emphasis        undo the transmitter's treble boost
+  main                       four calls, in order
+  audio plumbing             not radio; getting samples to the card
+```
+
+<!-- pause -->
+
+No DSP library. The interesting parts are written out by hand.
+
+---
+
+<!-- speaker_note: FIGMA - the "antenna hears everything" idea deserves a picture; a wide spectrum with one channel boxed. Say - "The antenna does not tune. It hears every station at once, and the dongle hands you all of it. Tuning happens here, in software." Then the second idea - decimation is not just throwing data away, it is throwing away data you have proven you no longer need. If you drift - filter to one channel, then keep every 4th sample. -->
+
+FM — Step 1: Filter
+====================
+
+The antenna hears every station at once. Tuning happens in software.
+
+```rust
+// Only do the expensive part on the samples we are keeping.
+if self.countdown >= self.decimation {
+    self.countdown = 0;
+    let (mut i, mut q) = (0.0, 0.0);
+    for j in 0..n {
+        let h = self.history[(self.pos + j) % n];
+        i += h.i * self.taps[j];
+        q += h.q * self.taps[j];
+    }
+    out.push(Iq { i, q });
+}
+```
+
+<!-- pause -->
+
+960,000 samples a second becomes 240,000. Once the high frequencies
+are gone, the extra samples carry no information.
+
+---
+
+<!-- speaker_note: FIGMA - this is THE slide of the section. Give the three lines of math room to breathe; consider animating the rotation on the complex plane beside it. Say - "FM encodes audio as the speed of rotation. So the audio is just how far the point turned between one sample and the next. Multiplying by the conjugate of the previous sample subtracts the previous angle. The angle of what is left is the rotation, and the rotation is the audio." Anchor quote - "Multiply by the conjugate of the previous sample. Take the angle. That is FM demodulation." If you drift - phase change is audio. -->
 
 FM — Step 2: Demodulate
 ========================
 
 ```rust
-pub fn process(&mut self, input: &[Complex<f32>]) -> Vec<f32> {
-    let mut output = Vec::with_capacity(input.len());
-
-    for &sample in input {
-        // Multiply by the conjugate of the previous sample.
-        // This gives us the phase *difference* between them.
-        let product = sample * self.prev.conj();
-
-        // Extract the angle — that's the instantaneous frequency.
-        let phase = product.im.atan2(product.re);
-
-        // Scale it. This is now an audio sample.
-        output.push(phase * self.gain);
-        self.prev = sample;
-    }
-
-    output
+fn process(&mut self, input: &[Iq]) -> Vec<f32> {
+    input
+        .iter()
+        .map(|&s| {
+            // s * conj(prev), written out rather than
+            // hidden inside a library
+            let re = s.i * self.prev.i + s.q * self.prev.q;
+            let im = s.q * self.prev.i - s.i * self.prev.q;
+            self.prev = s;
+            im.atan2(re) * self.gain
+        })
+        .collect()
 }
 ```
 
@@ -468,24 +506,43 @@ pub fn process(&mut self, input: &[Complex<f32>]) -> Vec<f32> {
 
 The audio _is_ the rate of phase change — the **rotation speed**.
 
+That is the whole of FM. Three lines.
+
 ---
 
-FM — Step 3: Filter and Play
-=============================
+<!-- speaker_note: FIGMA - small slide, low drama, it is the palate cleanser before the payoff. Say - "Stations boost their treble before transmitting, because hiss lives up there and a boosted signal survives it better. We undo the boost. Skip this and every station sounds harsh and thin." Mention 75 microseconds here, 50 in Europe - it is a nice detail that the constant is a different number depending on which continent you are on. If you drift - they boost treble, we un-boost it. -->
+
+FM — Step 3: De-emphasis
+=========================
 
 ```rust
-// We have 256,000 audio samples per second,
-// but speakers only need 48,000.
-// Filter out frequencies above 15 kHz (human hearing),
-// then keep every 5th sample.
-let mut audio = audio_filter.process_real(&audio_raw);
+fn process(&mut self, samples: &mut [f32]) {
+    for s in samples.iter_mut() {
+        self.prev += self.alpha * (*s - self.prev);
+        *s = self.prev;
+    }
+}
+```
 
-// FM stations boost high frequencies before transmitting.
-// De-emphasis undoes that, restoring the original balance.
-deemphasis.process(&mut audio);
+<!-- pause -->
 
-// Send to speakers.
-ring_buffer.push(&audio);
+75 μs in North America. 50 μs in Europe.
+A constant that depends on which continent you are standing on.
+
+---
+
+<!-- speaker_note: FIGMA - the four lines should land one at a time, and the step comments should be visually tied back to the three step slides just shown (same colours). This is the "it all fits" moment before the demo. Say - "That is the receiver. Filter, demodulate, filter, de-emphasise. Everything else in the file is reading bytes and talking to the sound card." Then START THE DEMO - task fm-single FREQ=97.7 (or 106.1 if in Ottawa). Let the music play for several seconds before saying anything. If you drift - four calls, in order, and then you hear it. -->
+
+FM — The Whole Loop
+===================
+
+```rust
+let tuned     = iq_filter.process(&iq);                 // step 1
+let raw_audio = fm_demod.process(&tuned);               // step 2
+let mut audio = audio_filter.process_real(&raw_audio);
+deemphasis.process(&mut audio);                         // step 3
+
+ring.push(&audio);                                      // speakers
 ```
 
 <!-- pause -->

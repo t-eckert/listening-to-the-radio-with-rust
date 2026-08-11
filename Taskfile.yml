@@ -25,6 +25,16 @@ tasks:
       - cargo run -p fm-receiver -- --frequency {{.FREQ | default "100.3"}}
     dir: demos
 
+  fm-single:
+    desc: Same radio, one file, piped from rtl_sdr (FREQ in MHz). WAV=out.wav to record
+    cmds:
+      - >-
+        rtl_sdr -f $(echo '{{.FREQ | default "97.7"}} * 1000000' | bc | cut -d. -f1)
+        -s 960000 -g 40 - | cargo run --release -p fm-single -- {{.WAV}}
+    dir: demos
+    env:
+      DYLD_LIBRARY_PATH: /opt/homebrew/lib
+
   am:
     desc: Listen to AM radio (set FREQ in MHz, e.g. 121.5 for aviation)
     cmds:
