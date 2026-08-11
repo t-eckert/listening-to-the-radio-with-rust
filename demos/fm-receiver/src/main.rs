@@ -1,4 +1,4 @@
-use anyhow::{Context, Result};
+use anyhow::{Context, Result, bail};
 use clap::Parser;
 use cpal::traits::{DeviceTrait, HostTrait, StreamTrait};
 use num_complex::Complex;
@@ -18,8 +18,8 @@ struct Args {
     #[arg(short, long, default_value_t = 100.3)]
     frequency: f64,
 
-    /// RTL-SDR sample rate in Hz
-    #[arg(long, default_value_t = 2_048_000)]
+    /// RTL-SDR sample rate in Hz. Must be a whole multiple of --audio-rate.
+    #[arg(long, default_value_t = 960_000)]
     sample_rate: u32,
 
     /// Audio output sample rate in Hz
@@ -58,18 +58,22 @@ fn main() -> Result<()> {
     // 1. Low-pass filter IQ to FM channel bandwidth (~200 kHz) and
     //    decimate to an intermediate rate. This removes adjacent channels
     //    and noise before FM demodulation.
-    let intermediate_rate = 256_000u32; // 256 kHz — enough for WBFM
+    let plan = plan_rates(sdr_rate, audio_rate)?;
+    let intermediate_rate = plan.intermediate_rate;
+    println!(
+        "  Chain: {} -> {} -> {} Hz (decimate {}x then {}x)",
+        sdr_rate, intermediate_rate, audio_rate, plan.iq_decimation, plan.audio_decimation
+    );
+
     let iq_cutoff = 100_000.0 / sdr_rate as f32;
-    let iq_decimation = (sdr_rate / intermediate_rate) as usize; // 8x
-    let mut iq_filter = LowPassFilter::new(iq_cutoff, 51, iq_decimation);
+    let mut iq_filter = LowPassFilter::new(iq_cutoff, 51, plan.iq_decimation);
 
     // 2. FM demodulate at the intermediate rate
     let mut fm_demod = FmDemodulator::new(75_000.0, intermediate_rate as f32);
 
     // 3. Low-pass filter audio to ~15 kHz and decimate to audio rate
     let audio_cutoff = 15_000.0 / intermediate_rate as f32;
-    let audio_decimation = (intermediate_rate / audio_rate) as usize;
-    let mut audio_filter = LowPassFilter::new(audio_cutoff, 31, audio_decimation);
+    let mut audio_filter = LowPassFilter::new(audio_cutoff, 31, plan.audio_decimation);
 
     // 3. De-emphasis (75 μs for North America)
     let mut deemphasis = DeEmphasisFilter::new(75e-6, audio_rate as f32);
@@ -155,6 +159,61 @@ fn main() -> Result<()> {
     Ok(())
 }
 
+/// The FM channel is ~200 kHz wide, so demodulation has to happen at or above
+/// that rate. Below it the channel no longer fits and the audio comes apart.
+const MIN_INTERMEDIATE_RATE: u32 = 200_000;
+
+/// How to get from the SDR's rate down to the audio rate in two whole steps.
+#[derive(Debug)]
+struct RatePlan {
+    iq_decimation: usize,
+    intermediate_rate: u32,
+    audio_decimation: usize,
+}
+
+/// Split the total decimation into two stages that each divide evenly.
+///
+/// Both stages keep every Nth sample, so N has to be a whole number. Round it
+/// off instead and audio comes out at a rate other than the one we label it
+/// with — the station plays at the wrong speed and pitch, with nothing in the
+/// output to say so. That is why an SDR rate that is not a whole multiple of
+/// the audio rate is rejected here rather than quietly truncated.
+fn plan_rates(sdr_rate: u32, audio_rate: u32) -> Result<RatePlan> {
+    if audio_rate == 0 || sdr_rate == 0 {
+        bail!("sample rate and audio rate must both be non-zero");
+    }
+    if sdr_rate % audio_rate != 0 {
+        bail!(
+            "sample rate {sdr_rate} Hz is not a whole multiple of audio rate {audio_rate} Hz \
+             ({sdr_rate}/{audio_rate} = {:.3}). Every decimation step keeps every Nth sample, \
+             so a fractional ratio cannot be represented and the audio would play at the wrong \
+             speed. Try --sample-rate 960000, 1920000, or 2400000 with --audio-rate 48000.",
+            sdr_rate as f64 / audio_rate as f64
+        );
+    }
+
+    let total = sdr_rate / audio_rate;
+
+    // Decimate as hard as possible in the first stage — that is the expensive
+    // filter — while leaving the intermediate rate wide enough for the channel.
+    let iq_decimation = (1..=total)
+        .filter(|d| total % d == 0 && sdr_rate / d >= MIN_INTERMEDIATE_RATE)
+        .max()
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "sample rate {sdr_rate} Hz cannot be split into stages that keep the \
+                 intermediate rate at or above {MIN_INTERMEDIATE_RATE} Hz for a {audio_rate} Hz \
+                 output. Use a higher --sample-rate."
+            )
+        })?;
+
+    Ok(RatePlan {
+        iq_decimation: iq_decimation as usize,
+        intermediate_rate: sdr_rate / iq_decimation,
+        audio_decimation: (total / iq_decimation) as usize,
+    })
+}
+
 /// Lock-free single-producer single-consumer ring buffer for audio.
 struct RingBuffer {
     buf: std::sync::Mutex<std::collections::VecDeque<f32>>,
@@ -212,4 +271,71 @@ fn start_audio_output(
     )?;
 
     Ok(stream)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// The property that matters: the two stages multiplied together must land
+    /// exactly on the audio rate, with the demodulator's rate wide enough for
+    /// the channel.
+    fn assert_exact(sdr_rate: u32, audio_rate: u32) {
+        let p = plan_rates(sdr_rate, audio_rate).expect("should plan");
+        assert_eq!(
+            sdr_rate / p.iq_decimation as u32,
+            p.intermediate_rate,
+            "stage 1 must divide evenly"
+        );
+        assert_eq!(
+            p.intermediate_rate / p.audio_decimation as u32,
+            audio_rate,
+            "stage 2 must land on the audio rate"
+        );
+        assert_eq!(
+            p.iq_decimation * p.audio_decimation,
+            (sdr_rate / audio_rate) as usize,
+            "stages must multiply to the total decimation"
+        );
+        assert!(
+            p.intermediate_rate >= MIN_INTERMEDIATE_RATE,
+            "intermediate rate {} too narrow for a 200 kHz channel",
+            p.intermediate_rate
+        );
+    }
+
+    #[test]
+    fn default_rate_is_exact() {
+        assert_exact(960_000, 48_000);
+        let p = plan_rates(960_000, 48_000).unwrap();
+        assert_eq!(p.iq_decimation, 4);
+        assert_eq!(p.intermediate_rate, 240_000);
+        assert_eq!(p.audio_decimation, 5);
+    }
+
+    #[test]
+    fn other_usable_rates_are_exact() {
+        for rate in [960_000, 1_920_000, 2_400_000, 1_440_000] {
+            assert_exact(rate, 48_000);
+        }
+    }
+
+    /// 2048000/48000 = 128/3. The old code truncated this to 40x and produced
+    /// 51200 Hz audio labelled 48000 Hz; now it is refused outright.
+    #[test]
+    fn indivisible_rate_is_rejected_not_rounded() {
+        let err = plan_rates(2_048_000, 48_000).unwrap_err().to_string();
+        assert!(err.contains("not a whole multiple"), "unexpected: {err}");
+    }
+
+    #[test]
+    fn rate_too_low_for_the_channel_is_rejected() {
+        assert!(plan_rates(96_000, 48_000).is_err());
+    }
+
+    #[test]
+    fn zero_rates_do_not_divide_by_zero() {
+        assert!(plan_rates(960_000, 0).is_err());
+        assert!(plan_rates(0, 48_000).is_err());
+    }
 }

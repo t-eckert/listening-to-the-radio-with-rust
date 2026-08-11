@@ -35,6 +35,18 @@ tasks:
     env:
       DYLD_LIBRARY_PATH: /opt/homebrew/lib
 
+  capture:
+    desc: Record IQ to a file at the fm-single rate (FREQ in MHz, SECS, OUT)
+    cmds:
+      - >-
+        rtl_sdr -f $(echo '{{.FREQ | default "106.1"}} * 1000000' | bc | cut -d. -f1)
+        -s 960000 -g 40 -n $(echo '{{.SECS | default "10"}} * 960000' | bc | cut -d. -f1)
+        {{.OUT | default "fm.iq"}}
+      - ls -lh {{.OUT | default "fm.iq"}}
+    dir: demos
+    env:
+      DYLD_LIBRARY_PATH: /opt/homebrew/lib
+
   am:
     desc: Listen to AM radio (set FREQ in MHz, e.g. 121.5 for aviation)
     cmds:

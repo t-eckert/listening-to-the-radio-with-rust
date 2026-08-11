@@ -20,6 +20,10 @@ target
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# IQ captures (~2 MB per second at 960 kS/s) and demodulated audio
+*.iq
+*.wav
+
 # SQLite databases
 *.db
 *.db-shm
