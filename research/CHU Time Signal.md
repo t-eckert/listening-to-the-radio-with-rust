@@ -6,6 +6,52 @@ inform the design of a software-defined radio decoder written in Rust.
 
 ---
 
+## STATUS: OFF AIR SINCE 2026-06-22
+
+**CHU's shortwave broadcast was permanently shut down by the NRC on 2026-06-22.** All three
+frequencies (3330, 7850, 14670 kHz) went dark at once, as part of multi-year departmental
+spending reductions, after 88 years of continuous transmission. The NRC status page now
+reads: "The shortwave radio broadcast of the NRC's official time signal is no longer
+available." The offered replacements are the web clock, the telephone talking clock, and NTP.
+
+**Everything below this section is written in the present tense and describes the station as
+it operated until that date.** It remains accurate as a description of the protocol and the
+transmitter, and it is still what `demos/chu-decoder` was built against. It is no longer a
+description of anything on the air.
+
+### Confirmed by measurement, not just by announcement
+
+2026-08-10, RTL-SDR Blog V3 (R820T, 1 ppm TCXO), direct sampling Q-branch, 2 m vertical whip
+on the office desk in Ottawa:
+
+| target | result |
+|---|---|
+| CHU 7.850 MHz (15 km away, 5 kW) | **nothing** — max 1.7 dB in +/-600 Hz |
+| CHU 3.330 MHz (15 km away, 3 kW) | **nothing** — max 1.2 dB in +/-600 Hz |
+| WWV 5.000 MHz (Fort Collins CO, ~2900 km) | **14.2 dB**, within 0.5 Hz of exact |
+| WWV 10.000 MHz | 6.2 dB |
+| 41 m broadcasters (7.335-7.520 MHz) | 7.8-16.4 dB |
+| 90 m broadcaster (3.200 MHz) | 9.0 dB |
+
+Receiving Colorado at 2900 km while a 15 km local transmitter reads zero is the signature of
+an off-air station, not a reception problem. That distinction matters: every other explanation
+for a missing CHU signal — antenna, direct sampling, propagation, gain — is ruled out by the
+same capture picking up weaker, more distant signals on neighbouring frequencies.
+
+### Consequences for the demos
+
+- There are **no CHU IQ recordings anywhere in this repo**, so `demos/chu-decoder` can be run
+  neither live nor from capture. It is dead code kept for reference.
+- Do not spend time debugging CHU reception. There is no signal to receive.
+- **WWV 5.000 MHz is receivable on this exact setup** and is the live HF replacement, but its
+  time code is completely different — 100 Hz subcarrier, IRIG-H, 1 bps, against CHU's Bell 103
+  FSK at 300 baud. `chu-decoder` will not decode it; that needs a separate decoder.
+- Reception of WWV is carrier-only at this desk. The modulation tones (100/500/600/1000 Hz)
+  sit below the noise floor, verified by demodulating a capture through the `am-receiver`
+  binary. Do not promise ticks or voice from the stage.
+
+---
+
 ## Station Overview
 
 **Operator:** Institute for National Measurement Standards, National Research Council of Canada (NRC)
@@ -13,9 +59,10 @@ inform the design of a software-defined radio decoder written in Rust.
 **Location:** Near Barrhaven, Ontario -- 15 km (10 mi) southwest of Ottawa's central business district
 **Coordinates:** 45 17' 47" N, 75 45' 22" W
 **First transmission:** 1938
-**Broadcast:** Continuous, 24/7
+**Final transmission:** 2026-06-22
+**Broadcast:** Continuous, 24/7 -- for 88 years, until the shutdown above
 
-CHU is one of only a handful of shortwave time signal stations in the world. From Ottawa, it is
+CHU was one of only a handful of shortwave time signal stations in the world. From Ottawa it was
 essentially a local signal -- the transmitter is about 10 miles from downtown.
 
 ---
@@ -53,7 +100,9 @@ RTL-SDR dongles (which typically start around 24 MHz with the R820T2 tuner). To 
 - **RTL-SDR Blog V3/V4**: Has built-in direct sampling mode activated via software, no
   hardware modification needed.
 
-The 7.850 MHz signal (5 kW) is the strongest and most reliable for software reception.
+The 7.850 MHz signal (5 kW) was the strongest and most reliable for software reception. None of
+these approaches will receive CHU today -- see the status section above. They remain the correct
+way to reach WWV, which is still transmitting on 5.000 MHz.
 
 ---
 
