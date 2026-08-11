@@ -1,7 +1,7 @@
 # Listening to the Radio with Rust — Production Notes
 
-**Duration:** 35–40 minutes
-**Venue:** Bayview Yards (7 Bayview Station Rd), 2nd floor, Ottawa Systems, 24 March 2026
+**Duration:** 40 minutes
+**Venue:** RustConf 2026, Montreal, 9 September 2026
 **Goal:** Introduce technical folks to SDR in a way that enables them to go experiment themselves.
 
 All delivery notes, anchor quotes, and speaker notes are in `slides.md`.
@@ -22,7 +22,7 @@ All delivery notes, anchor quotes, and speaker notes are in `slides.md`.
 task build       # build release binaries
 task alias       # create short names in demos/bin/
 task rtl-tcp     # start in a background terminal
-task fm FREQ=106.1  # test audio output at the venue
+task fm FREQ=97.7   # test audio output at the venue
 task present     # open slides
 ```
 
@@ -33,11 +33,32 @@ task present     # open slides
 | EM wave animation | `task wave` |
 | IQ visualization (arrow keys) | `task iq` |
 | Raw IQ from dongle | `task iq-print` |
-| FM radio | `task fm FREQ=106.1` |
-| AM aviation | `task am FREQ=118.8` |
+| FM radio | `task fm FREQ=97.7` |
+| AM aviation | `task am FREQ=119.9` |
 | WWV time signal (spectrum) | see below — needs `-D` direct sampling |
 | ADS-B decoder | `task adsb` |
-| Flight tracker (second terminal) | `task tracker` |
+| Flight tracker (second terminal) | `flight-tracker --region montreal` |
+
+## Montreal Frequencies — VERIFY AT THE VENUE
+
+Every frequency below changed when the talk moved from Ottawa to RustConf Montreal.
+These come from published sources, **not** from measurement at the venue. Test them the
+day before; a dead demo on stage is the failure mode.
+
+| Demo | Ottawa (old) | Montreal (new) | Notes |
+|------|---|---|---|
+| FM | 106.1 CHEZ | **97.7 CHOM** (rock) | Backup: 95.9 Virgin |
+| AM aviation | 118.8 YOW tower | **119.9 CYUL main tower** | Backups: 119.3 north tower, 118.9 south arrival |
+| Flight tracker | hard-coded Ottawa | `--region montreal` | Default is still `ottawa` |
+
+The flight tracker's region is now a flag rather than a compile-time constant. It sets the
+map viewport, the SQL bounds, and the drawn geography together — previously all three were
+hard-coded to Ottawa, and an aircraft outside the longitude window was dropped by the query,
+so the map rendered **empty with no error**. `--region ottawa|montreal`, or
+`--bounds LAT_MIN,LAT_MAX,LON_MIN,LON_MAX` for any other city (no coastline drawn).
+
+Montreal's river geometry is an approximation, not traced from a map. Aircraft positions are
+real ADS-B and unaffected, but check the rivers if the shape matters to you.
 
 ## WWV Time Signal Demo — What Actually Works
 

@@ -1,4 +1,5 @@
 use crate::db::{AircraftRow, Position, TrackerDb};
+use crate::region::Region;
 use anyhow::Result;
 
 pub struct App {
@@ -7,37 +8,34 @@ pub struct App {
     pub selected: usize,
     pub running: bool,
     pub db: TrackerDb,
-    // Map viewport (Ottawa area)
-    pub lon_min: f64,
-    pub lon_max: f64,
-    pub lat_min: f64,
-    pub lat_max: f64,
+    /// Map viewport and geography. Everything location-specific lives here.
+    pub region: &'static Region,
 }
 
 impl App {
-    pub fn new(db: TrackerDb) -> Self {
+    pub fn new(db: TrackerDb, region: &'static Region) -> Self {
         Self {
             aircraft: Vec::new(),
             trails: Vec::new(),
             selected: 0,
             running: true,
             db,
-            lon_min: -76.5,
-            lon_max: -74.5,
-            lat_min: 44.8,
-            lat_max: 45.8,
+            region,
         }
     }
 
     /// Refresh data from the database.
     pub fn tick(&mut self) -> Result<()> {
-        self.aircraft = self.db.load_aircraft(1800)?; // last 30 minutes
+        let (lat_min, lat_max, lon_min, lon_max) = self.region.db_bounds();
+        self.aircraft = self
+            .db
+            .load_aircraft(1800, lat_min, lat_max, lon_min, lon_max)?; // last 30 minutes
 
         // Clear positions that are outside the map viewport (CPR glitches)
         for ac in &mut self.aircraft {
             if let (Some(lat), Some(lon)) = (ac.lat, ac.lon) {
-                if lat < self.lat_min || lat > self.lat_max
-                    || lon < self.lon_min || lon > self.lon_max
+                if lat < self.region.lat_min || lat > self.region.lat_max
+                    || lon < self.region.lon_min || lon > self.region.lon_max
                 {
                     ac.lat = None;
                     ac.lon = None;
@@ -55,7 +53,9 @@ impl App {
         for (i, ac) in self.aircraft.iter().enumerate() {
             if ac.lat.is_some() && ac.lon.is_some() {
                 let limit = if i == self.selected { 20 } else { 5 };
-                let trail = self.db.load_trail(&ac.icao, limit)?;
+                let trail = self
+                    .db
+                    .load_trail(&ac.icao, limit, lat_min, lat_max, lon_min, lon_max)?;
                 self.trails.push(trail);
             } else {
                 self.trails.push(Vec::new());

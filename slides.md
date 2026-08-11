@@ -1,6 +1,6 @@
 ---
 title: Listening to the Radio with Rust
-sub_title: Ottawa Systems, 24 March 2026
+sub_title: RustConf 2026, Montreal, 9 September 2026
 author: Thomas Eckert
 theme:
   name: terminal-dark
@@ -400,7 +400,7 @@ But writing it yourself is how you _understand_ what's happening.
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Anchor quote - "Multiply by the conjugate of the previous sample. Take the angle. That is FM demodulation." Start FM receiver demo. Try 106.1 (CHEZ) or 100.3 (Majic). Let it play for a few seconds. Let the audience hear it. If you drift - One line of math. Phase change is audio. Play the music, show the code. -->
+<!-- speaker_note: Anchor quote - "Multiply by the conjugate of the previous sample. Take the angle. That is FM demodulation." Start FM receiver demo. Try 97.7 (CHOM, rock) or 95.9 (Virgin). Verify at the venue. Let it play for a few seconds. Let the audience hear it. If you drift - One line of math. Phase change is audio. Play the music, show the code. -->
 
 Let's hear some signals.
 
@@ -530,12 +530,12 @@ That's it. The audio _is_ the distance from the origin — the **amplitude**.
 
 <!-- pause -->
 
-Let's tune to 118.8 MHz — Ottawa airport tower.
+Let's tune to 119.9 MHz — Montréal-Trudeau tower.
 
 In Canada, receiving is legal. The law restricts transmitting
 and sharing private communications, but ATC is a public broadcast.
 
-<!-- speaker_note: Switch to AM receiver demo. Tune to 118.8 MHz (YOW tower). Vertical antenna. You may hear ATC in English or French. If tower is silent for 10+ seconds, explain that ATC is bursty and move to the AM code slides while waiting. -->
+<!-- speaker_note: Switch to AM receiver demo. Tune to 119.9 MHz (CYUL main tower). Backups if it is quiet - 119.3 (north tower), 118.9 (south arrival). VERIFY ALL THREE AT THE VENUE the day before; these are from the published CYUL chart, not measured. Vertical antenna. You may hear ATC in English or French. If tower is silent for 10+ seconds, explain that ATC is bursty and move to the AM code slides while waiting. -->
 
 ---
 
@@ -729,7 +729,7 @@ This short one is about 7 cm — a quarter wavelength at 1090 MHz.
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Anchor quote - "Every plane in the sky is announcing itself right now." Start ADS-B decoder demo. Run adsb-decoder, then flight-tracker in a second terminal. Aircraft appear on the Ottawa map with callsign, altitude, speed. Let it accumulate. Each new dot is satisfying. If you drift - Same math as AM, different protocol on top. Show the map. Let it fill in. -->
+<!-- speaker_note: Anchor quote - "Every plane in the sky is announcing itself right now." Start ADS-B decoder demo. Run adsb-decoder, then in a second terminal run task tracker (it defaults to the montreal region now; the bare binary still defaults to ottawa, and the wrong region renders an empty map with no error). Aircraft appear on the Montreal map with callsign, altitude, speed. Let it accumulate. Each new dot is satisfying. If you drift - Same math as AM, different protocol on top. Show the map. Let it fill in. -->
 
 Let's see what's flying overhead.
 

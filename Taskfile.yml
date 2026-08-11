@@ -38,10 +38,12 @@ tasks:
     dir: demos
 
   tracker:
-    desc: Show tracked aircraft on a map (run adsb task first)
+    desc: Show tracked aircraft on a map (run adsb task first). REGION=ottawa|montreal
     cmds:
-      - cargo run -p flight-tracker
+      - cargo run -p flight-tracker -- --region {{.REGION}}
     dir: demos
+    vars:
+      REGION: '{{.REGION | default "montreal"}}'
 
   adsb-api:
     desc: Serve tracked aircraft over HTTP as JSON (run adsb task first)
