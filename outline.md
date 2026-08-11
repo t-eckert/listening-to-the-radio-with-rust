@@ -35,8 +35,36 @@ task present     # open slides
 | Raw IQ from dongle | `task iq-print` |
 | FM radio | `task fm FREQ=106.1` |
 | AM aviation | `task am FREQ=118.8` |
+| WWV time signal (spectrum) | see below — needs `-D` direct sampling |
 | ADS-B decoder | `task adsb` |
 | Flight tracker (second terminal) | `task tracker` |
+
+## WWV Time Signal Demo — What Actually Works
+
+**CHU is dead.** The NRC shut down all three frequencies on 2026-06-22. There is no live
+CHU signal and no recording of one in this repo. `demos/chu-decoder` is now dead code.
+
+**WWV on 5.000 MHz is the replacement, and it is a *spectrum* demo, not an audio demo.**
+Measured 2026-08-10, office desk, 2 m vertical whip, direct sampling:
+
+| what | result |
+|---|---|
+| WWV 5.000 MHz carrier | 10–14 dB above noise — **visible** |
+| WWV modulation (100/500/600/1000 Hz tones) | **absent** — sidebands below the noise floor |
+
+Verified end to end: the capture was demodulated through the real `am-receiver` binary and
+the audio contains none of WWV's tones. Do not promise ticks or voice from the stage.
+
+```bash
+# Direct sampling. -D takes NO argument — writing "-D 2" silently breaks -n.
+rtl_sdr -f 5000000 -s 250000 -D -n 2500000 wwv.iq
+```
+
+To get audio you need far more signal: roughly 9.5 m of wire (a quarter wave at 5 MHz),
+not the 2 m whip. Untested as of 2026-08-10.
+
+**The talk does not depend on this demo.** The CHU shutdown story and the 15 m / 2 m
+antenna bridge both work with no hardware at all.
 
 ## Risk Mitigation
 
@@ -64,12 +92,20 @@ The talk works even if every live demo fails. The physics, the concepts, and the
 | Why Rust + ecosystem | 3 |
 | FM demo + pipeline | 3 |
 | AM demo + pipeline | 3 |
+| Time signals (CHU story + WWV) | 4 |
 | Antenna theory + swap | 4 |
 | ADS-B demo + pipeline | 5 |
 | Closing | 2 |
-| **Total** | **~38 min** |
+| **Total** | **~42 min** |
+
+Runs long for a 40-minute slot on purpose — carry the surplus and cut from a real
+run-through rather than trimming on paper. The cut list below is pre-decided so the
+decision is cheap when the time comes.
 
 ### If time is tight
+- **Drop the WWV demo, keep the CHU story.** The shutdown beat and the "15 metres vs
+  2 metres" bridge into antenna length are the parts that earn their time; the spectrum
+  demo is the cuttable half. Saves ~2 min and removes the only live-RF risk in the section.
 - Shorten antenna theory — state the 1/4 wavelength rule without the destructive interference detail.
 - Skip FM Step 1 (filter) and Step 3 (filter and play) slides — just show the demod code.
 

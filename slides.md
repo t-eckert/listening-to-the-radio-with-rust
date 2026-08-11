@@ -579,6 +579,114 @@ Same IQ data, different interpretation.
 
 ---
 
+<!-- speaker_note: Anchor quote - "Everything so far has been listening. This one is about knowing what time it is." The shift - other demos turn radio into sound or data. This one turns radio into a clock. If you drift - time signal stations broadcast atomic time, continuously, one way, no network. -->
+
+Time From the Sky
+=================
+
+Everything so far turned radio into **sound** or **data**.
+
+<!-- pause -->
+
+This one turns radio into a **clock**.
+
+<!-- pause -->
+
+Time signal stations broadcast the current time, continuously,
+straight from a caesium atomic clock.
+
+One-way. No network. No handshake. Nothing to log into.
+
+---
+
+<!-- speaker_note: This is the "why should I care" slide. Aim it at the embedded and infrastructure people in the room - they have all met a drifting RTC. Do not oversell it against NTP; the point is the cases where NTP is not reachable. If you drift - no network, still needs the time. -->
+
+Why You'd Still Want This
+=========================
+
+Your hardware has no WiFi, no cell, no GPS.
+How does it learn what time it is?
+
+<!-- incremental_lists: true -->
+
+- A sensor in a mine, a basement, a ship's hull
+- An air-gapped machine that will never reach an NTP server
+- A real-time clock that drifts seconds a week
+- GPS solves this — but it needs a view of the sky, and it is trivially jammed
+
+<!-- pause -->
+
+Shortwave refracts off the ionosphere. It arrives from
+**thousands of kilometres away, through walls.**
+
+---
+
+<!-- speaker_note: This is the emotional beat of the talk. Slow down and let the date land before the last line. Anchor quote - "I wrote a decoder for a radio station that doesn't exist anymore." If you drift - CHU ran 88 years, 15 km from my desk, and went silent two months before this talk. -->
+
+CHU — Ottawa, 1938–2026
+=======================
+
+Fifteen kilometres from my desk in Ottawa: **CHU**,
+run by the National Research Council.
+
+3.330, 7.850, 14.670 MHz. Caesium clocks. Broadcasting since **1938**.
+
+<!-- pause -->
+
+I wrote a decoder for it — Bell 103 FSK, 300 baud, BCD time code.
+
+<!-- pause -->
+
+On **22 June 2026**, the NRC shut it off. After 88 years.
+
+<!-- pause -->
+
+I pointed the receiver at 7.850 MHz and found
+**noise where a station used to be.**
+
+---
+
+<!-- speaker_note: Demo - spectrum view at 5.000 MHz, point at the single line. MEASURED on the office desk with a 2 m whip - carrier sits 10-14 dB above noise, and the sidebands do NOT make it. You will SEE the carrier, you will NOT hear the ticks. Do not promise audio. HF fades minute to minute; if the line is missing, say "that's shortwave" and move on - the story carries this section without the demo. -->
+
+WWV — Fort Collins, Colorado
+============================
+
+CHU is gone. **WWV** is still transmitting. 2,900 km from my desk.
+
+<!-- pause -->
+
+The R820T tuner cannot go below 24 MHz. So we bypass it completely —
+**direct sampling**, where the antenna feeds the ADC directly.
+
+```bash
+rtl_sdr -f 5000000 -s 250000 -D
+```
+
+<!-- pause -->
+
+The carrier is at 5.000000 MHz. Not approximately — *exactly*,
+because it comes off the same kind of atomic standard it is reporting.
+
+---
+
+<!-- jump_to_middle -->
+
+<!-- speaker_note: This is the bridge into antenna length, and it is doing real work - the honest limitation IS the setup for the next section. Say the 15 metres and the 2 metres slowly, hold up the whip on "my antenna is 2 metres." Then walk straight into antenna theory. -->
+
+I can see the carrier. I can't hear the ticks.
+
+<!-- pause -->
+
+A quarter wavelength at 5 MHz is **15 metres**.
+
+My antenna is 2 metres.
+
+<!-- pause -->
+
+Which brings us to antenna length.
+
+---
+
 <!-- speaker_note: Anchor quote - "An antenna resonates at a quarter of the wavelength." Swap the antenna during this section. The physical act reinforces the point. If you drift - Quarter wavelength. Too long equals destructive interference. Show the short antenna. -->
 
 Antenna Length
