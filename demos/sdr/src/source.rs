@@ -31,6 +31,12 @@ pub trait SdrSource: Send {
         Ok(()) // No-op for sources that don't support gain control
     }
 
+    /// Highest manual gain the tuner supports, in tenths of dB. None if this
+    /// source has no gain control or cannot report its range.
+    fn max_gain(&self) -> Result<Option<i32>> {
+        Ok(None)
+    }
+
     /// Enable direct sampling mode for receiving below ~24 MHz.
     /// Mode: 0 = off, 1 = I-branch, 2 = Q-branch.
     fn set_direct_sampling(&mut self, _mode: u32) -> Result<()> {

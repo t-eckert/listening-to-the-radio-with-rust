@@ -17,6 +17,16 @@ impl UsbSource {
         let mut dev =
             RtlSdr::open_with_index(index as usize).context("opening RTL-SDR device")?;
 
+        // Direct sampling survives across program runs: it lives in the
+        // dongle's registers, not in our process. `rtl_test -t` in particular
+        // enables it and then aborts with "No E4000 tuner found", leaving it
+        // on. Direct sampling bypasses the tuner completely, so every tuned
+        // frequency reads as noise until something clears it. Clear it here so
+        // opening a device always starts from a known state; the callers that
+        // actually want it (chu-decoder) turn it back on straight after.
+        dev.set_direct_sampling(DirectSampleMode::Off)
+            .context("disabling direct sampling")?;
+
         let sample_rate = 2_048_000;
         dev.set_sample_rate(sample_rate)
             .context("setting sample rate")?;
@@ -78,6 +88,11 @@ impl SdrSource for UsbSource {
         }
         .context("setting gain")?;
         Ok(())
+    }
+
+    fn max_gain(&self) -> Result<Option<i32>> {
+        let gains = self.dev.get_tuner_gains().context("querying tuner gains")?;
+        Ok(gains.into_iter().max())
     }
 
     fn set_direct_sampling(&mut self, mode: u32) -> Result<()> {

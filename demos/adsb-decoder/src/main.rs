@@ -154,9 +154,25 @@ fn main() -> Result<()> {
     source.set_frequency(freq_hz)?;
     source.set_sample_rate(args.sample_rate)?;
 
-    if let Some(gain) = args.gain {
-        source.set_gain(Some((gain * 10.0) as i32))?;
-        println!("  Gain: {gain:.1} dB");
+    match args.gain {
+        Some(gain) => {
+            source.set_gain(Some((gain * 10.0) as i32))?;
+            println!("  Gain: {gain:.1} dB");
+        }
+        None => {
+            // ADS-B is a handful of 120 μs bursts per second on an otherwise
+            // empty channel. The tuner's AGC spends nearly all its time looking
+            // at noise, settles low, and never opens up in time for a burst, so
+            // auto gain misses aircraft that max gain hears easily. Default to
+            // the highest gain the tuner actually reports.
+            match source.max_gain()? {
+                Some(g) => {
+                    source.set_gain(Some(g))?;
+                    println!("  Gain: {:.1} dB (tuner maximum)", g as f64 / 10.0);
+                }
+                None => println!("  Gain: auto"),
+            }
+        }
     }
 
     let db = db::AdsbDb::open(&args.db)?;
