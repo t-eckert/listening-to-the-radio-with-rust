@@ -260,17 +260,18 @@ pub fn decode_cpr_global(
     // Latitude index
     let j = (59.0 * cpr_lat_even - 60.0 * cpr_lat_odd + 0.5).floor();
 
-    let lat_even = d_lat_even * (j.rem_euclid(60.0) + cpr_lat_even);
-    let lat_odd = d_lat_odd * (j.rem_euclid(59.0) + cpr_lat_odd);
+    // The latitude step yields a value in 0..360. Wrap both parities into
+    // -90..90 straight away: nl() below treats anything at or beyond 87 as a
+    // polar zone, so feeding it an unwrapped southern latitude (which arrives
+    // here as roughly 300) would silently collapse it to a single zone.
+    let wrap = |lat: f64| if lat >= 270.0 { lat - 360.0 } else { lat };
+    let lat_even = wrap(d_lat_even * (j.rem_euclid(60.0) + cpr_lat_even));
+    let lat_odd = wrap(d_lat_odd * (j.rem_euclid(59.0) + cpr_lat_odd));
 
     // Pick latitude based on which message was most recent
-    let lat = if most_recent_odd {
-        if lat_odd >= 270.0 { lat_odd - 360.0 } else { lat_odd }
-    } else {
-        if lat_even >= 270.0 { lat_even - 360.0 } else { lat_even }
-    };
+    let lat = if most_recent_odd { lat_odd } else { lat_even };
 
-    if lat < -90.0 || lat > 90.0 {
+    if !(-90.0..=90.0).contains(&lat) {
         return None;
     }
 
@@ -284,18 +285,26 @@ pub fn decode_cpr_global(
     }
 
     let nl = if most_recent_odd { nl_odd } else { nl_even };
-    let n = if nl > 1 { nl } else { 1 };
 
-    let d_lon = 360.0 / n as f64;
+    // The two parities divide the globe into a different number of longitude
+    // zones: the even frame uses NL, the odd frame NL-1. Using NL for both
+    // scales every odd-frame longitude by (NL-1)/NL, which near the antimeridian
+    // of the 0..360 frame is an error of several degrees.
+    let ni = if most_recent_odd {
+        (nl.saturating_sub(1)).max(1)
+    } else {
+        nl.max(1)
+    };
+    let d_lon = 360.0 / ni as f64;
 
     let m = (cpr_lon_even * (nl as f64 - 1.0) - cpr_lon_odd * nl as f64 + 0.5).floor();
     let lon = if most_recent_odd {
-        d_lon * (m.rem_euclid((nl - 1).max(1) as f64) + cpr_lon_odd)
+        d_lon * (m.rem_euclid(ni as f64) + cpr_lon_odd)
     } else {
-        d_lon * (m.rem_euclid(nl as f64) + cpr_lon_even)
+        d_lon * (m.rem_euclid(ni as f64) + cpr_lon_even)
     };
 
-    let lon = if lon > 180.0 { lon - 360.0 } else { lon };
+    let lon = if lon >= 180.0 { lon - 360.0 } else { lon };
 
     Some((lat, lon))
 }
@@ -332,6 +341,83 @@ mod tests {
     fn test_nl_poles() {
         assert_eq!(nl(87.0), 1);
         assert_eq!(nl(-87.0), 1);
+    }
+
+    /// Assert a decoded position is within ~1 metre of the expected one.
+    fn assert_pos(got: Option<(f64, f64)>, want_lat: f64, want_lon: f64, what: &str) {
+        let (lat, lon) = got.unwrap_or_else(|| panic!("{what}: decode returned None"));
+        assert!(
+            (lat - want_lat).abs() < 1e-4 && (lon - want_lon).abs() < 1e-4,
+            "{what}: got ({lat:.5}, {lon:.5}), want ({want_lat:.5}, {want_lon:.5})"
+        );
+    }
+
+    /// The published worked example from the Mode S / ADS-B literature:
+    /// even frame 8D40621D58C382D690C8AC2863A7,
+    /// odd  frame 8D40621D58C386435CC412692AD6.
+    #[test]
+    fn cpr_matches_the_published_worked_example() {
+        let (lat_e, lon_e) = (93000u32, 51372u32);
+        let (lat_o, lon_o) = (74158u32, 50194u32);
+
+        assert_pos(
+            decode_cpr_global(lat_e, lon_e, lat_o, lon_o, false),
+            52.25720,
+            3.91937,
+            "even-latest",
+        );
+        // The odd frame resolves to its own slightly later latitude band. The
+        // longitude zone width here is 360/(NL-1), not 360/NL.
+        assert_pos(
+            decode_cpr_global(lat_e, lon_e, lat_o, lon_o, true),
+            52.26578,
+            3.93891,
+            "odd-latest",
+        );
+    }
+
+    /// Both parities must land on the same place, whichever arrived last.
+    #[test]
+    fn cpr_agrees_between_parities() {
+        // Encoded from 41.79 N, 76.79 W (Troy, Pennsylvania).
+        let (lat_e, lon_e) = (126484u32, 80551u32);
+        let (lat_o, lon_o) = (111269u32, 108509u32);
+
+        assert_pos(
+            decode_cpr_global(lat_e, lon_e, lat_o, lon_o, false),
+            41.78998,
+            -76.79000,
+            "troy even-latest",
+        );
+        assert_pos(
+            decode_cpr_global(lat_e, lon_e, lat_o, lon_o, true),
+            41.78999,
+            -76.79003,
+            "troy odd-latest",
+        );
+    }
+
+    /// Southern latitudes come out of the latitude step as values near 300,
+    /// which must be wrapped into -90..90 before nl() sees them -- nl() treats
+    /// anything at or beyond 87 as a polar zone and returns 1.
+    #[test]
+    fn cpr_works_in_the_southern_hemisphere() {
+        // Encoded from 33.87 S, 151.21 E (Sydney).
+        let (lat_e, lon_e) = (46531u32, 76200u32);
+        let (lat_o, lon_o) = (58862u32, 21146u32);
+
+        assert_pos(
+            decode_cpr_global(lat_e, lon_e, lat_o, lon_o, false),
+            -33.86998,
+            151.20999,
+            "sydney even-latest",
+        );
+        assert_pos(
+            decode_cpr_global(lat_e, lon_e, lat_o, lon_o, true),
+            -33.87001,
+            151.20998,
+            "sydney odd-latest",
+        );
     }
 
     #[test]
