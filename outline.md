@@ -1,8 +1,25 @@
 # Listening to the Radio with Rust — Production Notes
 
-**Duration:** 40 minutes
+**Duration:** 40 minutes hard ceiling, **no Q&A**, target 38 on the clock.
+Per the RustConf speaker packet, breakout sessions are 40 minutes *including* up to
+10 minutes of optional Q&A. Declining Q&A buys the full 40 for content.
 **Venue:** RustConf 2026, Montreal, 9 September 2026
+**Slot:** Wednesday 16:00, after a 30-minute break, last breakout before lightning talks.
 **Goal:** Introduce technical folks to SDR in a way that enables them to go experiment themselves.
+
+## The Slot Shapes the Talk
+
+Three consequences, all of them already reflected in `slides.md`:
+
+1. **The 30-minute break before the session is the tech window.** The packet only promises
+   breakout speakers 15 minutes at the AV table. Use the whole break at the podium to
+   re-verify 97.7, 119.9, and the ADS-B feed against the venue. Nothing else in this file
+   matters as much as that.
+2. **A post-break room needs a payoff before it needs a syllabus.** The talk opens cold with
+   live FM audio, before the title slide. First sound in the room is under 60 seconds in,
+   not 21 minutes in.
+3. **No Q&A, so the close is an invitation instead.** Hardware on the table, Discord channel,
+   reception afterward. The reception is the same evening, which makes this slot good for it.
 
 All delivery notes, anchor quotes, and speaker notes are in `slides.md`.
 
@@ -34,13 +51,28 @@ exported to run locally at the venue. So:
 
 ## Pre-talk Setup
 
+Use the full 30-minute break before the session, at the podium, not the 15 minutes the
+packet asks for.
+
 ```bash
 task build       # build release binaries
 task alias       # create short names in demos/bin/
 task rtl-tcp     # start in a background terminal
 task fm FREQ=97.7   # test audio output at the venue
+task am FREQ=119.9  # test ATC; try 119.3 and 118.9 too
+task adsb        # confirm aircraft are decoding before you rely on it
 task present     # open slides
 ```
+
+**The cold open runs before you are introduced.** `task fm-single FREQ=97.7` is already
+running with the volume down when the emcee starts talking. You walk on and raise the
+volume — nothing to launch, nothing to type, no terminal on screen. Then kill the audio
+before the title slide.
+
+A failed cold open is the worst possible failure, so have the pre-recorded IQ file loaded
+in a second terminal and one keystroke away. If live RF is dead at 15:55, open cold from the
+recording instead and say so — "this one's recorded, we'll go live later." Do not open cold
+on silence.
 
 ## Demo Commands
 
@@ -120,33 +152,48 @@ The talk works even if every live demo fails. The physics, the concepts, and the
 
 ## Timing
 
-| Section | Minutes |
-|---------|---------|
-| Intro + roadmap | 2 |
-| Physics (EM waves) | 5 |
-| RTL-SDR + tuner + rtl_tcp | 3 |
-| IQ samples + demos | 5 |
-| Demodulation tables | 3 |
-| Why Rust + ecosystem | 3 |
-| FM demo + pipeline (now 6 slides, single-file walkthrough) | 5 |
-| AM demo + pipeline | 3 |
-| Time signals (CHU story + WWV) | 4 |
-| Antenna theory + swap | 4 |
-| ADS-B demo + pipeline | 5 |
-| Closing | 2 |
-| **Total** | **~44 min** |
+| # | Section | Min | Cum | Payoff |
+|---|---------|-----|-----|--------|
+| 0 | **Cold open** — live FM, no title slide | 1.5 | 1.5 | audio |
+| 1 | Title + about me + roadmap | 1.5 | 3.0 | |
+| 2 | Physics (bobbers) + `wave-demo` | 4.0 | 7.0 | animation |
+| 3 | RTL-SDR: two chips, tuner, rtl_tcp | 2.5 | 9.5 | |
+| 4 | I/Q + complex plane + `iq-demo` + `iq-print` | 5.5 | 15.0 | animation |
+| 5 | Many signals, one idea (merged tables) | 1.0 | 16.0 | |
+| 6 | FM: pipeline, one file, 3 steps, whole loop + demo | 5.0 | 21.0 | **audio** |
+| 7 | Why Rust + crates | 1.5 | 22.5 | |
+| 8 | AM: pipeline, one-line diff, live ATC | 3.5 | 26.0 | **audio** |
+| 9 | Time signals: CHU story, WWV limitation | 3.0 | 29.0 | story |
+| 10 | Antenna length + physical swap | 2.0 | 31.0 | **object** |
+| 11 | ADS-B: pipeline, decode, live map | 5.5 | 36.5 | **map** |
+| 12 | Close + invitation | 1.5 | 38.0 | |
 
-Runs long for a 40-minute slot on purpose — carry the surplus and cut from a real
-run-through rather than trimming on paper. The cut list below is pre-decided so the
-decision is cheap when the time comes.
+**38.0 min against a 40-minute ceiling.** Two minutes of headroom, no Q&A.
 
-### If time is tight
-- **Drop the WWV demo, keep the CHU story.** The shutdown beat and the "15 metres vs
-  2 metres" bridge into antenna length are the parts that earn their time; the spectrum
-  demo is the cuttable half. Saves ~2 min and removes the only live-RF risk in the section.
-- Shorten antenna theory — state the 1/4 wavelength rule without the destructive interference detail.
-- Skip FM Step 1 (filter) and Step 3 (filter and play) slides — just show the demod code.
+Sensory payoff every 4–6 minutes: sound, animation, a physical object passed in front of
+the room, a map filling in. That cadence is the actual defence against a 4 PM room, more
+than any individual cut.
 
-### If time is generous
-- Let ADS-B run longer. Watching aircraft accumulate is satisfying.
-- Deeper dive into the IQ visualization with iq-demo.
+### Structural changes from the pre-August version
+- Opens cold with FM audio; the title slide lands *after* the music.
+- First radio payoff moved from minute 21 to minute 1.
+- Two demodulation table slides merged into one "magnitude or phase" slide.
+- "Why Rust" moved out of an abstract interlude and placed next to the FM inner loop.
+- Ecosystem crate table folded into the same slide.
+- "Why Not Longer?" (destructive interference) cut entirely.
+- WWV reduced to one slide, no live demo by default.
+- Q&A dropped; close is now hardware table + Discord + reception.
+
+### If running long (cut in this order)
+1. **FM Step 1 (filter slide).** Saves ~45 s. The pipeline slide already made the point.
+2. **FM Step 3 (de-emphasis).** Saves ~45 s.
+3. **"Why You'd Still Want This"** in the time-signal section. Saves ~45 s; the CHU story
+   survives on its own.
+4. **Shorten ADS-B accumulation** — name one aircraft instead of three.
+
+Never cut: "Points on the Complex Plane", "FM — Step 2: Demodulate", the antenna swap.
+
+### If running short
+- Let ADS-B accumulate longer and name more aircraft.
+- Deeper dive with `iq-demo` — sweep frequency and amplitude with the arrow keys.
+- Optional WWV spectrum demo, but only if the carrier was visible during the break test.
