@@ -44,7 +44,7 @@ struct Iq {
 // ===========================================================================
 // STEP 1 — Low-pass filter, and throw away samples we no longer need.
 //
-// The dongle hands us 960 kHz of spectrum. We want one 200 kHz station out of
+// The dongle outputs 960 kHz of spectrum. I want one 200 kHz station out of
 // it. Filter away everything else, then keep only every 4th sample: once the
 // high frequencies are gone, the extra samples carry no information.
 // ===========================================================================
@@ -205,17 +205,9 @@ fn main() -> Result<(), Box<dyn Error>> {
     let wav_path = std::env::args().nth(1);
 
     // Build the pipeline. Cutoffs are fractions of each stage's input rate.
-    let mut iq_filter = LowPass::new(
-        CHANNEL_HALF_WIDTH / SDR_RATE as f32,
-        51,
-        IQ_DECIM,
-    );
+    let mut iq_filter = LowPass::new(CHANNEL_HALF_WIDTH / SDR_RATE as f32, 51, IQ_DECIM);
     let mut fm_demod = FmDemod::new(IF_RATE as f32);
-    let mut audio_filter = LowPass::new(
-        AUDIO_BANDWIDTH / IF_RATE as f32,
-        31,
-        AUDIO_DECIM,
-    );
+    let mut audio_filter = LowPass::new(AUDIO_BANDWIDTH / IF_RATE as f32, 31, AUDIO_DECIM);
     let mut deemphasis = DeEmphasis::new(DEEMPHASIS_TAU, AUDIO_RATE as f32);
 
     let ring = Arc::new(AudioRing::new(AUDIO_RATE as usize * 2));
