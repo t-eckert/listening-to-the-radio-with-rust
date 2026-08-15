@@ -9,7 +9,7 @@ Per the RustConf speaker packet, breakout sessions are 40 minutes *including* up
 
 ## The Slot Shapes the Talk
 
-Three consequences, all of them already reflected in `slides.md`:
+Three consequences, all of them already reflected in `deck/slides.md`:
 
 1. **The 30-minute break before the session is the tech window.** The packet only promises
    breakout speakers 15 minutes at the AV table. Use the whole break at the podium to
@@ -21,23 +21,35 @@ Three consequences, all of them already reflected in `slides.md`:
 3. **No Q&A, so the close is an invitation instead.** Hardware on the table, Discord channel,
    reception afterward. The reception is the same evening, which makes this slot good for it.
 
-All delivery notes, anchor quotes, and speaker notes are in `slides.md`.
+All delivery notes, anchor quotes, and speaker notes are in `deck/slides.md`.
 
 ---
 
 ## How These Files Are Used
 
-**`slides.md` is a prototype, not the deck.** The real slides are rebuilt in Figma and
-exported to run locally at the venue. So:
+**`deck/slides.md` is the deck itself — there is no second copy.** It is a
+[Slidev](https://sli.dev) presentation: markdown in, browser out, PDF for the submission.
+The earlier plan to rebuild the slides in Figma is dead; Figma's motion features are
+gated behind a paid feature flag, and a PDF cannot carry animation anyway.
 
-- `slides.md` is the **source of truth for content** — wording, ordering, what each slide
+- `deck/slides.md` is the **single source of truth** — wording, ordering, what each slide
   says, and what to say out loud. Write talking points into it, not into chat.
-- Speaker notes carry two things: the delivery cue (anchor quote, what to say if you drift)
-  and, where useful, a `FIGMA -` line describing what the slide wants to look like.
+- Speaker notes are the **last HTML comment in each slide**. That is a Slidev rule, not a
+  preference: earlier comments in the same slide are ignored, so a slide gets one merged
+  note block, not several.
 - Slide count and ordering are a design signal. One idea per slide; do not pack.
-- It still has to render in presenterm, since that is the prototyping loop. Keep the syntax
-  valid: no bare double-dashes inside speaker note comments, `---` only as a slide
-  separator, setext headers (title over `=====`).
+- Code fences take a line-step spec: ```` ```rust {all|7-8|10} ```` advances the highlight on
+  each click. Use it where the point is *which line*, not just the code.
+
+```bash
+cd deck
+npm run dev      # localhost:3030, presenter view at /presenter
+npm run export   # radio-talk.pdf, one page per slide
+```
+
+Presenting: laptop screen shows `/presenter` (notes, timer, next slide), projector shows
+the deck. Runs entirely offline once installed. The exported PDF is both the Aug 25
+submission and the last-resort backup if the browser misbehaves at the venue.
 
 ---
 
@@ -83,7 +95,7 @@ task alias       # create short names in demos/bin/
 task rtl-tcp     # start in a background terminal
 task fm FREQ=97.7   # test audio output at the venue
 task am-single FREQ=119.9  # test ATC; try 119.3 and 118.9 too
-task present     # open slides
+(cd deck && npm run dev)   # open the deck; presenter view at /presenter
 
 # ADS-B is on the Pi, not this laptop. Confirm it from here:
 curl -s http://<pi>/healthz
