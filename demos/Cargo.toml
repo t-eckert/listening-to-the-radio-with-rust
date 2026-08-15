@@ -1,5 +1,5 @@
 [workspace]
-members = ["sdr", "fm-receiver", "fm-single", "am-receiver", "chu-decoder", "freq-scanner", "iq-print", "adsb-decoder", "adsb-api", "flight-tracker", "wave-demo", "iq-demo"]
+members = ["sdr", "fm-receiver", "fm-single", "am-receiver", "am-single", "chu-decoder", "freq-scanner", "iq-print", "adsb-decoder", "adsb-api", "flight-tracker", "wave-demo", "iq-demo"]
 resolver = "2"
 
 [workspace.package]

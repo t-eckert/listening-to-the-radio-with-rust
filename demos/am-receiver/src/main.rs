@@ -18,8 +18,9 @@ struct Args {
     #[arg(short, long, default_value_t = 7.85)]
     frequency: f64,
 
-    /// RTL-SDR sample rate in Hz
-    #[arg(long, default_value_t = 1_024_000)]
+    /// RTL-SDR sample rate in Hz. Must divide evenly down to the audio rate;
+    /// 960 kHz gives 960 -> 240 -> 48, all whole numbers.
+    #[arg(long, default_value_t = 960_000)]
     sample_rate: u32,
 
     /// Audio output sample rate in Hz
@@ -61,21 +62,41 @@ fn main() -> Result<()> {
         println!("  Gain: {gain:.1} dB");
     }
 
+    // Every decimation below must be a whole number of samples. If a rate does
+    // not divide evenly, integer division silently truncates and we produce
+    // audio at a rate the sound card was never told about: the ring buffer
+    // fills faster than it drains and drops samples forever. That is a bug you
+    // hear as constant dropouts, never as an error, so refuse it up front.
+    //
+    // 1_024_000 was the old default and cannot work: 1_024_000 / 48_000 is
+    // 21.33, so no integer chain from it reaches 48 kHz at all.
+    let intermediate_rate = 240_000u32;
+    if sdr_rate % intermediate_rate != 0 || intermediate_rate % audio_rate != 0 {
+        anyhow::bail!(
+            "rates must divide evenly: {sdr_rate} -> {intermediate_rate} -> {audio_rate} Hz \
+             ({sdr_rate}/{intermediate_rate} = {:.3}, {intermediate_rate}/{audio_rate} = {:.3}). \
+             Try --sample-rate 960000 with --audio-rate 48000.",
+            sdr_rate as f64 / intermediate_rate as f64,
+            intermediate_rate as f64 / audio_rate as f64,
+        );
+    }
+
     // DSP chain:
-    // 1. Low-pass filter IQ to AM channel bandwidth (~10 kHz) and decimate.
-    //    Aviation AM channels are 25 kHz wide, so 10 kHz cutoff is fine.
-    let intermediate_rate = 128_000u32;
+    // 1. Low-pass filter IQ to AM channel bandwidth and decimate.
+    //    Aviation AM channels are 25 kHz apart, so a 12.5 kHz cutoff is right.
+    //    A narrow cutoff needs a long filter to stay sharp; 51 taps at 960 kHz
+    //    is far too soft, so this matches am-single at 151.
     let iq_cutoff = 12_500.0 / sdr_rate as f32; // half of 25 kHz AM channel
-    let iq_decimation = (sdr_rate / intermediate_rate) as usize; // 8x
-    let mut iq_filter = LowPassFilter::new(iq_cutoff, 51, iq_decimation);
+    let iq_decimation = (sdr_rate / intermediate_rate) as usize; // 4x
+    let mut iq_filter = LowPassFilter::new(iq_cutoff, 151, iq_decimation);
 
     // 2. AM demodulate (envelope detection)
     let am_demod = AmDemodulator::new();
 
-    // 3. Low-pass filter audio to ~5 kHz and decimate to audio rate
+    // 3. Low-pass filter audio to ~6 kHz and decimate to audio rate
     let audio_cutoff = 6_000.0 / intermediate_rate as f32;
-    let audio_decimation = (intermediate_rate / audio_rate) as usize;
-    let mut audio_filter = LowPassFilter::new(audio_cutoff, 31, audio_decimation.max(1));
+    let audio_decimation = (intermediate_rate / audio_rate) as usize; // 5x
+    let mut audio_filter = LowPassFilter::new(audio_cutoff, 121, audio_decimation);
 
     // Ring buffer for audio output
     let ring_size = audio_rate as usize * 2;

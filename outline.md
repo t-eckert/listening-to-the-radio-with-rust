@@ -82,7 +82,7 @@ task build       # build release binaries
 task alias       # create short names in demos/bin/
 task rtl-tcp     # start in a background terminal
 task fm FREQ=97.7   # test audio output at the venue
-task am FREQ=119.9  # test ATC; try 119.3 and 118.9 too
+task am-single FREQ=119.9  # test ATC; try 119.3 and 118.9 too
 task present     # open slides
 
 # ADS-B is on the Pi, not this laptop. Confirm it from here:
@@ -95,10 +95,9 @@ break is for the stage audio and for confirming the network path to the Pi still
 from the podium — the venue banned personal routers, so that path is conference WiFi or
 the hardline Tina offered, and it is the single most fragile thing in the talk.
 
-**The cold open runs before you are introduced.** `task fm-single FREQ=97.7` is already
-running with the volume down when the emcee starts talking. You walk on and raise the
-volume — nothing to launch, nothing to type, no terminal on screen. Then kill the audio
-before the title slide.
+"Welcome back from the break. I figure we get back into things with a little music."
+
+`task fm-single FREQ=97.7`
 
 A failed cold open is the worst possible failure, so have the pre-recorded IQ file loaded
 in a second terminal and one keystroke away. If live RF is dead at 15:55, open cold from the
@@ -114,45 +113,26 @@ on silence.
 | Raw IQ from dongle | `task iq-print` |
 | FM radio | `task fm FREQ=97.7` |
 | FM radio, single file (the one the slides show) | `task fm-single FREQ=97.7` |
-| AM aviation | `task am FREQ=119.9` |
+| AM aviation (the one the slides show) | `task am-single FREQ=119.9` |
+| AM aviation, multi-file version | `task am FREQ=119.9` |
 | ADS-B | on the Pi: `skyward run`. On the laptop: browser at `http://<pi>/` (UI not built yet). |
 
-## Montreal Frequencies — VERIFY AT THE VENUE
+## Montreal Frequencies
 
-Every frequency below changed when the talk moved from Ottawa to RustConf Montreal.
 These come from published sources, **not** from measurement at the venue. Test them the
 day before; a dead demo on stage is the failure mode.
 
-| Demo | Ottawa (old) | Montreal (new) | Notes |
-|------|---|---|---|
-| FM | 106.1 CHEZ | **97.7 CHOM** (rock) | Backup: 95.9 Virgin |
-| AM aviation | 118.8 YOW tower | **119.9 CYUL main tower** | Backups: 119.3 north tower, 118.9 south arrival |
+| Demo |  Montreal (new) | Notes |
+|------|---|---|
+| FM | **97.7 CHOM** (rock) | Backup: 95.9 Virgin |
+| AM aviation |  **119.9 CYUL main tower** | Backups: 119.3 north tower, 118.9 south arrival |
 
-ADS-B is 1090 MHz everywhere, so it needs no retuning for Montreal — but whatever
-displays it may still carry an Ottawa-shaped viewport. Check that before the day.
+ADS-B is 1090 MHz everywhere.
 
 ## Time Signals — CHU Story Only, No WWV
 
 **CHU is dead.** The NRC shut down all three frequencies on 2026-06-22. There is no live
 CHU signal and no recording of one in this repo. `demos/chu-decoder` is now dead code.
-
-**WWV was cut from the talk on 2026-08-14.** It is not a trim to restore if time allows —
-it is gone. Three reasons, in order of weight:
-
-1. **The physics claim on it was wrong.** The slide said the ticks were inaudible because a
-   quarter wave at 5 MHz is 15 m and the whip is 2 m. The connect/disconnect test says
-   otherwise: the antenna raises the noise floor 8.3 dB above the receiver's own at 5 MHz,
-   so reception is *external-noise-limited* and a perfect antenna would buy **0.6 dB**.
-   The whip was never the limitation; the building is. Stating the wrong cause to a
-   technical audience is the actual risk, not the missing demo.
-2. **No demo.** Measured 2026-08-10: the 5.000 MHz carrier sits 10–14 dB above noise and is
-   visible, but the 100/500/600/1000 Hz modulation is absent — sidebands below the floor,
-   verified by pushing the capture through the real `am-receiver` binary. A visible line
-   with nothing to hear is a weak payoff in a 4 PM room.
-3. **It cost a minute** the talk did not have, in the one section with no live output.
-
-The direct-sampling detail (bypassing the tuner to get below 24 MHz, `rtl_sdr -D`) went with
-it. Genuinely interesting, too deep for an intro-level talk, and it lived only on that slide.
 
 **What carries the section instead:** the CHU shutdown story, which needs no hardware, and
 the "Why You'd Still Want This" slide, which is the only place the talk touches the
@@ -194,19 +174,20 @@ is a much less charming excuse on stage than "the ionosphere is bad."
 | 5 | Many signals, one idea (merged tables) | 1.0 | 16.0 | |
 | 6 | FM: pipeline, one file, 3 steps, whole loop + demo | 5.0 | 21.0 | **audio** |
 | 7 | Why Rust + crates | 1.5 | 22.5 | |
-| 8 | AM: pipeline, one-line diff, live ATC | 3.5 | 26.0 | **audio** |
-| 9 | Time signals: CHU story (no WWV) | 2.0 | 28.0 | story |
-| 10 | Antenna length → why the receiver is upstairs | 2.0 | 30.0 | reveal |
-| 11 | ADS-B: pipeline, four stages, live aircraft | 5.5 | 35.5 | **live data** |
-| 12 | Close + invitation | 1.5 | 37.0 | |
+| 8 | AM: same pipeline, 2 diff slides, live ATC | 4.0 | 26.5 | **audio** |
+| 9 | Time signals: CHU story (no WWV) | 2.0 | 28.5 | story |
+| 10 | Antenna length → why the receiver is upstairs | 2.0 | 30.5 | reveal |
+| 11 | ADS-B: pipeline, four stages, live aircraft | 5.5 | 36.0 | **live data** |
+| 12 | Close + invitation | 1.5 | 37.5 | |
 
-**37.0 min against a 40-minute ceiling.** Three minutes of headroom, no Q&A.
+**37.5 min against a 40-minute ceiling.** Two and a half minutes of headroom, no Q&A.
 
 Sensory payoff every 4–6 minutes: sound, animation, a physical object passed in front of
 the room, a map filling in. That cadence is the actual defence against a 4 PM room, more
 than any individual cut.
 
 ### Structural changes from the pre-August version
+
 - Opens cold with FM audio; the title slide lands *after* the music.
 - First radio payoff moved from minute 21 to minute 1.
 - Two demodulation table slides merged into one "magnitude or phase" slide.
@@ -222,6 +203,18 @@ than any individual cut.
   explained for free.
 - ADS-B code slides rewritten against `skyward` (magnitude → detect → slice → validate)
   instead of the retired `demos/adsb-decoder`.
+- **AM slides retargeted at the new `demos/am-single`**, mirroring what the FM section does
+  with `fm-single`. The two files are byte-identical outside the three steps, so the
+  section's claim is now demonstrable with a diff rather than asserted. Step 2 is the real
+  difference (FM needs the previous sample, AM doesn't); step 3 turned out to be the same
+  three lines with one character changed — de-emphasis keeps the slow-moving part, the DC
+  block subtracts it. Cost: one extra slide, +0.5 min.
+- **`am-receiver` had a live audio bug**, found while building `am-single`: its default
+  1,024,000 Hz cannot reach 48 kHz by integer decimation (1,024,000 / 48,000 = 21.33), and
+  `128_000 / 48_000` truncated to 2, so it produced 64 kHz audio into a 48 kHz sound card —
+  a 1.333x overrun, dropping a quarter of the audio continuously. Fixed: default 960 kHz,
+  intermediate 240 kHz, and a guard that refuses non-dividing rates instead of truncating.
+  Measured before/after with a synthesised 1 kHz AM tone.
 - The `rtl_tcp` slide became "From Dongle to Your Code" — pipe vs socket, converging on the
   same program. It used to be a stray implementation detail *and* it was inaccurate: it
   claimed every demo read from `rtl_tcp`, but `fm-single` reads raw IQ on **stdin**, piped
@@ -230,6 +223,7 @@ than any individual cut.
   and plants the socket idea that the ADS-B reveal collects on.
 
 ### If running long (cut in this order)
+
 1. **FM Step 1 (filter slide).** Saves ~45 s. The pipeline slide already made the point.
 2. **FM Step 3 (de-emphasis).** Saves ~45 s.
 3. **"Why You'd Still Want This"** in the time-signal section. Saves ~45 s; the CHU story
@@ -240,6 +234,7 @@ Never cut: "Points on the Complex Plane", "FM — Step 2: Demodulate", "So the R
 in This Room" (it is the only thing that explains the remote Pi).
 
 ### If running short
+
 - Let ADS-B accumulate longer and name more aircraft.
 - Deeper dive with `iq-demo` — sweep frequency and amplitude with the arrow keys.
 - Linger on the CHU beat. Let the 88-years line and the date sit longer than feels natural.

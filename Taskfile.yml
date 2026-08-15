@@ -53,6 +53,16 @@ tasks:
       - cargo run -p am-receiver -- --frequency {{.FREQ | default "121.5"}}
     dir: demos
 
+  am-single:
+    desc: Same AM radio, one file, piped from rtl_sdr (FREQ in MHz). WAV=out.wav to record
+    cmds:
+      - >-
+        rtl_sdr -f $(echo '{{.FREQ | default "119.9"}} * 1000000' | bc | cut -d. -f1)
+        -s 960000 -g 40 - | cargo run --release -p am-single -- {{.WAV}}
+    dir: demos
+    env:
+      DYLD_LIBRARY_PATH: /opt/homebrew/lib
+
   adsb:
     desc: Decode ADS-B aircraft signals at 1090 MHz
     cmds:

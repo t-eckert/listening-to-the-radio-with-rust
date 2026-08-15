@@ -326,12 +326,12 @@ Every demodulation asks one of two questions:
 
 <!-- pause -->
 
-**How far is the point from the origin?** → `s.norm()`
+**How far is the point from the origin?** → `√(I² + Q²)`
 AM broadcast · ADS-B · garage remotes · weather satellites
 
 <!-- pause -->
 
-**How fast is the point rotating?** → `(s * prev.conj()).arg()`
+**How fast is the point rotating?** → `the angle it turned since last time`
 FM broadcast · pagers · ship AIS · digital voice
 
 <!-- pause -->
@@ -523,39 +523,94 @@ but writing it yourself is how you _understand_ it.
 
 ---
 
-<!-- speaker_note: Anchor quote - "AM is even simpler. Just take the magnitude. sqrt of I squared plus Q squared. That is it." Keep this section moving; its whole job is the one line diff against FM. If you drift - Magnitude equals AM. One function call. -->
+<!-- speaker_note: Anchor quote - "AM is even simpler. Just take the magnitude. sqrt of I squared plus Q squared. That is it." Keep this section moving; its whole job is the one line diff against FM. Say - "Same three rates as the FM receiver. Same two divisions. I did not pick different numbers, because there was no reason to." If you drift - Magnitude equals AM. One function call. -->
 
-AM Radio — The Pipeline
-=======================
+AM Radio — The Same Pipeline
+============================
 
 ```
-IQ samples (1 MHz)
-  → low-pass filter + keep every 8th sample (128 kHz)
-  → AM demodulate
-  → low-pass filter + keep every 3rd sample (48 kHz)
-  → speakers
+IQ samples          960 kHz
+  ↓  low-pass, keep every 4th sample
+intermediate        240 kHz
+  ↓  AM demodulate
+raw audio           240 kHz
+  ↓  low-pass, keep every 5th sample
+audio                48 kHz
+  ↓  DC block
+speakers
 ```
 
 <!-- pause -->
 
-Same structure as FM. Different demodulation.
+The same three rates as the FM receiver.
+Only the middle step changed.
 
 ---
 
-AM — Demodulation
-=================
+<!-- speaker_note: FIGMA - the two code blocks should sit side by side, FM above or left, AM below or right, with the differing line highlighted in both. This is the payoff slide of the section. Say - "FM needs the previous sample, because rotation is a difference. AM doesn't, because distance isn't." If you drift - one needs history, the other does not. -->
+
+AM — Step 2: Demodulate
+=======================
 
 ```rust
-pub fn process(&self, input: &[Complex<f32>]) -> Vec<f32> {
-    input.iter()
-        .map(|s| s.norm())  // sqrt(I² + Q²) — distance from origin
-        .collect()
-}
+// FM: how far did the point turn since last time?
+im.atan2(re) * self.gain
+
+// AM: how far is the point from the origin?
+(s.i * s.i + s.q * s.q).sqrt()
 ```
 
 <!-- pause -->
 
-That's it. The audio _is_ the distance from the origin — the **amplitude**.
+FM needs the **previous sample** — rotation is a difference.
+
+AM needs **nothing but this sample** — distance isn't.
+
+---
+
+<!-- speaker_note: FIGMA - show the two structs stacked with the final line highlighted; the whole slide is one character of difference. Say - "Step three in the FM receiver kept the slow-moving part. Step three here subtracts it. Same tracker, same three lines, one character apart - and one is a low-pass, the other a high-pass." Do not over-explain the DC offset; the envelope never goes negative, speakers want zero-centred, done. If you drift - keep the slow part or subtract it. -->
+
+AM — Step 3: DC Block
+=====================
+
+The envelope never goes negative — it rides on the carrier.
+Speakers want audio centred on zero.
+
+```rust
+// FM de-emphasis: keep the slow-moving part
+self.prev += self.alpha * (*s - self.prev);
+*s = self.prev;
+
+// AM DC block: subtract it
+self.prev += self.alpha * (*s - self.prev);
+*s -= self.prev;
+```
+
+<!-- pause -->
+
+One tracker. Keep it and you have a low-pass.
+Subtract it and you have a high-pass.
+
+---
+
+<!-- speaker_note: START THE AM DEMO HERE - task am-single FREQ=119.9 (CYUL main tower). Backups if it is quiet - 119.3 (north tower), 118.9 (south arrival). VERIFY ALL THREE AT THE VENUE during the 30 minute break; these are from the published CYUL chart, not measured. Vertical antenna, the same 2 m whip that did FM. You may hear ATC in English or French. ATC is bursty - if the tower is silent for 10 or more seconds, say so and let it sit; a pause on a real channel is more convincing than a recording. -->
+
+AM — The Whole Loop
+===================
+
+```rust
+let tuned     = iq_filter.process(&iq);                 // step 1
+let raw_audio = am_demod.process(&tuned);               // step 2
+let mut audio = audio_filter.process_real(&raw_audio);
+dc_block.process(&mut audio);                           // step 3
+
+ring.push(&audio);                                      // speakers
+```
+
+<!-- pause -->
+
+That is the same five lines as the FM receiver,
+with two words changed.
 
 <!-- pause -->
 
@@ -563,32 +618,6 @@ Let's tune to 119.9 MHz — Montréal-Trudeau tower.
 
 In Canada, receiving is legal. The law restricts transmitting
 and sharing private communications, but ATC is a public broadcast.
-
-<!-- speaker_note: Switch to AM receiver demo. Tune to 119.9 MHz (CYUL main tower). Backups if it is quiet - 119.3 (north tower), 118.9 (south arrival). VERIFY ALL THREE AT THE VENUE during the 30 minute break before your session; these are from the published CYUL chart, not measured. Vertical antenna. You may hear ATC in English or French. If tower is silent for 10 or more seconds, explain that ATC is bursty and move to the next slide while waiting. -->
-
----
-
-AM — The Full Loop
-==================
-
-```rust
-// Filter to just our channel, keep every 8th sample
-let filtered_iq = iq_filter.process(&iq_buf[..n]);
-
-// AM demodulate — magnitude of each IQ sample,
-// with DC offset removed so audio centers on zero
-let audio_raw = am_demod.process(&filtered_iq);
-
-// Keep every 3rd sample to get to 48 kHz for speakers
-let mut audio = audio_filter.process_real(&audio_raw);
-
-// Send to speakers
-ring_buffer.push(&audio);
-```
-
-<!-- pause -->
-
-Compare to FM: the only difference is one line — `s.norm()` instead of `(s * prev.conj()).arg()`.
 
 ---
 
