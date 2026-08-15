@@ -180,24 +180,31 @@ you're sliding the window so your station lands at zero.
 
 ---
 
-rtl_tcp
-=======
+<!-- speaker_note: FIGMA - two arrows converging into one box labelled "your code". The convergence IS the point; do not draw them as separate pipelines. This slide used to be rtl_tcp trivia and now it does narrative work, so give it its beat. Say - "The dongle produces one thing: bytes. How they get to your program is a plumbing decision, not a radio decision. On this laptop it's a pipe. Across a network it's a socket. Your code can't tell the difference." Then plant the seed - "Which means the radio doesn't have to be in the same room as the code. Hold on to that one." You collect on it at the ADS-B reveal. If you drift - same bytes, two transports, one program. -->
 
-The dongle streams raw bytes over USB.
+From Dongle to Your Code
+========================
 
-`rtl_tcp` is a small server that forwards those bytes over TCP.
+The dongle produces exactly one thing: a stream of raw IQ bytes.
 
 <!-- pause -->
 
 ```
-RTL-SDR → USB → rtl_tcp → TCP → your code
+   this laptop      rtl_sdr  ── pipe ────┐
+                                         ├──▶  your code
+   somewhere else   rtl_tcp  ── socket ──┘
 ```
 
 <!-- pause -->
 
-This means any program on the network can connect and receive samples.
+The FM receiver you walked in on reads a **pipe**.
+The AM receiver you'll hear later reads a **socket**.
 
-All the demos today read from `rtl_tcp` — including the one that was playing when you walked in.
+Neither one knows the difference.
+
+<!-- pause -->
+
+Which means the radio doesn't have to be in the same room as the code.
 
 ---
 
@@ -668,36 +675,7 @@ I pointed the receiver at 7.850 MHz and found
 
 ---
 
-<!-- speaker_note: WWV is now one slide and NO LIVE DEMO by default. The spectrum demo is optional and only if you are ahead of schedule and the carrier was visible during your break test - measured 10 to 14 dB above noise on a 2 m whip, and the sidebands do NOT make it, so you will SEE a line and never hear ticks. Do not promise audio. The honest limitation is the bridge into the next section, so this slide must end on the 15 metres versus 2 metres line. -->
-
-WWV — and Why I Can't Hear It
-=============================
-
-CHU is gone. **WWV** in Fort Collins is still transmitting. 2,900 km away.
-
-The R820T tuner cannot go below 24 MHz, so we bypass it —
-**direct sampling**, antenna straight into the ADC.
-
-```bash
-rtl_sdr -f 5000000 -s 250000 -D
-```
-
-<!-- pause -->
-
-I can see the carrier. I can't hear the ticks.
-
-<!-- pause -->
-
-A quarter wavelength at 5 MHz is **15 metres**.
-My antenna is 2 metres.
-
-<!-- pause -->
-
-Which brings us to antenna length.
-
----
-
-<!-- speaker_note: Anchor quote - "An antenna resonates at a quarter of the wavelength." Do NOT explain destructive interference; state the rule and move to the swap. If you drift - Quarter wavelength. Two numbers. Show the short antenna. -->
+<!-- speaker_note: Anchor quote - "An antenna resonates at a quarter of the wavelength." THE TRANSITION IS SPOKEN, not on a slide. Let the CHU line sit in silence for a beat first, then - "CHU was on 7.85 megahertz. Shortwave. And the length of that wave decides everything about what you can hear." Do NOT explain destructive interference; state the rule and let the three numbers do the work. Gesture at the 2 m whip on stage when you say 85 cm. If you drift - Quarter wavelength. Three frequencies, three very different lengths. -->
 
 Antenna Length
 ==============
@@ -708,30 +686,47 @@ At that length it resonates — electrons oscillate with maximum efficiency.
 
 <!-- pause -->
 
-- FM (88 MHz) → wavelength ~3.4 m → **85 cm** per side
+- CHU (7.85 MHz) → wavelength 38 m → **9.5 m**
+- FM (88 MHz) → wavelength ~3.4 m → **85 cm**
 - ADS-B (1090 MHz) → wavelength ~27 cm → **7 cm**
 
 <!-- pause -->
 
+Same physics, two orders of magnitude apart.
 This is why you don't use the same antenna for everything.
 
 ---
 
-<!-- jump_to_middle -->
+<!-- speaker_note: This slide replaces the old on-stage antenna swap. It does two jobs at once - it is the payoff of the antenna rule, and it explains what the audience is about to look at. Point at the 2 m whip on stage, then upward. Say - "This antenna is wrong for 1090 megahertz, and this room is wrong too. So the ADS-B receiver isn't here. There's a Raspberry Pi upstairs by a window with a 7 centimetre stub on it, and I'm going to talk to it over the network." COLLECT THE CALLBACK from the transport slide - "Remember the socket. This is what it was for." Do NOT apologise for the receiver being remote; it is a consequence of the physics you just explained. -->
 
-<!-- speaker_note: SWAP THE ANTENNA HERE, physically, in front of the room. Hold up the 2 m whip, then the 7 cm stub. The physical act is the slide; say almost nothing over it. "Fifteen metres is what I'd need for WWV. This is seven centimetres, and it is exactly right for what's overhead." -->
+So the Receiver Isn't in This Room
+==================================
 
-I just swapped antennas.
+1090 MHz wants a **7 cm** antenna and a **view of the sky**.
+
+This whip is 2 m, and we are indoors.
 
 <!-- pause -->
 
-This one is 7 cm.
+```
+   7th floor, by a window          this stage
+   ┌─────────────────────┐         ┌──────────────┐
+   │  7 cm antenna       │         │  laptop      │
+   │  RTL-SDR            │         │              │
+   │  Raspberry Pi       │◄────────┤  browser     │
+   │  running `skyward`  │ network │              │
+   └─────────────────────┘         └──────────────┘
+```
+
+<!-- pause -->
+
+Antenna theory is why this box is upstairs and not on the table.
 
 ---
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Anchor quote - "Every plane in the sky is announcing itself right now." Start ADS-B decoder demo. Run adsb-decoder, then in a second terminal run task tracker (it defaults to the montreal region now; the bare binary still defaults to ottawa, and the wrong region renders an empty map with no error). Aircraft appear on the Montreal map with callsign, altitude, speed. START IT NOW and let it accumulate UNDER the code slides so the map is full by the time you come back to it. If you drift - Same math as AM, different protocol on top. -->
+<!-- speaker_note: Anchor quote - "Every plane in the sky is announcing itself right now." skyward has been running on the Pi since well before your session, so there is nothing to launch - open the browser at the Pi and the map is already populated. Have the tab open and loaded BEFORE you walk on; do not type a URL on stage. START IT NOW and leave it up in a second window so it keeps filling UNDER the code slides. If you drift - Same math as AM, different protocol on top. -->
 
 Let's see what's flying overhead.
 
@@ -750,67 +745,78 @@ ADS-B — The Pipeline
 
 ```
 IQ samples (2.4 MHz)
-  → magnitude (same s.norm() as AM)
-  → detect preamble pattern
-  → extract 112 bits from pulse positions
-  → CRC check
-  → decode: callsign, lat, lon, altitude, speed
-  → store in database
+  → magnitude          sqrt(I² + Q²) — the same as AM
+  → preamble detect    find the 8 μs ADS-B signature
+  → bit slice          112 bits from pulse positions
+  → CRC-24 validate    discard what the air damaged
+  → track              pair CPR frames into a position
+  → HTTP               JSON and an SSE stream
 ```
 
+<!-- pause -->
+
+Four DSP stages, and only the first one is radio.
+
 ---
+
+<!-- speaker_note: FIGMA - keep the two code blocks side by side if it fits; the whole point is that they are the same operation. Say - "This is the AM demodulator again. It is operating on raw bytes off the dongle instead of parsed complex numbers, because on a Pi at 2.4 million samples a second that conversion is the expensive part. But the maths is the maths." If you drift - magnitude is magnitude. AM and aircraft are the same measurement. -->
 
 ADS-B — Demodulation
 =====================
 
+ADS-B is on-off keyed. Phase carries nothing,
+so magnitude is the *whole* demodulator.
+
 ```rust
-// Same operation as AM — just take the magnitude.
-// ADS-B is on/off keying: high magnitude = 1, low = 0.
-let mag: Vec<f32> = iq_buf[..n].iter()
-    .map(|s| s.norm())
-    .collect();
+// rtl_sdr emits offset binary: 0..255 with 127.5 as zero.
+let i = f32::from(iq[2 * k]) - 127.5;
+let q = f32::from(iq[2 * k + 1]) - 127.5;
+let m = (i * i + q * q).sqrt() * MAG_SCALE;
 ```
 
 <!-- pause -->
 
-Same `s.norm()` as AM. But instead of audio, the pattern of
-high and low values encodes digital data.
+The same `sqrt(I² + Q²)` you saw in the AM receiver.
+
+Instead of audio, the pattern of high and low values encodes **bits**.
 
 ---
 
-ADS-B — Decode
-==============
+<!-- speaker_note: The point of this slide is that the four stages are swappable and scored against each other, which is why the repo exists at all. Say - "Every stage has a deliberately naive version and a registry of alternatives, so a new implementation lands beside the old one instead of replacing it, and a benchmark says which is better." Do not oversell it; one sentence and move to the payoff. If you drift - four stages, each one replaceable, each one measured. -->
+
+ADS-B — Four Stages
+===================
 
 ```rust
-// Look for the ADS-B preamble pattern in the magnitude data
-let raw_messages = demod.process(&mag);
-
-for bits in &raw_messages {
-    // Try to decode the 112-bit message
-    if let Some(msg) = decode_message(bits) {
-        // Extract position, altitude, callsign, speed...
-        // and store in a SQLite database
-        db.upsert(&aircraft)?;
-    }
-}
+Pipeline::new(
+    magnitude,   // sqrt(I² + Q²) → u16
+    detector,    // where does a message start?
+    slicer,      // pulse positions → 112 bits
+    validator,   // CRC-24, or throw it away
+)
 ```
 
 <!-- pause -->
 
-Each message is a 120 μs burst — blink and you'd miss it.
-But at 2.4 million samples per second, we catch every one.
+Each message is a 112-bit burst, 120 μs long — blink and you'd miss it.
+At 2.4 million samples per second, we catch them all.
+
+<!-- pause -->
+
+Every stage has a naive baseline and a registry of alternatives,
+so a faster implementation lands _beside_ the old one and gets scored.
 
 ---
 
 <!-- jump_to_middle -->
 
-<!-- speaker_note: Come back to the map here. It has been filling in for three or four minutes and should be busy. Name one aircraft out loud - callsign, altitude, where it is going. That specificity is the payoff of the whole section. Let it sit for a few seconds in silence. -->
+<!-- speaker_note: Come back to skyward here. It has been accumulating for three or four minutes and should be busy. Name one aircraft OUT LOUD - callsign, altitude, where it is going. That specificity is the payoff of the whole section and of the talk; a list of hex codes is not a payoff. Let it sit for a few seconds in silence. -->
 
 Every plane in the sky above us is announcing itself right now.
 
 <!-- pause -->
 
-With a $30 dongle and a 7 cm antenna, we can see them all.
+With a $30 dongle and a 7 cm antenna, on a Pi upstairs, we can see them all.
 
 ---
 
