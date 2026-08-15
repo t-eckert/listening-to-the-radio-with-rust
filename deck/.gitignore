@@ -2,3 +2,4 @@ node_modules/
 dist/
 .slidev/
 *.pdf
+check/

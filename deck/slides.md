@@ -474,21 +474,21 @@ If you drift: one line of math. Phase change is audio.
 
 # FM Radio — The Pipeline
 
-```
-IQ samples          960 kHz
-  ↓  low-pass, keep every 4th sample
-intermediate        240 kHz
-  ↓  FM demodulate
-raw audio           240 kHz
-  ↓  low-pass, keep every 5th sample
-audio                48 kHz
-  ↓  de-emphasis
-speakers
-```
+<RatePipeline class="mt-4" :steps="[
+  { rate: '960 kHz', label: 'IQ samples' },
+  { op: 'low-pass, keep every 4th sample', divide: 4 },
+  { rate: '240 kHz', label: 'intermediate' },
+  { op: 'FM demodulate' },
+  { rate: '240 kHz', label: 'raw audio' },
+  { op: 'low-pass, keep every 5th sample', divide: 5 },
+  { rate: '48 kHz', label: 'audio' },
+  { op: 'de-emphasis' },
+  { label: 'speakers' },
+]" />
 
 <v-click>
 
-Three rates. Every division is a whole number.
+<div class="mt-4">Three rates. Every division is a whole number.</div>
 
 </v-click>
 
@@ -506,20 +506,23 @@ how fast you make audio and how fast the sound card eats it."
 
 Everything that follows lives in **one file**.
 
-```
-fm-single/src/main.rs
-
-  rates and constants        the whole design in three numbers
-  Step 1  low-pass filter    pick one station out of the noise
-  Step 2  FM demodulate      turn rotation into sound
-  Step 3  de-emphasis        undo the transmitter's treble boost
-  main                       four calls, in order
-  audio plumbing             not radio; getting samples to the card
-```
+<FileMap
+  class="mt-3"
+  file="demos/fm-single/src/main.rs"
+  :bands="[
+    { label: 'header, imports', note: '', lines: 14 },
+    { label: 'rates, constants', note: 'the whole design in three numbers', lines: 29 },
+    { label: 'Step 1  filter', note: 'pick one station out of the noise', lines: 88, step: true },
+    { label: 'Step 2  demodulate', note: 'turn rotation into sound', lines: 39, step: true },
+    { label: 'Step 3  de-emphasis', note: 'undo the treble boost from the transmitter', lines: 29, step: true },
+    { label: 'main', note: 'four calls, in order', lines: 70 },
+    { label: 'audio plumbing', note: 'not radio; samples to the sound card', lines: 58 },
+  ]"
+/>
 
 <v-click>
 
-No DSP library. The interesting parts are written out by hand.
+<div class="mt-3">No DSP library. The interesting parts are written out by hand.</div>
 
 </v-click>
 
@@ -534,6 +537,8 @@ runs, and it is what was playing when you walked in."
 ---
 
 # FM — Step 1: Filter
+
+<SpectrumBand channel="97.7" span="960 kHz of spectrum, all at once" width="200 kHz — one station" />
 
 The antenna hears every station at once. Tuning happens in software.
 
@@ -706,22 +711,21 @@ doesn't make it crackle, it makes it stop."
 
 # AM Radio — The Same Pipeline
 
-```
-IQ samples          960 kHz
-  ↓  low-pass, keep every 4th sample
-intermediate        240 kHz
-  ↓  AM demodulate
-raw audio           240 kHz
-  ↓  low-pass, keep every 5th sample
-audio                48 kHz
-  ↓  DC block
-speakers
-```
+<RatePipeline class="mt-4" :steps="[
+  { rate: '960 kHz', label: 'IQ samples' },
+  { op: 'low-pass, keep every 4th sample', divide: 4 },
+  { rate: '240 kHz', label: 'intermediate' },
+  { op: 'AM demodulate' },
+  { rate: '240 kHz', label: 'raw audio' },
+  { op: 'low-pass, keep every 5th sample', divide: 5 },
+  { rate: '48 kHz', label: 'audio' },
+  { op: 'DC block' },
+  { label: 'speakers' },
+]" />
 
 <v-click>
 
-The same three rates as the FM receiver.
-Only the middle step changed.
+<div class="mt-4">The same three rates as the FM receiver. Only the middle step changed.</div>
 
 </v-click>
 
