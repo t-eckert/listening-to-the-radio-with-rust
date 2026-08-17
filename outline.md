@@ -194,9 +194,11 @@ is a much less charming excuse on stage than "the ionosphere is bad."
 
 **37.5 min against a 40-minute ceiling.** Two and a half minutes of headroom, no Q&A.
 
-Sensory payoff every 4–6 minutes: sound, animation, a physical object passed in front of
-the room, a map filling in. That cadence is the actual defence against a 4 PM room, more
-than any individual cut.
+Sensory payoff every 4–6 minutes: sound, animation, a map filling in, and the hardware in
+the audience's hands at the close. That cadence is the actual defence against a 4 PM room,
+more than any individual cut. (The old "physical object passed in front of the room" beat
+died with the antenna swap; if you want a mid-talk physical beat back, pass the dongle
+during the RTL-SDR section and note it in that slide.)
 
 ### Structural changes from the pre-August version
 

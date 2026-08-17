@@ -18,7 +18,7 @@ COLD OPEN. The FM receiver is ALREADY RUNNING before the emcee introduces you,
 audio muted at the mixer or volume down. You walk on, bring the volume up, and
 say NOTHING for ten seconds. Let the room hear music. Then: "That's CHOM, 97.7.
 It came out of the air, into a thirty dollar USB stick, through about forty lines
-of Rust that I wrote, and out of those speakers. I'm Thomas. Let me show you how."
+of signal processing that I wrote, and out of those speakers. I'm Thomas. Let me show you how."
 Then kill the audio and advance.
 
 IF THE COLD OPEN FAILS, do not debug on stage. Say "Live RF. That's part of the
@@ -670,7 +670,7 @@ track, and now they know what they are listening to. Let it run under the next s
 
 # Why Rust
 
-At 2.4 million samples per second, every sample gets **~400 ns** of processing time.
+At **960 thousand samples per second**, every sample gets about **1 µs** of processing time — and the receiver has to keep up with that, forever.
 
 <v-clicks>
 
@@ -703,8 +703,11 @@ but writing it yourself is how you _understand_ it.
 This is the Rust beat, and it belongs HERE, next to the inner loop the audience
 just read. Keep it to ninety seconds. This is RustConf; nobody needs selling on
 Rust, they want to know what the constraint actually is.
-Say: "2.4 million samples a second. Four hundred nanoseconds each. A GC pause
+Say: "960 thousand samples a second. About a microsecond each. A GC pause
 doesn't make it crackle, it makes it stop."
+The 2.4 MHz / 400 ns figures are the ADS-B/Pi rate, not this receiver; the FM and
+AM paths the audience just read run at 960 kS/s. Keep the number matched to the
+slide you are standing on.
 -->
 
 ---
@@ -1094,6 +1097,73 @@ a second that conversion is the expensive part. But the maths is the maths."
 
 ---
 
+# ADS-B — Bits in Time
+
+<PpmBits class="my-2" />
+
+There's no volume knob and no phase to read — only _where_ in each slot the pulse
+sits. Each bit is **1 µs**, split in half: a pulse in the first half is a `1`, a
+pulse in the second half is a `0`. That's pulse-position modulation.
+
+<v-click>
+
+The 8 µs preamble is a fixed pattern. Find it and you know two things at once: a
+message starts here, and exactly where every bit slot after it begins.
+
+</v-click>
+
+<!--
+This is the "how does a pulse become a bit" slide. Walk the diagram left to
+right: the preamble first, then read the four data bits off the picture — pulse
+early, pulse late, early, late → 1 0 1 0.
+Say: "It's the crudest possible encoding. The carrier is either on or off — no
+amplitude, no phase, none of the tricks FM and AM used. The only thing that
+carries information is timing: which half of the microsecond the pulse lands in.
+That's why finding the preamble matters so much. It's not data, it's a tuning
+fork. Once you've locked onto that 8-microsecond pattern, you know where all 112
+bit slots are."
+Do NOT get into CRC or sample rates here; that's the next slide.
+-->
+
+---
+
+# ADS-B — Why Timing Is Everything
+
+At 2.4 million samples per second, each half-slot is only about **1.2 samples** wide.
+
+```rust {all|2-3|5-6}
+// Measured from the frame start, never bit-to-bit, so rounding
+// error can't pile up across 112 bits.
+let bit_start_us = 8.0 + bit_idx as f64;
+
+let early = mag[us_to_sample(bit_start_us + 0.25)]; // middle of first half
+let late  = mag[us_to_sample(bit_start_us + 0.75)]; // middle of second half
+bits[bit_idx] = if early > late { 1 } else { 0 };
+```
+
+<v-click>
+
+Drift by half a slot and the last bits land in the wrong half. **CRC-24 catches
+it and throws the whole 112-bit message away** — better nothing than a wrong altitude.
+
+</v-click>
+
+<!--
+The point of this slide: with 1.2 samples per half-slot, sloppy timing corrupts
+the message, so the decoder is fanatical about where it samples.
+Say: "We're sampling at 2.4 megahertz, so a half-microsecond half-slot is barely
+one sample wide. If I computed each bit's position from the previous bit, the
+rounding error would compound, and by bit 112 I'd be reading the wrong half of
+the slot. So every position is computed from the start of the frame — the error
+stays flat instead of accumulating. And there's a backstop: a 24-bit CRC. If the
+timing slipped, or a plane's message collided with another, the checksum fails
+and we discard the whole thing. On a busy sky you throw away a lot of messages,
+and that's fine — a dropped position is invisible, a wrong altitude is dangerous."
+The us_to_sample helper is real; it's the floating-point µs→index map in demod.rs.
+-->
+
+---
+
 # ADS-B — Four Stages
 
 ```rust
@@ -1114,18 +1184,23 @@ At 2.4 million samples per second, we catch them all.
 
 <v-click>
 
-Every stage has a naive baseline and a registry of alternatives, so a faster
-implementation lands _beside_ the old one and gets scored.
+Every stage has a naive baseline and a registry of alternatives, scored on the
+same capture. The baseline detector finds **517** valid messages; a smarter one
+finds **2,403** on the same bytes — four-fifths of the signal is still on the table.
 
 </v-click>
 
 <!--
 The point of this slide is that the four stages are swappable and scored against
-each other, which is why the repo exists at all.
+each other, which is why the repo exists at all — and the headroom number makes
+that concrete instead of abstract.
 Say: "Every stage has a deliberately naive version and a registry of
-alternatives, so a new implementation lands beside the old one instead of
-replacing it, and a benchmark says which is better."
-Do not oversell it; one sentence and move to the payoff.
+alternatives, scored against each other on a golden capture. The baseline
+detector pulls 517 valid messages out of one file. Swap in a smarter detector and
+you get 2,403 from the same bytes — the naive pipeline works, and four-fifths of
+the signal is still on the table. The repo is a scoreboard, not a finished thing."
+Numbers are from skyward/fixtures/raw/golden.toml [headroom]. Do not oversell it;
+land the stat and move to the payoff.
 -->
 
 ---
