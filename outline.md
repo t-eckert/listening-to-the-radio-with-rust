@@ -59,7 +59,7 @@ Two receivers, in two places. **There is no antenna swap on stage.**
 
 **On stage (audio demos):**
 - Laptop
-- RTL-SDR Blog V4 dongle
+- RTL-SDR Blog V3 dongle
 - 2 m telescoping antenna — FM and AM, vertical for AM
 - USB-C adapter if needed for venue display
 

@@ -216,22 +216,11 @@ Same dongle receives FM, AM, aviation, ADS-B — just change the frequency and t
 
 # Two Chips
 
-```
-    ┌─────────────────────────────────────────────────┐
-    │                  RTL-SDR Dongle                 │
-    │                                                 │
-    │   ┌───────────┐          ┌──────────────┐       │
-  ──┤   │   R828D   │─────────▶│  RTL2832U    │──── USB ──▶  your code
-    │   │  (tuner)  │  analog  │   (ADC)      │       │
-    │   └───────────┘          └──────────────┘       │
-    │    shift freq              sample to            │
-    │    to baseband             digital bytes        │
-    └─────────────────────────────────────────────────┘
-```
+<TwoChips tuner="R820T2" class="mt-8" />
 
 <v-click>
 
-**R828D tuner** — selects which part of the spectrum to listen to.
+**R820T2 tuner** — selects which part of the spectrum to listen to.
 
 </v-click>
 
@@ -249,7 +238,7 @@ The antenna picks up _everything_ — FM, AM, aviation, cell towers, Wi-Fi — a
 
 <v-click>
 
-The R828D's job is to select a narrow slice of that spectrum. It shifts your chosen
+The R820T2's job is to select a narrow slice of that spectrum. It shifts your chosen
 frequency down to **baseband** — a low frequency centered around zero that the ADC can sample.
 
 </v-click>
@@ -1252,7 +1241,7 @@ codes is not a payoff. Let it sit for a few seconds in silence.
 # Getting Started
 
 **Hardware**
-- RTL-SDR Blog V4 (~$30)
+- RTL-SDR Blog V3 (~$30)
 - Dipole antenna kit (~$10)
 
 **No hardware yet?** Try `wave-demo` and `iq-demo` — they visualize the core
