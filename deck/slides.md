@@ -1258,8 +1258,9 @@ codes is not a payoff. Let it sit for a few seconds in silence.
 **No hardware yet?** Try `wave-demo` and `iq-demo` — they visualize the core
 concepts with no dongle needed.
 
-**All code from this talk**
-`github.com/t-eckert/listening-to-the-radio-with-rust`
+**All the code — open source**
+- Talk demos (FM, AM, the receivers) — `github.com/t-eckert/listening-to-the-radio-with-rust`
+- Aircraft tracker (the map you saw) — `github.com/t-eckert/skyward`
 
 <v-click>
 
