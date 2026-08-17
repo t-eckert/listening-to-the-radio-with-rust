@@ -3,6 +3,8 @@ theme: default
 title: Listening to the Radio with Rust
 info: RustConf 2026, Montreal, 9 September 2026
 author: Thomas Eckert
+fonts:
+  sans: Inter
 transition: fade
 lineNumbers: false
 drawings:
@@ -11,19 +13,27 @@ layout: center
 class: text-center
 ---
 
-# 97.7 MHz
+# Listening to the Radio with Rust
+
+Thomas Eckert
+
+RustConf 2026 · Montreal · 9 September 2026
 
 <!--
-COLD OPEN. The FM receiver is ALREADY RUNNING before the emcee introduces you,
-audio muted at the mixer or volume down. You walk on, bring the volume up, and
-say NOTHING for ten seconds. Let the room hear music. Then: "That's CHOM, 97.7.
-It came out of the air, into a thirty dollar USB stick, through about forty lines
-of signal processing that I wrote, and out of those speakers. I'm Thomas. Let me show you how."
-Then kill the audio and advance.
+COLD OPEN. This cover slide is ALREADY UP as you walk on — no station number on
+screen. The FM receiver is ALREADY RUNNING, audio muted at the mixer or volume
+down. Bring the volume up and say NOTHING for ten seconds. Let the room hear
+music over the title. Then name it yourself: "That's CHOM, 97.7. It came out of
+the air, into a thirty dollar USB stick, through about forty lines of signal
+processing that I wrote, and out of those speakers. I'm Thomas. Let me show you
+how." Then kill the audio and advance.
+
+The reveal is spoken, not on the slide — the audience hears the radio before
+they see a single number.
 
 IF THE COLD OPEN FAILS, do not debug on stage. Say "Live RF. That's part of the
-fun, and we'll get it back later." Advance to the title and carry on. The
-pre-recorded IQ file is one keystroke away for the FM section proper.
+fun, and we'll get it back later." Advance and carry on. The pre-recorded IQ
+file is one keystroke away for the FM section proper.
 
 PANIC CARD. If you lose your place, say one of these.
 (1) "So, what does this mean practically?" to transition to the next demo.
@@ -34,46 +44,61 @@ You know this material. You built every demo. The audience is on your side.
 -->
 
 ---
-layout: center
-class: text-center
+layout: default
+class: about-me-slide
 ---
 
-# Listening to the Radio with Rust
+<div class="about-copy">
 
-Thomas Eckert
+Software engineer at **Honeycomb**. Previously at Redpanda, HashiCorp, and Microsoft. Distributed systems and observability.
+
+Before any of it, I studied **Physics**.
+
+This talk sits exactly where those two halves meet. Software-defined radio is a physics problem — waves, antennas, noise on a real channel — that you solve in code.
+
+Everything you'll see today, I built in Rust: an FM radio, an AM aviation receiver, an aircraft tracker. I write about what I learn at **fieldtheories.blog**.
+
+</div>
+
+<!-- PHOTO PLACEHOLDER: swap this div for <img src="/me.jpg" class="about-photo" />
+     (drop me.jpg in deck/public/) once you've picked a photo. object-cover keeps it filling the half. -->
+<div class="about-photo"></div>
+
+<style>
+.about-me-slide {
+  padding: 0 !important;
+  position: relative;
+}
+.about-me-slide .about-copy {
+  width: 50%;
+  height: 100%;
+  padding: 3rem 3.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  box-sizing: border-box;
+}
+.about-me-slide .about-photo {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 50%;
+  height: 100%;
+  object-fit: cover;
+  background: linear-gradient(160deg, #38bdf8 0%, #6366f1 48%, #d946ef 100%);
+}
+</style>
 
 <!--
-The title lands as punctuation AFTER the music, not before it. Big, quiet,
-confident. Hold it for two seconds and move.
--->
-
----
-
-# About Me
-
-Software engineer at Redpanda Data. Background in physics.
-
-I'm always picking up new hobbies: cycling, climbing, homelab, watercolor, and now...
-
-<v-click>
-
-software-defined radio.
-
-</v-click>
-
-<v-click>
-
-Accessible price point. Steep first hour.
-
-That first hour is what this talk is for.
-
-</v-click>
-
-<!--
-Keep this to thirty seconds. You are sharing a hobby, not lecturing.
-Anchor quote: "I'm not an expert. This is something I've been playing with for a
-few months. When I find something cool, my first instinct is to share it."
-If you drift: you are here to share something cool. That is it.
+Forty-five seconds, not more. The bonafides are here to buy trust for the
+physics, not to brag — say them fast and move on. The through-line: I'm a
+software engineer who trained in physics, and SDR is the rare thing that needs
+both halves at once.
+Stay honest about the RF part: "I've built distributed systems for years, but
+radio I'm only a few months into — which is exactly why this is the talk I wish
+I'd had in my first hour."
+If you drift: you are here to share something cool that sits between your two
+backgrounds.
 -->
 
 ---
