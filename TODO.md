@@ -35,19 +35,47 @@ it was captured in Ottawa (capture task defaults to 106.1, not 97.7), and nothin
 - [x] **Verified (failure modes):** missing file, empty file, and no-args all exit non-zero
       with a readable message; `task am-file` refuses with "record one with `task capture`"
       because `atc.iq` does not exist yet.
-- [ ] **Still to verify by ear:** play `task fm-file` end to end and hear >60 s of continuous
-      audio. Not done — pacing is measured, but nobody has listened to it.
+- [x] **Verified by ear (2026-08-17):** `task fm-file` plays clean, continuous FM. The new
+      `fm.iq` is a 120 s capture of a strong local station (see item 2 for why not 97.7).
 
 ## 2. No AM/ATC recording exists — record one
 
 Risk Mitigation claims "pre-record IQ samples for all demos"; only FM exists. ATC is the
 demo most likely to sit silent live, so it needs the recording most.
 
-- [ ] (Thomas, at the desk) Record 2–3 min of ATC with actual transmissions on it:
-      `task capture FREQ=<active Ottawa freq> SECS=180 OUT=atc.iq`. Ottawa tower is fine
-      for a backup clip.
-- [ ] Re-capture a longer FM clip too (current fm.iq is 10 s): `SECS=180`.
-- [ ] **Verify:** play both through `task am-file` / `task fm-file` and hear voice/music.
+### Capture session 2026-08-17 (V4 `FMAM01`, 2 m vertical against office window)
+
+**FM — done, but the frequency assumption was wrong.** `fm.iq` is now a clean 120 s
+capture of **101.7 (Ottawa, g20, 0% clipped)**, verified by ear. Key finding: **97.7 is
+CHOM *Montreal*** — ~200 km away, so at the Ottawa desk it demods to fuzz. Home captures
+MUST use a strong *local* station. Measured at the window: 97.9 and 101.7 are crystal
+clear; CKCU 93.1 (campus, low power) is too hissy indoors even at g40. The deck's live
+cold open still uses 97.7 — that gets captured fresh at the **Montreal venue**, where
+97.7 *is* CHOM.
+
+Gain also had to drop hard: a strong local station rails the ADC at g30 (37% clipped on
+97.7-band, 26% on 101.7). Good levels were g10–g20 for commercial FM. The old Taskfile
+comment (g40 → 10.6% clipped) understated it.
+
+- [x] FM clip recorded and verified (101.7, g20, 120 s → `fm.iq`).
+- [ ] **Interim only** — Thomas plans to record a better FM clip *outdoors* later. Overwrite
+      `fm.iq` when that exists.
+- [ ] Update the `task capture`/`fm-single` FM defaults away from 97.7 for home use, or add a
+      `LOCAL` note, so nobody re-captures Montreal's frequency at the desk by accident.
+
+**Aviation (ATC) — cannot be captured at this window.** ATIS (121.15) had no voice; an
+airband power scan (118–137 MHz) showed 121.15 absent and everything else only 5–11 dB
+over the noise floor (135.15 approach, a ~132.9 cluster). `atis.iq` / `tower.iq` /
+`ground.iq` are on disk but demod to noise. A 2 m vertical indoors is too weak for
+118–137 MHz here.
+
+- [ ] Capture ATC **outdoors or at the venue**, not at the office window. Scan the airband
+      on site (`rtl_power -f 118M:137M:25k`) and record the strongest active frequency.
+- [ ] `task am-file` still defaults to `atc.iq`, which does not exist. Once a real ATC clip
+      exists, name it `atc.iq` (or point the task default at whatever the primary clip is).
+
+**MW broadcast — dropped.** The 2 m vertical is hopelessly short for the 530–1700 kHz
+band; `mw.iq` demodulated to unintelligible mush and was deleted. Not a core demo.
 
 ## 3. "Why Rust" slide quotes the wrong receiver's numbers — fix the slide
 
