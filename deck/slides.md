@@ -258,11 +258,7 @@ The dongle produces exactly one thing: a stream of raw IQ bytes.
 
 <v-click>
 
-```
-   this laptop      rtl_sdr  ── pipe ────┐
-                                         ├──▶  your code
-   somewhere else   rtl_tcp  ── socket ──┘
-```
+<TransportConverge class="my-6" />
 
 </v-click>
 
@@ -1005,15 +1001,7 @@ This whip is 2 m, and we are indoors.
 
 <v-click>
 
-```
-   7th floor, by a window          this stage
-   ┌─────────────────────┐         ┌──────────────┐
-   │  7 cm antenna       │         │  laptop      │
-   │  RTL-SDR            │         │              │
-   │  Raspberry Pi       │◄────────┤  browser     │
-   │  running `skyward`  │ network │              │
-   └─────────────────────┘         └──────────────┘
-```
+<RemoteReceiver class="my-6" />
 
 </v-click>
 
