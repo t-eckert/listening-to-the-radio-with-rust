@@ -105,19 +105,18 @@ backgrounds.
 
 # What We'll Cover
 
-<v-clicks>
-
-1. **Physics** — what is physically happening in an antenna
-2. **Instrumentation** — how a $30 dongle digitizes radio waves
-3. **Interpretation** — how different math extracts different signals
-4. **Application** — live demos: FM, AM, and aircraft tracking
-
-</v-clicks>
+<CoverageFlow class="mt-12" />
 
 <!--
 Frame this as "how what you just heard happens", not as four abstract nouns.
-Say: "We're going to take that music apart, backwards. What's in the air, how a
-dongle catches it, how the math reads it, and then three things you can point it at."
+Walk the arrow left to right: "One signal path. It comes out of the antenna as
+current, the RTL-SDR digitizes it, we look at the raw IQ samples, and then
+demodulation is where the math extracts the actual signal."
+Then the fan-out: "And that same pipeline, with different math at the end,
+becomes three different things — music, a voice on an aviation channel, and the
+position of an aircraft. Those are the three demos."
+Say: "We're going to take that music apart, backwards, and then point it at
+three things."
 -->
 
 ---
