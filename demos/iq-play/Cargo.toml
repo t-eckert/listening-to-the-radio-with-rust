@@ -1,0 +1,8 @@
+[package]
+name = "iq-play"
+version.workspace = true
+edition.workspace = true
+
+# No dependencies. This is stage tooling, not a demo — it never appears on a
+# slide, and it must never be a reason something fails at the podium.
+[dependencies]

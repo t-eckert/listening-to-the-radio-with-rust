@@ -26,26 +26,54 @@ tasks:
     dir: demos
 
   fm-single:
-    desc: Same radio, one file, piped from rtl_sdr (FREQ in MHz). WAV=out.wav to record
+    desc: Same radio, one file, piped from rtl_sdr (FREQ MHz, GAIN dB). WAV=out.wav to record
     cmds:
+      # GAIN default 30, not 40: on the 2 m whip a strong broadcast station rails
+      # the ADC at 40 (10.6% of samples clipped, measured 2026-08-16). Montreal is
+      # a stronger field than Ottawa, so expect to go lower still at the venue.
       - >-
         rtl_sdr -f $(echo '{{.FREQ | default "97.7"}} * 1000000' | bc | cut -d. -f1)
-        -s 960000 -g 40 - | cargo run --release -p fm-single -- {{.WAV}}
+        -s 960000 -g {{.GAIN | default "30"}} - | bin/fm-single {{.WAV}}
     dir: demos
     env:
       DYLD_LIBRARY_PATH: /opt/homebrew/lib
+    preconditions:
+      - sh: test -x bin/fm-single
+        msg: "bin/fm-single is missing — run `task alias` before the session, not on stage"
+
+  fm-file:
+    desc: Play a recorded IQ file through fm-single, paced and looping (FILE, WAV to record)
+    cmds:
+      - bin/iq-play {{.FILE | default "fm.iq"}} | bin/fm-single {{.WAV}}
+    dir: demos
+    preconditions:
+      - sh: test -x bin/fm-single
+        msg: "bin/fm-single is missing — run `task alias` before the session, not on stage"
+      - sh: test -x bin/iq-play
+        msg: "bin/iq-play is missing — run `task alias` before the session, not on stage"
+      - sh: test -f {{.FILE | default "fm.iq"}}
+        msg: "no such IQ file: {{.FILE | default \"fm.iq\"}} — record one with `task capture`"
 
   capture:
-    desc: Record IQ to a file at the fm-single rate (FREQ in MHz, SECS, OUT)
+    desc: Record IQ at the fm-single rate (FREQ MHz, SECS, OUT, GAIN dB, DEV index)
     cmds:
+      # Check the result with `task capture-check OUT=<file>` before trusting it —
+      # a clipped capture is a distorted fallback, and it looks fine as a file size.
       - >-
-        rtl_sdr -f $(echo '{{.FREQ | default "106.1"}} * 1000000' | bc | cut -d. -f1)
-        -s 960000 -g 40 -n $(echo '{{.SECS | default "10"}} * 960000' | bc | cut -d. -f1)
+        rtl_sdr -d {{.DEV | default "0"}}
+        -f $(echo '{{.FREQ | default "106.1"}} * 1000000' | bc | cut -d. -f1)
+        -s 960000 -g {{.GAIN | default "30"}} -n $(echo '{{.SECS | default "10"}} * 960000' | bc | cut -d. -f1)
         {{.OUT | default "fm.iq"}}
       - ls -lh {{.OUT | default "fm.iq"}}
     dir: demos
     env:
       DYLD_LIBRARY_PATH: /opt/homebrew/lib
+
+  capture-check:
+    desc: Report level and clipping for a recorded IQ file (OUT=file.iq)
+    cmds:
+      - python3 capture-check.py {{.OUT | default "fm.iq"}}
+    dir: demos
 
   am:
     desc: Listen to AM radio (set FREQ in MHz, e.g. 121.5 for aviation)
@@ -57,11 +85,30 @@ tasks:
     desc: Same AM radio, one file, piped from rtl_sdr (FREQ in MHz). WAV=out.wav to record
     cmds:
       - >-
+      # GAIN stays high here: aviation AM is a weak, intermittent signal, the
+      # opposite problem to broadcast FM. Do not copy the FM value across.
+      - >-
         rtl_sdr -f $(echo '{{.FREQ | default "119.9"}} * 1000000' | bc | cut -d. -f1)
-        -s 960000 -g 40 - | cargo run --release -p am-single -- {{.WAV}}
+        -s 960000 -g {{.GAIN | default "40"}} - | bin/am-single {{.WAV}}
     dir: demos
     env:
       DYLD_LIBRARY_PATH: /opt/homebrew/lib
+    preconditions:
+      - sh: test -x bin/am-single
+        msg: "bin/am-single is missing — run `task alias` before the session, not on stage"
+
+  am-file:
+    desc: Play a recorded IQ file through am-single, paced and looping (FILE, WAV to record)
+    cmds:
+      - bin/iq-play {{.FILE | default "atc.iq"}} | bin/am-single {{.WAV}}
+    dir: demos
+    preconditions:
+      - sh: test -x bin/am-single
+        msg: "bin/am-single is missing — run `task alias` before the session, not on stage"
+      - sh: test -x bin/iq-play
+        msg: "bin/iq-play is missing — run `task alias` before the session, not on stage"
+      - sh: test -f {{.FILE | default "atc.iq"}}
+        msg: "no such IQ file: {{.FILE | default \"atc.iq\"}} — record one with `task capture`"
 
   adsb:
     desc: Decode ADS-B aircraft signals at 1090 MHz
@@ -117,6 +164,9 @@ tasks:
       - ln -sf ../target/release/iq-print bin/iq-print
       - ln -sf ../target/release/fm-receiver bin/fm
       - ln -sf ../target/release/am-receiver bin/am
+      - ln -sf ../target/release/fm-single bin/fm-single
+      - ln -sf ../target/release/am-single bin/am-single
+      - ln -sf ../target/release/iq-play bin/iq-play
       - ln -sf ../target/release/adsb-decoder bin/adsb
       - ln -sf ../target/release/flight-tracker bin/tracker
       - ln -sf ../target/release/adsb-api bin/adsb-api

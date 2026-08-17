@@ -933,6 +933,10 @@ dependencies = [
 ]
 
 [[package]]
+name = "iq-play"
+version = "0.1.0"
+
+[[package]]
 name = "iq-print"
 version = "0.1.0"
 dependencies = [
