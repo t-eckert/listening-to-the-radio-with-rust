@@ -2,77 +2,113 @@
 // The physics metaphor, animated. Replaces what we were going to build in
 // Figma; needs no feature flag and plays offline in the browser.
 //
-// The wave is a travelling sine along the water surface, not concentric rings.
-// Rings looked like a bullseye centred on the bobber, and a static export only
-// caught one of them; a sine still reads correctly when frozen, which matters
-// because the PDF is the backup deck.
+// The wave EMANATES from the transmitter: still water to its left, full swing at
+// the source, decaying with distance as the energy spreads out. That look needs
+// a spatial amplitude envelope anchored at the source — which a translating path
+// can't have (moving the path drags its envelope along). So instead of sliding a
+// pre-built sine, we hold the envelope fixed in space and advance only the phase
+// each frame. Crests are born at the bobber, travel right, and shrink as they go.
+//
+// Because both bobbers read their height from the same wave function, the
+// receiver's lag and its smaller swing fall out for free: it is exactly as far
+// behind as the wave takes to reach it, and as weak as the wave is when it gets
+// there. No hand-tuned delay.
+//
+// A frozen frame still reads correctly (it is a decaying sine off a point
+// source), which matters because the exported PDF is the backup deck. When we
+// are printing, or the viewer asked for reduced motion, we never start the loop
+// and just render the initial frame.
 //
 //   receiver: show the second bobber (the receiving antenna)
 //   paused:   freeze everything, for a still frame
-defineProps({
+import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
+
+const props = defineProps({
   receiver: { type: Boolean, default: false },
   paused: { type: Boolean, default: false },
 })
 
 const BASE = 130 // water line
-const TX = 140 // transmitter x
+const TX = 140 // transmitter x (the source)
 const RX = 500 // receiver x
 const WAVELENGTH = 96
-const AMP = 17
+const AMP = 17 // swing at the source
+const SPREAD = 320 // amplitude ~ 1/(1 + d/SPREAD): full at the source, weaker away
+const XMAX = 730 // wave drawn from the source out to here
+const PERIOD = 1.8 // seconds per oscillation
+const K = (2 * Math.PI) / WAVELENGTH
 
-// One long constant-amplitude sine. Decay is applied by a mask that does NOT
-// move, so translating the wave slides the crests without dragging the
-// envelope along with them.
-const wave = (() => {
+// Amplitude as a function of position: zero left of the source, full at it,
+// falling off with distance, and eased to zero over the last stretch so the
+// train fades out instead of ending on a hard vertical edge.
+function envelope(x) {
+  if (x < TX) return 0
+  const d = x - TX
+  const spread = 1 / (1 + d / SPREAD)
+  const edge = Math.min(1, (XMAX - x) / 70)
+  return AMP * spread * Math.max(0, edge)
+}
+
+// Phase grows with time; a larger phase slides the pattern in +x, i.e. away from
+// the source. The envelope does not move, so the motion reads as radiation.
+function waveY(x, phase) {
+  return BASE - envelope(x) * Math.sin(K * (x - TX) - phase)
+}
+
+const phase = ref(0)
+
+const wavePath = computed(() => {
   const pts = []
-  for (let x = -WAVELENGTH; x <= 760; x += 4) {
-    const y = BASE - AMP * Math.sin((2 * Math.PI * (x - TX)) / WAVELENGTH)
-    pts.push(`${x === -WAVELENGTH ? 'M' : 'L'}${x} ${y.toFixed(2)}`)
+  for (let x = TX; x <= XMAX; x += 3) {
+    pts.push(`${x === TX ? 'M' : 'L'}${x} ${waveY(x, phase.value).toFixed(2)}`)
   }
   return pts.join(' ')
-})()
+})
 
-// Unique per instance: two of these can be in the DOM at once during a slide
-// transition, and duplicate mask ids would cross-wire them.
-const uid = `bob${Math.floor(performance.now() * 1000) % 1e9}`
+// Both bobbers sit exactly on the wave.
+const txY = computed(() => waveY(TX, phase.value))
+const rxY = computed(() => waveY(RX, phase.value))
+
+let raf = 0
+let last = 0
+function tick(now) {
+  if (last) phase.value += (2 * Math.PI * (now - last)) / (PERIOD * 1000)
+  last = now
+  raf = requestAnimationFrame(tick)
+}
+
+const still =
+  props.paused ||
+  (typeof matchMedia !== 'undefined' && matchMedia('(prefers-reduced-motion: reduce)').matches) ||
+  (typeof document !== 'undefined' && !!document.querySelector('.print-mode'))
+
+onMounted(() => {
+  if (!still) raf = requestAnimationFrame(tick)
+})
+onBeforeUnmount(() => cancelAnimationFrame(raf))
 </script>
 
 <template>
   <svg
     class="bobbers"
-    :class="{ paused }"
     viewBox="0 0 640 200"
     role="img"
-    aria-label="A bobber oscillating in water, sending waves along the surface to a second bobber"
+    aria-label="A bobber oscillating in water, radiating waves along the surface to a second bobber"
   >
-    <defs>
-      <linearGradient :id="`${uid}-fade`" x1="0" x2="1">
-        <stop offset="0" stop-color="white" stop-opacity="0" />
-        <stop offset="0.22" stop-color="white" stop-opacity="1" />
-        <stop offset="0.78" stop-color="white" stop-opacity="0.45" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
-      </linearGradient>
-      <mask :id="`${uid}-mask`">
-        <rect x="0" y="0" width="640" height="200" :fill="`url(#${uid}-fade)`" />
-      </mask>
-    </defs>
-
-    <!-- still water, for reference -->
+    <!-- still water, for reference (calm to the left of the source) -->
     <line class="water" x1="10" y1="130" x2="630" y2="130" />
 
-    <!-- the wave, travelling left to right -->
-    <g :mask="`url(#${uid}-mask)`">
-      <path class="wave" :d="wave" />
-    </g>
+    <!-- the wave, radiating from the transmitter -->
+    <path class="wave" :d="wavePath" />
 
-    <!-- transmitter: pushed up and down -->
-    <g class="bob tx">
+    <!-- transmitter: the source, driven up and down -->
+    <g class="bob tx" :transform="`translate(0 ${(txY - BASE).toFixed(2)})`">
       <line class="stem" :x1="TX" :y1="BASE - 13" :x2="TX" :y2="BASE - 44" />
       <circle :cx="TX" :cy="BASE" r="13" />
     </g>
 
-    <!-- receiver: driven by the arriving wave, so it lags -->
-    <g v-if="receiver" class="bob rx">
+    <!-- receiver: driven by the arriving wave, so it lags and swings less -->
+    <g v-if="receiver" class="bob rx" :transform="`translate(0 ${(rxY - BASE).toFixed(2)})`">
       <line class="stem" :x1="RX" :y1="BASE - 13" :x2="RX" :y2="BASE - 44" />
       <circle :cx="RX" :cy="BASE" r="13" />
     </g>
@@ -100,8 +136,8 @@ const uid = `bob${Math.floor(performance.now() * 1000) % 1e9}`
   fill: none;
   stroke: currentColor;
   stroke-width: 2.5;
-  opacity: 0.5;
-  animation: travel 1.8s linear infinite;
+  stroke-linecap: round;
+  opacity: 0.55;
 }
 
 .bob circle {
@@ -114,59 +150,11 @@ const uid = `bob${Math.floor(performance.now() * 1000) % 1e9}`
   opacity: 0.35;
 }
 
-/* Both bobbers ride the same wave. The receiver is three quarters of a period
-   behind, because the wave has to travel 360px to reach it and that is 3.75
-   wavelengths. */
-.tx,
-.rx {
-  animation: bob 1.8s linear infinite;
-}
-
-/* The wave covers the 360px to the receiver in 3.75 wavelengths, so the
-   receiver lags by 0.75 of a period. For a sine that is the same shape as
-   leading by a quarter period, which is what a negative delay expresses. */
-.rx {
-  animation-delay: -0.45s;
-}
-
 .label {
   fill: currentColor;
   opacity: 0.5;
   font-size: 15px;
   font-family: inherit;
   text-anchor: middle;
-}
-
-@keyframes bob {
-  0%   { transform: translateY(0); }
-  12.5% { transform: translateY(12px); }
-  25%  { transform: translateY(17px); }
-  37.5% { transform: translateY(12px); }
-  50%  { transform: translateY(0); }
-  62.5% { transform: translateY(-12px); }
-  75%  { transform: translateY(-17px); }
-  87.5% { transform: translateY(-12px); }
-  100% { transform: translateY(0); }
-}
-
-/* One wavelength per period, so crests and bobbers stay coherent. */
-@keyframes travel {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(96px);
-  }
-}
-
-.paused *,
-:global(.print-mode) .bobbers * {
-  animation-play-state: paused !important;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .bobbers * {
-    animation-play-state: paused !important;
-  }
 }
 </style>
