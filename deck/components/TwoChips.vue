@@ -29,13 +29,14 @@ const ADC_X = 486
       </marker>
     </defs>
 
-    <!-- dongle enclosure -->
+    <!-- dongle enclosure: a faint translucent panel on the dark slide, kept to a
+         crisp outline so it still reads as the dongle boundary without dominating -->
     <rect x="128" y="74" width="612" height="168" rx="16"
-          fill="#f8fafc" stroke="#cbd5e1" stroke-width="2" />
+          fill="#f8fafc" fill-opacity="0.08" stroke="#cbd5e1" stroke-width="2" />
     <text x="148" y="100" class="tc-enclosure">RTL-SDR dongle</text>
 
     <!-- antenna, feeding in from outside -->
-    <g stroke="#64748b" stroke-width="2.5" fill="none">
+    <g stroke="#94a3b8" stroke-width="2.5" fill="none">
       <line x1="52" y1="196" x2="52" y2="120" />
       <line x1="52" y1="120" x2="38" y2="104" />
       <line x1="52" y1="120" x2="66" y2="104" />
@@ -91,7 +92,7 @@ const ADC_X = 486
   letter-spacing: 0.04em;
   text-transform: uppercase;
 }
-.two-chips .tc-caption { font-size: 12px; fill: #64748b; }
+.two-chips .tc-caption { font-size: 12px; fill: #cbd5e1; }
 .two-chips .tc-wire { font-size: 11px; fill: #94a3b8; letter-spacing: 0.04em; }
-.two-chips .tc-code { font-size: 14px; font-weight: 600; fill: #475569; text-anchor: start; }
+.two-chips .tc-code { font-size: 14px; font-weight: 600; fill: #e2e8f0; text-anchor: start; }
 </style>

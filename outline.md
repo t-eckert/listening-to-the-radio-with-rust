@@ -25,6 +25,13 @@ All delivery notes, anchor quotes, and speaker notes are in `deck/slides.md`.
 
 ---
 
+PANIC CARD. If you lose your place, say one of these.
+(1) "So, what does this mean practically?" to transition to the next demo.
+(2) "Let me show you." to switch to any demo.
+(3) "The key idea is..." rotation speed is frequency, distance is amplitude.
+(4) "Let's go back to the IQ plane." to re-anchor on the core concept.
+You know this material. You built every demo. The audience is on your side.
+
 ## How These Files Are Used
 
 **`deck/slides.md` is the deck itself — there is no second copy.** It is a

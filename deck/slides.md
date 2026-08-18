@@ -1,5 +1,6 @@
 ---
 theme: default
+colorSchema: dark
 title: Listening to the Radio with Rust
 info: RustConf 2026, Montreal, 9 September 2026
 author: Thomas Eckert
@@ -17,30 +18,15 @@ class: text-center
 
 Thomas Eckert
 
-RustConf 2026 · Montreal · 9 September 2026
+RustConf 2026 | Montreal | 9 September 2026
 
 <!--
-COLD OPEN. This cover slide is ALREADY UP as you walk on — no station number on
-screen. The FM receiver is ALREADY RUNNING, audio muted at the mixer or volume
-down. Bring the volume up and say NOTHING for ten seconds. Let the room hear
-music over the title. Then name it yourself: "That's CHOM, 97.7. It came out of
-the air, into a thirty dollar USB stick, through about forty lines of signal
-processing that I wrote, and out of those speakers. I'm Thomas. Let me show you
-how." Then kill the audio and advance.
+Walk up. This cover slide is already up. The FM receiver is ALREADY RUNNING but
+SILENT: audio muted at the mixer or volume down. Don't touch it yet. Introduce
+yourself:
 
-The reveal is spoken, not on the slide — the audience hears the radio before
-they see a single number.
-
-IF THE COLD OPEN FAILS, do not debug on stage. Say "Live RF. That's part of the
-fun, and we'll get it back later." Advance and carry on. The pre-recorded IQ
-file is one keystroke away for the FM section proper.
-
-PANIC CARD. If you lose your place, say one of these.
-(1) "So, what does this mean practically?" to transition to the next demo.
-(2) "Let me show you." to switch to any demo.
-(3) "The key idea is..." rotation speed is frequency, distance is amplitude.
-(4) "Let's go back to the IQ plane." to re-anchor on the core concept.
-You know this material. You built every demo. The audience is on your side.
+"Good afternoon, my name is Thomas Eckert. I want to talk to you about a hobby
+I've recently picked up using Rust to write tiny software-defined radio applications."
 -->
 
 ---
@@ -50,13 +36,11 @@ class: about-me-slide
 
 <div class="about-copy">
 
-Software engineer at **Honeycomb**. Previously at Redpanda, HashiCorp, and Microsoft. Distributed systems and observability.
+## About Me
 
-Before any of it, I studied **Physics**.
+Software engineer at **Honeycomb**. Previously at Redpanda, HashiCorp, and Microsoft. I studied Physics.
 
-This talk sits exactly where those two halves meet. Software-defined radio is a physics problem — waves, antennas, noise on a real channel — that you solve in code.
-
-Everything you'll see today, I built in Rust: an FM radio, an AM aviation receiver, an aircraft tracker. I write about what I learn at **fieldtheories.blog**.
+I write about what I learn at **fieldtheories.blog**.
 
 </div>
 
@@ -91,11 +75,11 @@ Everything you'll see today, I built in Rust: an FM radio, an AM aviation receiv
 
 <!--
 Forty-five seconds, not more. The bonafides are here to buy trust for the
-physics, not to brag — say them fast and move on. The through-line: I'm a
+physics, not to brag. Say them fast and move on. The through-line: I'm a
 software engineer who trained in physics, and SDR is the rare thing that needs
 both halves at once.
 Stay honest about the RF part: "I've built distributed systems for years, but
-radio I'm only a few months into — which is exactly why this is the talk I wish
+radio I'm only a few months into, which is exactly why this is the talk I wish
 I'd had in my first hour."
 If you drift: you are here to share something cool that sits between your two
 backgrounds.
@@ -103,20 +87,12 @@ backgrounds.
 
 ---
 
-# What We'll Cover
+# Three Things We'll Build
 
-<CoverageFlow class="mt-12" />
+<ThreeApplications class="mt-12" />
 
 <!--
-Frame this as "how what you just heard happens", not as four abstract nouns.
-Walk the arrow left to right: "One signal path. It comes out of the antenna as
-current, the RTL-SDR digitizes it, we look at the raw IQ samples, and then
-demodulation is where the math extracts the actual signal."
-Then the fan-out: "And that same pipeline, with different math at the end,
-becomes three different things — music, a voice on an aviation channel, and the
-position of an aircraft. Those are the three demos."
-Say: "We're going to take that music apart, backwards, and then point it at
-three things."
+My goal with this talk is to introduce you to building applications in Rust using software defined radio as input. There is a wide range of things you can build using radio signals and Rust and they all sit on top of a common foundation you'll need to understand.
 -->
 
 ---
@@ -124,11 +100,39 @@ layout: center
 class: text-center
 ---
 
-## Let's start with the physics.
+Now playing:
+
+## 97.7 FM
+
+<!--
+What you are listening to is a live broadcast of 97.7 FM. This broadcast is picked up by the antenna you see on stage. It goes through the RTL-SDR dongle which produces a digitized version of the signal that I decode live on my laptop using Rust code to capture the music.
+-->
 
 ---
 
-# The Transmitter
+<CoverageFlow class="mt-12" />
+
+<!--
+Here is the pipeline. The antenna picks up the electromagnetic waves in the air. These waves cause electrons in the antenna to oscillate, generating a current. The RTL-SDR dongle tunes to a frequency and transforms that current into a digital spectrum. This is rendered out as IQ signals which can be demodulated. 
+
+The demodulation step is where we differentiate the applications. Depending on the antenna length and the demodulation code, we can get FM radio, AM radio, and aircraft tracking. Those, you will see demoed today. But there are other applications you can build with these same concepts.
+-->
+
+---
+layout: center
+class: text-center
+---
+
+## Let's begin with the physics.
+
+<!--
+Let's begin with the physics.
+-->
+
+---
+
+# Antenna Physics
+## The Transmitter
 
 <Bobbers class="my-6" />
 
@@ -142,7 +146,7 @@ You push it up and down. It oscillates. Waves radiate outward across the surface
 
 <v-click>
 
-This is what happens when charged particles accelerate. An electron moving up and
+This is what happens when charged particles accelerate. Electrons moving up and
 down in a wire creates **electromagnetic waves** that radiate outward through space.
 
 </v-click>
@@ -155,7 +159,8 @@ If you drift: two bobbers. One makes waves, one receives them. Electrons up and 
 
 ---
 
-# The Receiver
+# Antenna Physics
+## The Receiver
 
 <Bobbers receiver class="my-6" />
 
@@ -185,17 +190,11 @@ layout: center
 class: text-center
 ---
 
-Electrons moving up and down in a transmitting antenna create waves.
+Electrons moving up and down in a *transmitting* antenna create waves.
 
 <v-click>
 
-Those waves push electrons up and down in a receiving antenna.
-
-</v-click>
-
-<v-click>
-
-Everything that follows is about measuring and interpreting that movement.
+Those waves *push* electrons up and down in a receiving antenna.
 
 </v-click>
 
@@ -206,40 +205,52 @@ summary. Keep it to about forty seconds; this is a beat, not a section.
 
 ---
 
-# The RTL-SDR
+# Hardware: The RTL-SDR
 
 **Software-defined radio:** digitize a chunk of spectrum, do everything else in software.
 
-Same dongle receives FM, AM, aviation, ADS-B — just change the frequency and the code.
+Same dongle receives FM, AM, aviation, ADS-B. Just change the frequency and the code.
+
+<img src="/rtl-sdr.png" alt="RTL-SDR Blog V3 USB dongle" class="rtl-photo" />
+
+<style>
+.rtl-photo {
+  display: block;
+  margin: 2.5rem auto 0;
+  width: 74%;
+  max-width: 740px;
+  filter: drop-shadow(0 10px 28px rgba(0, 0, 0, 0.55));
+}
+</style>
 
 ---
 
-# Two Chips
+# Hardware: Two Chips
 
 <TwoChips tuner="R820T2" class="mt-8" />
 
 <v-click>
 
-**R820T2 tuner** — selects which part of the spectrum to listen to.
+**R820T2 tuner:** selects which part of the spectrum to listen to.
 
 </v-click>
 
 <v-click>
 
-**RTL2832U** — 8-bit ADC, sends digital data over USB.
+**RTL2832U:** 8-bit ADC, sends digital data over USB.
 
 </v-click>
 
 ---
 
-# The Tuner
+# Hardware: The Tuner
 
-The antenna picks up _everything_ — FM, AM, aviation, cell towers, Wi-Fi — all at once.
+The antenna picks up _everything_ at once: FM, AM, aviation, cell towers, Wi-Fi.
 
 <v-click>
 
 The R820T2's job is to select a narrow slice of that spectrum. It shifts your chosen
-frequency down to **baseband** — a low frequency centred around zero that the ADC can sample.
+frequency down to **baseband**, a low frequency centred around zero that the ADC can sample.
 
 </v-click>
 
@@ -312,8 +323,8 @@ it samples the signal on **two axes**:
 
 <v-clicks>
 
-- **I (in-phase)** — the cosine component: `A · cos(φ)`
-- **Q (quadrature)** — the sine component: `A · sin(φ)`
+- **I (in-phase)**, the cosine component: `A · cos(φ)`
+- **Q (quadrature)**, the sine component: `A · sin(φ)`
 
 </v-clicks>
 
@@ -481,7 +492,7 @@ If you drift: one line of math. Phase change is audio.
 
 ---
 
-# FM Radio — The Pipeline
+# FM Radio: The Pipeline
 
 <RatePipeline class="mt-4" :steps="[
   { rate: '960 kHz', label: 'IQ samples' },
@@ -545,9 +556,9 @@ runs, and it is what was playing when you walked in."
 
 ---
 
-# FM — Step 1: Filter
+# FM Step 1: Filter
 
-<SpectrumBand channel="97.7" span="960 kHz of spectrum, all at once" width="200 kHz — one station" />
+<SpectrumBand channel="97.7" span="960 kHz of spectrum, all at once" width="200 kHz, one station" />
 
 The antenna hears every station at once. Tuning happens in software.
 
@@ -583,7 +594,7 @@ FIRST CUT IF RUNNING LONG.
 
 ---
 
-# FM — Step 2: Demodulate
+# FM Step 2: Demodulate
 
 ```rust {all|7-8|10|all}
 fn process(&mut self, input: &[Iq]) -> Vec<f32> {
@@ -603,7 +614,7 @@ fn process(&mut self, input: &[Iq]) -> Vec<f32> {
 
 <v-click>
 
-The audio _is_ the rate of phase change — the **rotation speed**.
+The audio _is_ the rate of phase change, the **rotation speed**.
 
 That is the whole of FM. Three lines.
 
@@ -622,7 +633,7 @@ NEVER CUT THIS SLIDE.
 
 ---
 
-# FM — Step 3: De-emphasis
+# FM Step 3: De-emphasis
 
 ```rust
 fn process(&mut self, samples: &mut [f32]) {
@@ -650,7 +661,7 @@ SECOND CUT IF RUNNING LONG.
 
 ---
 
-# FM — The Whole Loop
+# FM: The Whole Loop
 
 ```rust {all|1|2|3-4|6}
 let tuned     = iq_filter.process(&iq);                 // step 1
@@ -679,13 +690,13 @@ track, and now they know what they are listening to. Let it run under the next s
 
 # Why Rust
 
-At **960 thousand samples per second**, every sample gets about **1 µs** of processing time — and the receiver has to keep up with that, forever.
+At **960 thousand samples per second**, every sample gets about **1 µs** of processing time, and the receiver has to keep up with that, forever.
 
 <v-clicks>
 
-- **No garbage collector** — no surprise pauses that drop samples
-- **Zero-cost iterators** — the DSP pipeline compiles to tight loops
-- **Fearless concurrency** — read samples on one thread, play audio on another
+- **No garbage collector:** no surprise pauses that drop samples
+- **Zero-cost iterators:** the DSP pipeline compiles to tight loops
+- **Fearless concurrency:** read samples on one thread, play audio on another
 
 </v-clicks>
 
@@ -703,7 +714,7 @@ At **960 thousand samples per second**, every sample gets about **1 µs** of pro
 
 <v-click>
 
-No C dependencies. GNURadio and SDR++ are more capable than any of this —
+No C dependencies. GNURadio and SDR++ are more capable than any of this,
 but writing it yourself is how you _understand_ it.
 
 </v-click>
@@ -721,7 +732,7 @@ slide you are standing on.
 
 ---
 
-# AM Radio — The Same Pipeline
+# AM Radio: The Same Pipeline
 
 <RatePipeline class="mt-4" :steps="[
   { rate: '960 kHz', label: 'IQ samples' },
@@ -751,7 +762,7 @@ different numbers, because there was no reason to."
 
 ---
 
-# AM — Step 2: Demodulate
+# AM Step 2: Demodulate
 
 ```rust {1-2|4-5|all}
 // FM: how far did the point turn since last time?
@@ -763,9 +774,9 @@ im.atan2(re) * self.gain
 
 <v-click>
 
-FM needs the **previous sample** — rotation is a difference.
+FM needs the **previous sample**: rotation is a difference.
 
-AM needs **nothing but this sample** — distance isn't.
+AM needs **nothing but this sample**: distance isn't.
 
 </v-click>
 
@@ -778,9 +789,9 @@ because distance isn't."
 
 ---
 
-# AM — Step 3: DC Block
+# AM Step 3: DC Block
 
-The envelope never goes negative — it rides on the carrier.
+The envelope never goes negative; it rides on the carrier.
 Speakers want audio centred on zero.
 
 ```rust {1-3|5-7|3,7}
@@ -812,7 +823,7 @@ want zero-centred, done.
 
 ---
 
-# AM — The Whole Loop
+# AM: The Whole Loop
 
 ```rust {all|2,4}
 let tuned     = iq_filter.process(&iq);                 // step 1
@@ -831,7 +842,7 @@ That is the same five lines as the FM receiver, with two words changed.
 
 <v-click>
 
-Let's tune to 119.9 MHz — Montréal-Trudeau tower.
+Let's tune to 119.9 MHz, Montréal-Trudeau tower.
 
 <span class="opacity-70">In Canada, receiving is legal. The law restricts transmitting and sharing private
 communications, but ATC is a public broadcast.</span>
@@ -908,7 +919,7 @@ How does it learn what time it is?
 - A sensor in a mine, a basement, a ship's hull
 - An air-gapped machine that will never reach an NTP server
 - A real-time clock that drifts seconds a week
-- GPS solves this — but it needs a view of the sky, and it's easy to jam
+- GPS solves this, but it needs a view of the sky, and it's easy to jam
 
 </v-clicks>
 
@@ -927,7 +938,7 @@ NTP; the point is the cases where NTP is not reachable. Keep to forty five secon
 
 ---
 
-# CHU — Ottawa, 1938–2026
+# CHU: Ottawa, 1938–2026
 
 Fifteen kilometres from my desk in Ottawa: **CHU**, run by the National Research Council.
 
@@ -935,7 +946,7 @@ Fifteen kilometres from my desk in Ottawa: **CHU**, run by the National Research
 
 <v-click>
 
-I wrote a decoder for it — Bell 103 FSK, 300 baud, BCD time code.
+I wrote a decoder for it: Bell 103 FSK, 300 baud, BCD time code.
 
 </v-click>
 
@@ -965,7 +976,7 @@ before this talk.
 
 An antenna works best when its length is a **quarter of the wavelength**.
 
-At that length it resonates — electrons oscillate with maximum efficiency.
+At that length it resonates: electrons oscillate with maximum efficiency.
 
 <v-clicks>
 
@@ -1049,11 +1060,11 @@ callsign. **Twice per second. Unencrypted.**
 
 ---
 
-# ADS-B — The Pipeline
+# ADS-B: The Pipeline
 
 ```
 IQ samples (2.4 MHz)
-  → magnitude          sqrt(I² + Q²) — the same as AM
+  → magnitude          sqrt(I² + Q²), same as AM
   → preamble detect    find the 8 μs ADS-B signature
   → bit slice          112 bits from pulse positions
   → CRC-24 validate    discard what the air damaged
@@ -1069,7 +1080,7 @@ Four DSP stages, and only the first one is radio.
 
 ---
 
-# ADS-B — Demodulation
+# ADS-B: Demodulation
 
 ADS-B is on-off keyed. Phase carries nothing, so magnitude is the _whole_ demodulator.
 
@@ -1098,11 +1109,11 @@ a second that conversion is the expensive part. But the maths is the maths."
 
 ---
 
-# ADS-B — Bits in Time
+# ADS-B: Bits in Time
 
 <PpmBits class="my-2" />
 
-There's no volume knob and no phase to read — only _where_ in each slot the pulse
+There's no volume knob and no phase to read, only _where_ in each slot the pulse
 sits. Each bit is **1 µs**, split in half: a pulse in the first half is a `1`, a
 pulse in the second half is a `0`. That's pulse-position modulation.
 
@@ -1115,9 +1126,9 @@ message starts here, and exactly where every bit slot after it begins.
 
 <!--
 This is the "how does a pulse become a bit" slide. Walk the diagram left to
-right: the preamble first, then read the four data bits off the picture — pulse
+right: the preamble first, then read the four data bits off the picture: pulse
 early, pulse late, early, late → 1 0 1 0.
-Say: "It's the crudest possible encoding. The carrier is either on or off — no
+Say: "It's the crudest possible encoding. The carrier is either on or off, with no
 amplitude, no phase, none of the tricks FM and AM used. The only thing that
 carries information is timing: which half of the microsecond the pulse lands in.
 That's why finding the preamble matters so much. It's not data, it's a tuning
@@ -1128,7 +1139,7 @@ Do NOT get into CRC or sample rates here; that's the next slide.
 
 ---
 
-# ADS-B — Why Timing Is Everything
+# ADS-B: Why Timing Is Everything
 
 At 2.4 million samples per second, each half-slot is only about **1.2 samples** wide.
 
@@ -1145,7 +1156,7 @@ bits[bit_idx] = if early > late { 1 } else { 0 };
 <v-click>
 
 Drift by half a slot and the last bits land in the wrong half. **CRC-24 catches
-it and throws the whole 112-bit message away** — better nothing than a wrong altitude.
+it and throws the whole 112-bit message away**. Better nothing than a wrong altitude.
 
 </v-click>
 
@@ -1155,17 +1166,17 @@ the message, so the decoder is fanatical about where it samples.
 Say: "We're sampling at 2.4 megahertz, so a half-microsecond half-slot is barely
 one sample wide. If I computed each bit's position from the previous bit, the
 rounding error would compound, and by bit 112 I'd be reading the wrong half of
-the slot. So every position is computed from the start of the frame — the error
+the slot. So every position is computed from the start of the frame, and the error
 stays flat instead of accumulating. And there's a backstop: a 24-bit CRC. If the
 timing slipped, or a plane's message collided with another, the checksum fails
 and we discard the whole thing. On a busy sky you throw away a lot of messages,
-and that's fine — a dropped position is invisible, a wrong altitude is dangerous."
+and that's fine. A dropped position is invisible, a wrong altitude is dangerous."
 The us_to_sample helper is real; it's the floating-point µs→index map in demod.rs.
 -->
 
 ---
 
-# ADS-B — Four Stages
+# ADS-B: Four Stages
 
 ```rust
 Pipeline::new(
@@ -1178,7 +1189,7 @@ Pipeline::new(
 
 <v-click>
 
-Each message is a 112-bit burst, 120 μs long — blink and you'd miss it.
+Each message is a 112-bit burst, 120 μs long. Blink and you'd miss it.
 At 2.4 million samples per second, we catch them all.
 
 </v-click>
@@ -1187,18 +1198,18 @@ At 2.4 million samples per second, we catch them all.
 
 Every stage has a naive baseline and a registry of alternatives, scored on the
 same capture. The baseline detector finds **517** valid messages; a smarter one
-finds **2,403** on the same bytes — four-fifths of the signal is still on the table.
+finds **2,403** on the same bytes. Four-fifths of the signal is still on the table.
 
 </v-click>
 
 <!--
 The point of this slide is that the four stages are swappable and scored against
-each other, which is why the repo exists at all — and the headroom number makes
+each other, which is why the repo exists at all, and the headroom number makes
 that concrete instead of abstract.
 Say: "Every stage has a deliberately naive version and a registry of
 alternatives, scored against each other on a golden capture. The baseline
 detector pulls 517 valid messages out of one file. Swap in a smarter detector and
-you get 2,403 from the same bytes — the naive pipeline works, and four-fifths of
+you get 2,403 from the same bytes. The naive pipeline works, and four-fifths of
 the signal is still on the table. The repo is a scoreboard, not a finished thing."
 Numbers are from skyward/fixtures/raw/golden.toml [headroom]. Do not oversell it;
 land the stat and move to the payoff.
@@ -1232,12 +1243,12 @@ codes is not a payoff. Let it sit for a few seconds in silence.
 - RTL-SDR Blog V3 (~$30)
 - Dipole antenna kit (~$10)
 
-**No hardware yet?** Try `wave-demo` and `iq-demo` — they visualize the core
+**No hardware yet?** Try `wave-demo` and `iq-demo`; they visualize the core
 concepts with no dongle needed.
 
-**All the code — open source**
-- Talk demos (FM, AM, the receivers) — `github.com/t-eckert/listening-to-the-radio-with-rust`
-- Aircraft tracker (the map you saw) — `github.com/t-eckert/skyward`
+**All the code is open source**
+- Talk demos (FM, AM, the receivers): `github.com/t-eckert/listening-to-the-radio-with-rust`
+- Aircraft tracker (the map you saw): `github.com/t-eckert/skyward`
 
 <v-click>
 

@@ -34,11 +34,17 @@ const CY = 214 // chain vertical centre
 
 const AW = 196 // app node width
 const AH = 64  // app node height
-const AX = 862 // app column x
+const AX = 930 // app column x — kept well clear of the chain so the branch
+               // connectors have room to curve (see viewBox width below)
 const APP_CY = [96, 214, 332] // app vertical centres
 
 const chainX = (i) => X0 + i * (NW + GAP)
 const lastRight = chainX(chain.length - 1) + NW // right edge of Demodulation
+
+// The hardware/software boundary. Antenna and RTL-SDR are physical; the IQ
+// samples and everything after them are just data in your code. The RTL-SDR is
+// the last hardware node, so the line sits in the gap after it.
+const divX = (chainX(1) + NW + chainX(2)) / 2
 
 // Straight arrows between consecutive chain nodes.
 const arrows = chain.slice(1).map((_, i) => ({
@@ -56,7 +62,7 @@ const branches = APP_CY.map((cy) => {
 </script>
 
 <template>
-  <svg viewBox="0 0 1066 384" class="coverage-flow" role="img"
+  <svg viewBox="0 0 1140 384" class="coverage-flow" role="img"
        aria-label="Signal path from antenna through the RTL-SDR, IQ signals and demodulation, fanning out into FM, AM aviation, and aircraft tracking">
     <defs>
       <marker id="cf-arrow" viewBox="0 0 10 10" refX="8" refY="5"
@@ -64,6 +70,15 @@ const branches = APP_CY.map((cy) => {
         <path d="M0 0 L10 5 L0 10 z" fill="#94a3b8" />
       </marker>
     </defs>
+
+    <!-- Hardware / software boundary: physical front end to the left, code to
+         the right. Drawn first so the flow arrow crosses over it. -->
+    <g class="cf-divider">
+      <line :x1="divX" :y1="24" :x2="divX" :y2="360"
+            stroke="#64748b" stroke-width="2" stroke-dasharray="6 7" />
+      <text :x="divX - 14" :y="42" text-anchor="end" class="cf-zone">Hardware</text>
+      <text :x="divX + 14" :y="42" text-anchor="start" class="cf-zone">Software</text>
+    </g>
 
     <!-- Straight arrows along the chain -->
     <line v-for="(a, i) in arrows" :key="'a' + i"
@@ -112,5 +127,12 @@ const branches = APP_CY.map((cy) => {
 .coverage-flow .cf-sub {
   font-size: 12px;
   font-weight: 400;
+}
+.coverage-flow .cf-zone {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  fill: #94a3b8;
 }
 </style>

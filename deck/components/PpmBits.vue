@@ -69,7 +69,7 @@ const midLines = [8.5, 9.5, 10.5, 11.5]
 <template>
   <svg class="ppm" viewBox="0 0 660 176" role="img"
     aria-label="A Mode S waveform: an 8 microsecond preamble followed by four data bits, each one microsecond wide and split into two half-slots. A pulse in the first half is a one, a pulse in the second half is a zero.">
-    <text class="cap" :x="X(0)" y="18">on–off keyed — carrier on = pulse, carrier off = silence</text>
+    <text class="cap" :x="X(0)" y="18">on–off keyed: carrier on = pulse, carrier off = silence</text>
 
     <!-- data-region grid: slot edges and the half-slot divider -->
     <line v-for="u in slotLines" :key="`s${u}`" class="slot" :x1="X(u)" y1="30" :x2="X(u)" y2="112" />
@@ -87,7 +87,7 @@ const midLines = [8.5, 9.5, 10.5, 11.5]
 
     <!-- region labels -->
     <line class="brace" :x1="X(0)" y1="118" :x2="X(8)" y2="118" />
-    <text class="reg" :x="X(4)" y="150">8 µs preamble — a fixed pattern</text>
+    <text class="reg" :x="X(4)" y="150">8 µs preamble, a fixed pattern</text>
 
     <!-- one-bit width callout under the first data bit -->
     <line class="brace" :x1="X(8)" y1="118" :x2="X(9)" y2="118" />

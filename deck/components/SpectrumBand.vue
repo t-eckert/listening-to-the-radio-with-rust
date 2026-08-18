@@ -8,7 +8,7 @@
 defineProps({
   channel: { type: String, default: '97.7' },
   span: { type: String, default: '960 kHz of spectrum, all at once' },
-  width: { type: String, default: '200 kHz — one station' },
+  width: { type: String, default: '200 kHz, one station' },
 })
 
 // x positions of the stations across a 0..1000 viewBox; index 2 is the one we want
