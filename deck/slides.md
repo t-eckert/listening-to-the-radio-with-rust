@@ -239,7 +239,7 @@ The antenna picks up _everything_ — FM, AM, aviation, cell towers, Wi-Fi — a
 <v-click>
 
 The R820T2's job is to select a narrow slice of that spectrum. It shifts your chosen
-frequency down to **baseband** — a low frequency centered around zero that the ADC can sample.
+frequency down to **baseband** — a low frequency centred around zero that the ADC can sample.
 
 </v-click>
 
@@ -361,7 +361,7 @@ These points trace rotation around the origin.
 
 <v-click>
 
-This is the key insight. Everything we do with SDR is about measuring these two properties.
+Everything in SDR comes back to these two: how fast it turns, how far out it sits.
 
 </v-click>
 
@@ -908,7 +908,7 @@ How does it learn what time it is?
 - A sensor in a mine, a basement, a ship's hull
 - An air-gapped machine that will never reach an NTP server
 - A real-time clock that drifts seconds a week
-- GPS solves this — but it needs a view of the sky, and it is trivially jammed
+- GPS solves this — but it needs a view of the sky, and it's easy to jam
 
 </v-clicks>
 
@@ -1249,7 +1249,7 @@ I'll be here, and at the reception after.
 
 <v-click>
 
-The airwaves are public. The signals are free. The tools are open source.
+The airwaves are public. The code is open.
 
 ## Go listen.
 
