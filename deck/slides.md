@@ -245,58 +245,42 @@ Same dongle receives FM, AM, aviation, ADS-B. Just change the frequency and the 
 
 # Hardware: The Tuner
 
-The antenna picks up _everything_ at once: FM, AM, aviation, cell towers, Wi-Fi.
+<TunerShift class="mt-6" />
 
-<v-click>
+<!--
+Say this over the diagram; don't put it on the slide.
 
-The R820T2's job is to select a narrow slice of that spectrum. It shifts your chosen
-frequency down to **baseband**, a low frequency centred around zero that the ADC can sample.
+The antenna picks up everything at once: FM, AM, aviation, cell towers, Wi-Fi.
+That's the top row, the whole spectrum arriving together.
 
-</v-click>
+The R820T2 tuner's job is to select a narrow slice of that. It mixes your chosen
+frequency against its local oscillator, sliding the whole spectrum down so your
+station lands at baseband, zero, a low frequency the ADC can sample. The tuner
+and its LO do the shifting; the ADC only samples what lands in the window. That's
+the move shown by the arrow.
 
-<v-click>
-
-Think of it like a radio dial: you're not filtering out other stations, you're sliding
-the window so your station lands at zero.
-
-</v-click>
+Think of it like a radio dial: you're not filtering out the other stations,
+you're sliding the whole window so your station lands at zero. Bottom row: the
+spectrum has slid down, your station sits on 0, and the ADC's sampling window
+only catches what's there. Everything else slid away with it.
+-->
 
 ---
 
 # From Dongle to Your Code
 
-The dongle produces exactly one thing: a stream of raw IQ bytes.
+There are two ways to get the raw IQ bytes into your code.
 
-<v-click>
+<TransportConverge class="my-10" />
 
-<TransportConverge class="my-6" />
-
-</v-click>
-
-<v-click>
-
-The FM receiver you walked in on reads a **pipe**.
-The AM receiver you'll hear later reads a **socket**.
-
-Neither one knows the difference.
-
-</v-click>
-
-<v-click>
-
-Which means the radio doesn't have to be in the same room as the code.
-
-</v-click>
+Use the **`rtl_sdr`** crate to read from USB, or run **`rtl_tcp`** as a separate process to serve the IQ bytestream over TCP.
 
 <!--
-Two arrows converging into one box labelled "your code". The convergence IS the
-point; do not draw them as separate pipelines. This slide used to be rtl_tcp
-trivia and now it does narrative work, so give it its beat.
-Say: "The dongle produces one thing: bytes. How they get to your program is a
-plumbing decision, not a radio decision. On this laptop it's a pipe. Across a
-network it's a socket. Your code can't tell the difference."
-Then plant the seed: "Which means the radio doesn't have to be in the same room
-as the code. Hold on to that one." You collect on it at the ADS-B reveal.
+Two ways to get the raw IQ bytes into your code:
+- the rtl_sdr crate reads straight from the USB dongle, in-process;
+- rtl_tcp runs as a separate process and serves the IQ bytestream over TCP.
+Because rtl_tcp is just a TCP interface, the dongle doesn't have to be on the
+same machine as your code. (You can collect on that at the ADS-B reveal.)
 -->
 
 ---
@@ -390,20 +374,35 @@ class: text-center
 ## Let's see this.
 
 <!--
-Run iq-demo here (task iq). Use arrow keys to change frequency and amplitude.
-Show how faster rotation equals higher frequency, larger circle equals higher
-amplitude. Let the audience see the connection. This is worth a full minute; it
-is the concept the rest of the talk stands on.
+Advance to the live IQ demo on the next slide. Show how faster rotation equals a
+higher frequency and a bigger circle equals a higher amplitude. Let the audience
+see the connection. This is worth a full minute; it's the concept the rest of
+the talk stands on.
 -->
 
 ---
 
-# Reading the Bytes
+# I/Q in Motion
 
-The IQ data is already there, but the ADC encodes it as unsigned 8-bit integers
-(0–255), not floats. We just need to center and scale:
+<IqDemo class="mt-4" />
 
-```rust {all|2|4-7}
+<!--
+The iq-demo, live in the deck. The point on the right and the height of the wave
+on the left are the same instant of the signal. Faster rotation is a higher
+frequency; a bigger circle is a higher amplitude. Change frequency with [ and ],
+amplitude with - and =, or click the buttons. Or hit Auto-sweep to let both drift
+on their own while you talk; any manual control takes back over.
+-->
+
+---
+
+# Reading the Bytes to IQ values
+
+The program receives IQ values as a stream of unsigned 8-bit integers. This function centers and scales these values pairwise to get the IQ values as floats.
+
+```rust {all|4|6-9}
+pub type IqSample = Complex<f32>;
+
 pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
     raw.chunks_exact(2)        // take pairs: [I, Q], [I, Q], ...
         .map(|pair| {
@@ -416,18 +415,14 @@ pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
 }
 ```
 
-<v-click>
-
 `127` → `0.0`. `255` → `1.0`. `0` → `-1.0`.
-
-</v-click>
 
 ---
 layout: center
 class: text-center
 ---
 
-## Let's see the real thing.
+## Now lets build some apps
 
 <!--
 Switch to iq-print demo (task iq-print). Keep it brief, 5 to 10 seconds. These
@@ -439,42 +434,18 @@ processes these. Then move on.
 
 # Many Signals, One Idea
 
-```
-IQ samples → demodulate → process
-```
+Every demodulation asks one of two questions.
 
-<v-click>
-
-Every demodulation asks one of two questions:
-
-</v-click>
-
-<v-click>
-
-**How far is the point from the origin?** → `√(I² + Q²)`
-<span class="opacity-60">AM broadcast · ADS-B · garage remotes · weather satellites</span>
-
-</v-click>
-
-<v-click>
-
-**How fast is the point rotating?** → `the angle it turned since last time`
-<span class="opacity-60">FM broadcast · pagers · ship AIS · digital voice</span>
-
-</v-click>
-
-<v-click>
-
-Magnitude or phase. That's the whole taxonomy.
-
-</v-click>
+<DemodFork class="mt-6" />
 
 <!--
 Anchor quote: "All demodulation comes back to measuring rotation speed or
-distance from the origin." Name two or three examples out loud rather than
-reading a list; the full tables are in the repo.
-Say: "Ships, pagers, weather satellites, garage door openers. All of them are one
-of these two questions."
+distance from the origin." One IQ point, two questions: how far from the origin
+(magnitude), or how fast it's turning (phase). That's the fork: amplitude
+modulation down one branch, frequency modulation down the other.
+Name two or three examples out loud rather than reading the list; the full tables
+are in the repo. "Ships, pagers, weather satellites, garage door openers. Every
+one is just one of these two questions."
 -->
 
 ---
@@ -482,7 +453,7 @@ layout: center
 class: text-center
 ---
 
-## Let's build the thing you heard when you walked in.
+## Let's build an FM radio tuner
 
 <!--
 Anchor quote: "Multiply by the conjugate of the previous sample. Take the angle.
@@ -494,30 +465,22 @@ If you drift: one line of math. Phase change is audio.
 
 # FM Radio: The Pipeline
 
-<RatePipeline class="mt-4" :steps="[
-  { rate: '960 kHz', label: 'IQ samples' },
-  { op: 'low-pass, keep every 4th sample', divide: 4 },
-  { rate: '240 kHz', label: 'intermediate' },
-  { op: 'FM demodulate' },
-  { rate: '240 kHz', label: 'raw audio' },
-  { op: 'low-pass, keep every 5th sample', divide: 5 },
-  { rate: '48 kHz', label: 'audio' },
-  { op: 'de-emphasis' },
-  { label: 'speakers' },
-]" />
-
-<v-click>
-
-<div class="mt-4">Three rates. Every division is a whole number.</div>
-
-</v-click>
+<PipelineMap class="mt-2" />
 
 <!--
-This wants to be a vertical flow diagram, one box per rate, arrows down. The
-three rates are the whole design.
-Say: "Each rate divides evenly into the one above it. 960 over 4 is 240. 240 over
-5 is 48. Pick numbers that do not divide evenly and you get a slow drift between
-how fast you make audio and how fast the sound card eats it."
+Walk it in beats; the slide reveals with you.
+Base: the endpoints. "We start with a firehose of IQ and end with audio the sound
+card wants."
+Click 1 (the three steps): "Three steps get us there: filter to one station,
+demodulate rotation into sound, de-emphasis to fix the treble. Those are the next
+three slides."
+Click 2 (the rates): "As we go we throw away samples we no longer need, so the
+rate falls: 960, 240, 48 kilohertz."
+Click 3 (the divisions): "And the divisions are whole numbers by design. 960 over
+4 is 240, 240 over 5 is 48. Pick numbers that don't divide evenly and you get a
+slow drift between how fast you make audio and how fast the sound card eats it."
+The 240->48 downsample is folded into Step 3; in the code it's Step 1's low-pass
+reused on the audio, with de-emphasis running at 48 kHz.
 -->
 
 ---
@@ -533,18 +496,12 @@ Everything that follows lives in **one file**.
     { label: 'header, imports', note: '', lines: 14 },
     { label: 'rates, constants', note: 'the whole design in three numbers', lines: 29 },
     { label: 'Step 1  filter', note: 'pick one station out of the noise', lines: 88, step: true },
-    { label: 'Step 2  demodulate', note: 'turn rotation into sound', lines: 39, step: true },
+    { label: 'Step 2  demodulate', note: 'turn rotation of IQ into sound', lines: 39, step: true },
     { label: 'Step 3  de-emphasis', note: 'undo the treble boost from the transmitter', lines: 29, step: true },
     { label: 'main', note: 'four calls, in order', lines: 70 },
     { label: 'audio plumbing', note: 'not radio; samples to the sound card', lines: 58 },
   ]"
 />
-
-<v-click>
-
-<div class="mt-3">No DSP library. The interesting parts are written out by hand.</div>
-
-</v-click>
 
 <!--
 Show the file as a single tall column of collapsed sections, like a minimap, with
@@ -558,30 +515,26 @@ runs, and it is what was playing when you walked in."
 
 # FM Step 1: Filter
 
+We have already selected a portion of the spectrum, but we need to filter out the noise from nearby stations with a low pass filter.
+
 <SpectrumBand channel="97.7" span="960 kHz of spectrum, all at once" width="200 kHz, one station" />
 
-The antenna hears every station at once. Tuning happens in software.
 
-```rust {all|2-3|4-9}
-// Only do the expensive part on the samples we are keeping.
+```rust {all|2-4|5-12}
+// A low-pass FIR filter that also decimates: keep one station, drop the rest.
+// Skip the costly convolution on samples we're about to throw away.
 if self.countdown >= self.decimation {
-    self.countdown = 0;
+    self.countdown = 0; // fire once per `decimation` inputs, then reset
+    // Convolution: each output is a weighted sum of the last n samples.
     let (mut i, mut q) = (0.0, 0.0);
     for j in 0..n {
-        let h = self.history[(self.pos + j) % n];
-        i += h.i * self.taps[j];
-        q += h.q * self.taps[j];
+        let h = self.history[(self.pos + j) % n]; // ring buffer of recent IQ
+        i += h.i * self.taps[j]; // apply the same filter
+        q += h.q * self.taps[j]; // taps to I and Q
     }
-    out.push(Iq { i, q });
+    out.push(Iq { i, q }); // emit one filtered, decimated sample
 }
 ```
-
-<v-click>
-
-960,000 samples a second becomes 240,000. Once the high frequencies are gone,
-the extra samples carry no information.
-
-</v-click>
 
 <!--
 The "antenna hears everything" idea deserves a picture: a wide spectrum with one
@@ -596,13 +549,14 @@ FIRST CUT IF RUNNING LONG.
 
 # FM Step 2: Demodulate
 
-```rust {all|7-8|10|all}
+We get the audio out of the change in angle between each sample.
+
+```rust {all|6-7|9|all}
 fn process(&mut self, input: &[Iq]) -> Vec<f32> {
     input
         .iter()
         .map(|&s| {
-            // s * conj(prev), written out rather than
-            // hidden inside a library
+            // s * conj(prev)
             let re = s.i * self.prev.i + s.q * self.prev.q;
             let im = s.q * self.prev.i - s.i * self.prev.q;
             self.prev = s;
@@ -612,13 +566,7 @@ fn process(&mut self, input: &[Iq]) -> Vec<f32> {
 }
 ```
 
-<v-click>
-
 The audio _is_ the rate of phase change, the **rotation speed**.
-
-That is the whole of FM. Three lines.
-
-</v-click>
 
 <!--
 This is THE slide of the section. Give the three lines of math room to breathe.
@@ -644,12 +592,7 @@ fn process(&mut self, samples: &mut [f32]) {
 }
 ```
 
-<v-click>
-
 75 μs in North America. 50 μs in Europe.
-A constant that depends on which continent you are standing on.
-
-</v-click>
 
 <!--
 Small slide, low drama, it is the palate cleanser before the payoff.
@@ -663,6 +606,8 @@ SECOND CUT IF RUNNING LONG.
 
 # FM: The Whole Loop
 
+This is how the loop is called within `main()`. 
+
 ```rust {all|1|2|3-4|6}
 let tuned     = iq_filter.process(&iq);                 // step 1
 let raw_audio = fm_demod.process(&tuned);               // step 2
@@ -671,12 +616,6 @@ deemphasis.process(&mut audio);                         // step 3
 
 ring.push(&audio);                                      // speakers
 ```
-
-<v-click>
-
-That's the whole FM receiver. That's what you walked in on.
-
-</v-click>
 
 <!--
 This is the "it all fits" moment.
@@ -688,76 +627,24 @@ track, and now they know what they are listening to. Let it run under the next s
 
 ---
 
-# Why Rust
-
-At **960 thousand samples per second**, every sample gets about **1 µs** of processing time, and the receiver has to keep up with that, forever.
-
-<v-clicks>
-
-- **No garbage collector:** no surprise pauses that drop samples
-- **Zero-cost iterators:** the DSP pipeline compiles to tight loops
-- **Fearless concurrency:** read samples on one thread, play audio on another
-
-</v-clicks>
-
-<v-click>
-
-| Crate | What it does |
-|-------|-------------|
-| `rtl-sdr-rs` | Pure Rust driver for the dongle |
-| `num-complex` | `I + jQ` just works |
-| `rustfft` | FFT for spectrum analysis |
-| `cpal` | Cross-platform audio output |
-| `ratatui` | Terminal UIs for visualizations |
-
-</v-click>
-
-<v-click>
-
-No C dependencies. GNURadio and SDR++ are more capable than any of this,
-but writing it yourself is how you _understand_ it.
-
-</v-click>
-
-<!--
-This is the Rust beat, and it belongs HERE, next to the inner loop the audience
-just read. Keep it to ninety seconds. This is RustConf; nobody needs selling on
-Rust, they want to know what the constraint actually is.
-Say: "960 thousand samples a second. About a microsecond each. A GC pause
-doesn't make it crackle, it makes it stop."
-The 2.4 MHz / 400 ns figures are the ADS-B/Pi rate, not this receiver; the FM and
-AM paths the audience just read run at 960 kS/s. Keep the number matched to the
-slide you are standing on.
--->
-
----
-
 # AM Radio: The Same Pipeline
 
-<RatePipeline class="mt-4" :steps="[
-  { rate: '960 kHz', label: 'IQ samples' },
-  { op: 'low-pass, keep every 4th sample', divide: 4 },
-  { rate: '240 kHz', label: 'intermediate' },
-  { op: 'AM demodulate' },
-  { rate: '240 kHz', label: 'raw audio' },
-  { op: 'low-pass, keep every 5th sample', divide: 5 },
-  { rate: '48 kHz', label: 'audio' },
-  { op: 'DC block' },
-  { label: 'speakers' },
+<PipelineMap class="mt-2" :steps="[
+  { n: 1, name: 'Filter', sub: 'pick one station out of the noise', divide: 4 },
+  { n: 2, name: 'Demodulate', sub: 'turn amplitude into sound' },
+  { n: 3, name: 'DC block', sub: 'downsample, then remove the DC offset', divide: 5 },
 ]" />
 
-<v-click>
-
-<div class="mt-4">The same three rates as the FM receiver. Only the middle step changed.</div>
-
-</v-click>
-
 <!--
-Anchor quote: "AM is even simpler. Just take the magnitude. sqrt of I squared
-plus Q squared. That is it." Keep this section moving; its whole job is the one
-line diff against FM.
-Say: "Same three rates as the FM receiver. Same two divisions. I did not pick
-different numbers, because there was no reason to."
+Same map as the FM pipeline; walk it the same way, in the same beats. The only
+differences are the two middle names: Step 2 reads the distance from the origin
+instead of the rotation, and Step 3 blocks DC instead of de-emphasising. Same
+endpoints, same three rates, same whole-number divisions.
+Anchor quote: "AM is even simpler. Just take the magnitude, sqrt of I squared plus
+Q squared. That's it." Keep this section moving; its whole job is the one-line
+diff against FM.
+Say: "Same three rates as the FM receiver. Same two divisions. I didn't pick
+different numbers, because there was no reason to. Only the middle step changed."
 -->
 
 ---
@@ -1233,6 +1120,56 @@ Come back to skyward here. It has been accumulating for three or four minutes an
 should be busy. Name one aircraft OUT LOUD: callsign, altitude, where it is going.
 That specificity is the payoff of the whole section and of the talk; a list of hex
 codes is not a payoff. Let it sit for a few seconds in silence.
+-->
+
+---
+
+# The Crates
+
+The whole talk leans on a handful of crates. Reach for these.
+
+<div class="crates">
+
+<div>
+
+**Radio & DSP**
+- **`rtl-sdr-rs`**: pure-Rust driver for the dongle
+- **`num-complex`**: complex numbers, `I + jQ`
+- **`rustfft`**: FFT for spectrum analysis
+
+**Audio**
+- **`cpal`**: cross-platform audio output
+- **`hound`**: read and write WAV files
+
+</div>
+
+<div>
+
+**Terminal visualizers**
+- **`ratatui`** + **`crossterm`**: the IQ and wave demos
+
+**Aircraft tracker service**
+- **`axum`** + **`tokio`**: HTTP and the live SSE stream
+- **`rusqlite`**: embedded SQLite store
+- **`serde`**: JSON in and out
+
+**Plumbing**
+- **`anyhow`**, **`clap`**, **`signal-hook`**
+
+</div>
+
+</div>
+
+<style>
+.crates { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem 3rem; margin-top: 1.5rem; }
+.crates ul { margin: 0.15rem 0 1.1rem; }
+.crates li { margin: 0.15rem 0; }
+</style>
+
+<!--
+Reference slide, not a read-aloud. It's here so people can photograph it. If you
+call out any, call out num-complex (`I + jQ` just works) and cpal (audio on any
+OS). Everything is pinned in the repo's Cargo files.
 -->
 
 ---

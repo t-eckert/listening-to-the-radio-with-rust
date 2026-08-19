@@ -1,9 +1,7 @@
 <script setup>
-// Two sources of IQ bytes converging into one consumer: rtl_sdr over a local
-// pipe, rtl_tcp over a network socket, both feeding the SAME "your code" box.
-// The convergence is the whole point of the slide — the code can't tell the two
-// transports apart — so the two arrows must meet at one box, not run as parallel
-// pipelines.
+// Two ways to get the raw IQ bytes into your code, both feeding the SAME "your
+// code" box: the rtl_sdr crate reading from USB in-process, or rtl_tcp running as
+// a separate process and serving the bytestream over TCP.
 const SRC_X = 214
 const SRC_W = 176
 const SRC_H = 62
@@ -23,7 +21,7 @@ const branch = (cy) => {
 
 <template>
   <svg viewBox="0 0 1000 284" class="transport" role="img"
-       aria-label="rtl_sdr over a pipe and rtl_tcp over a socket both converge into one 'your code' box">
+       aria-label="the rtl_sdr crate reading over USB and the rtl_tcp process serving over TCP both converge into one 'your code' box">
     <defs>
       <marker id="tr-arrow" viewBox="0 0 10 10" refX="8" refY="5"
               markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -34,17 +32,17 @@ const branch = (cy) => {
     <!-- converging connectors -->
     <path :d="branch(TOP_CY)" fill="none" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#tr-arrow)" />
     <path :d="branch(BOT_CY)" fill="none" stroke="#94a3b8" stroke-width="2.5" marker-end="url(#tr-arrow)" />
-    <text x="512" y="108" class="tr-wire">pipe</text>
-    <text x="512" y="188" class="tr-wire">socket</text>
+    <text x="512" y="108" class="tr-wire">USB</text>
+    <text x="512" y="188" class="tr-wire">TCP</text>
 
-    <!-- source 1: local pipe -->
-    <text x="196" :y="TOP_CY - 6" class="tr-where">this laptop</text>
+    <!-- source 1: the rtl_sdr crate, reading USB in-process -->
+    <text x="196" :y="TOP_CY - 6" class="tr-where">crate</text>
     <rect :x="SRC_X" :y="TOP_CY - SRC_H / 2" :width="SRC_W" :height="SRC_H" rx="12"
           fill="#eef2ff" stroke="#818cf8" stroke-width="2" />
     <text :x="SRC_X + SRC_W / 2" :y="TOP_CY + 6" class="tr-mono" fill="#312e81">rtl_sdr</text>
 
-    <!-- source 2: network socket -->
-    <text x="196" :y="BOT_CY - 6" class="tr-where">somewhere else</text>
+    <!-- source 2: rtl_tcp, a separate process serving over TCP -->
+    <text x="196" :y="BOT_CY - 6" class="tr-where">separate process</text>
     <rect :x="SRC_X" :y="BOT_CY - SRC_H / 2" :width="SRC_W" :height="SRC_H" rx="12"
           fill="#eef2ff" stroke="#818cf8" stroke-width="2" />
     <text :x="SRC_X + SRC_W / 2" :y="BOT_CY + 6" class="tr-mono" fill="#312e81">rtl_tcp</text>
