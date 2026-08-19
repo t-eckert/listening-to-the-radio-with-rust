@@ -15,9 +15,10 @@ Three consequences, all of them already reflected in `deck/slides.md`:
    breakout speakers 15 minutes at the AV table. Use the whole break at the podium to
    re-verify 97.7, 119.9, and the ADS-B feed against the venue. Nothing else in this file
    matters as much as that.
-2. **A post-break room needs a payoff before it needs a syllabus.** The talk opens cold with
-   live FM audio, before the title slide. First sound in the room is under 60 seconds in,
-   not 21 minutes in.
+2. **A post-break room needs a payoff before it needs a syllabus.** The FM receiver runs
+   silently from walk-on; the reveal is a controlled beat right after the intro ("Now
+   playing: 97.7 FM"). First sound in the room is about 3 minutes in, not 21. (The
+   pre-title cold open was tried and reverted 2026-08-18 — too jarring.)
 3. **No Q&A, so the close is an invitation instead.** Hardware on the table, Discord channel,
    reception afterward. The reception is the same evening, which makes this slot good for it.
 
@@ -114,14 +115,14 @@ break is for the stage audio and for confirming the network path to the Pi still
 from the podium — the venue banned personal routers, so that path is conference WiFi or
 the hardline Tina offered, and it is the single most fragile thing in the talk.
 
-"Welcome back from the break. I figure we get back into things with a little music."
+The receiver (`task fm-single FREQ=97.7`) starts during the break and runs muted from
+walk-on. At the reveal slide, bring the fader up: "I figure we get back into things with
+a little music."
 
-`task fm-single FREQ=97.7`
-
-A failed cold open is the worst possible failure, so have the pre-recorded IQ file loaded
-in a second terminal and one keystroke away. If live RF is dead at 15:55, open cold from the
-recording instead and say so — "this one's recorded, we'll go live later." Do not open cold
-on silence.
+A failed reveal is the worst possible failure, so have the pre-recorded IQ file loaded in
+a second terminal and one keystroke away. If live RF is dead at 15:55, do the reveal from
+the recording instead and say so — "this one's recorded, we'll go live later." Do not do
+the reveal on silence.
 
 ## Demo Commands
 
@@ -183,23 +184,34 @@ is a much less charming excuse on stage than "the ionosphere is bad."
 
 ## Timing
 
+Re-estimated 2026-08-18 against the 50-slide deck (controlled reveal, extra AM slide,
+crates at the end, map bookend + standalone closer added), using the dwell times the
+speaker notes themselves prescribe.
+
 | # | Section | Min | Cum | Payoff |
 |---|---------|-----|-----|--------|
-| 0 | **Cold open** — live FM, no title slide | 1.5 | 1.5 | audio |
-| 1 | Title + about me + roadmap | 1.5 | 3.0 | |
-| 2 | Physics (bobbers) + `wave-demo` | 4.0 | 7.0 | animation |
-| 3 | RTL-SDR: two chips, tuner, dongle→code transport | 2.5 | 9.5 | |
-| 4 | I/Q + complex plane + `iq-demo` + `iq-print` | 5.5 | 15.0 | animation |
-| 5 | Many signals, one idea (merged tables) | 1.0 | 16.0 | |
-| 6 | FM: pipeline, one file, 3 steps, whole loop + demo | 5.0 | 21.0 | **audio** |
-| 7 | Why Rust + crates | 1.5 | 22.5 | |
-| 8 | AM: same pipeline, 2 diff slides, live ATC | 4.0 | 26.5 | **audio** |
-| 9 | Time signals: CHU story (no WWV) | 2.0 | 28.5 | story |
-| 10 | Antenna length → why the receiver is upstairs | 2.0 | 30.5 | reveal |
-| 11 | ADS-B: pipeline, four stages, live aircraft | 5.5 | 36.0 | **live data** |
-| 12 | Close + invitation | 1.5 | 37.5 | |
+| 0 | Title + about me | 1.5 | 1.5 | |
+| 1 | Three things (the promise) | 0.5 | 2.0 | |
+| 2 | FM reveal — audio up, name the station | 1.0 | 3.0 | **audio** |
+| 3 | Coverage map + physics pivot | 1.0 | 4.0 | |
+| 4 | Physics (bobbers) + `wave-demo` | 3.5 | 7.5 | animation |
+| 5 | RTL-SDR: dongle, two chips, tuner, transport | 3.0 | 10.5 | |
+| 6 | I/Q + complex plane + `iq-demo` + bytes + `iq-print` | 5.5 | 16.0 | animation |
+| 7 | Many signals, one idea | 1.0 | 17.0 | |
+| 8 | FM: pipeline, one file, 3 steps, whole loop + audio | 5.5 | 22.5 | **audio** |
+| 9 | AM: same pipeline, diff slides, live ATC | 4.0 | 26.5 | **audio** |
+| 10 | Time signals: CHU story | 2.5 | 29.0 | story |
+| 11 | Antenna length → why the receiver is upstairs | 2.0 | 31.0 | reveal |
+| 12 | ADS-B: intro, map, code, payoff | 6.5 | 37.5 | **live data** |
+| 13 | Map bookend + crates | 0.75 | 38.25 | closure |
+| 14 | Getting started + "Go listen." | 1.25 | 39.5 | |
 
-**37.5 min against a 40-minute ceiling.** Two and a half minutes of headroom, no Q&A.
+**39.5 min against a 40-minute ceiling — zero slack.** Rehearse once with a timer; unless
+that run lands at 37:00 or under, take cuts 1 and 2 below pre-emptively rather than live.
+TIME CHECK cues are embedded in the speaker notes at Many Signals (~16:00), the AM
+pipeline (~22:30), and the ADS-B reveal (~32:30), each naming the cut to take if behind.
+The variable-dwell demos are where overruns actually come from; the ATC listen is capped
+at ~75 s and the map payoff at ~45 s in their notes.
 
 Sensory payoff every 4–6 minutes: sound, animation, a map filling in, and the hardware in
 the audience's hands at the close. That cadence is the actual defence against a 4 PM room,
@@ -209,8 +221,9 @@ during the RTL-SDR section and note it in that slide.)
 
 ### Structural changes from the pre-August version
 
-- Opens cold with FM audio; the title slide lands *after* the music.
-- First radio payoff moved from minute 21 to minute 1.
+- Opens with title + intro, then a controlled FM reveal (~minute 3). The pre-title cold
+  open was tried and reverted — too jarring.
+- First radio payoff moved from minute 21 to minute 3.
 - Two demodulation table slides merged into one "magnitude or phase" slide.
 - "Why Rust" moved out of an abstract interlude and placed next to the FM inner loop.
 - Ecosystem crate table folded into the same slide.
