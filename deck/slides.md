@@ -25,14 +25,11 @@ RustConf 2026 | Montreal | 9 September 2026
 
 [FM RECEIVER IS ALREADY RUNNING AND MUTED. Don't touch it.]
 
-Good afternoon. My name is Thomas Eckert, and I want to talk to you about a
-hobby I picked up a few months ago: writing very small software-defined radio
-applications in Rust.
+Good afternoon. My name is Thomas Eckert, and I want to talk to you about a hobby I picked up a few months ago: writing small software-defined radio applications in Rust.
 
 ***
 
-Walk on with this slide already up. Audio muted at the mixer, not stopped — the
-reveal three slides from now needs the process still running.
+Walk on with this slide already up. Audio muted at the mixer, not stopped — the reveal three slides from now needs the process still running.
 -->
 
 ---
@@ -83,8 +80,7 @@ I write about what I learn at **fieldtheories.blog**.
 [0:35 · 1:15]
 
 I'm a software engineer at Honeycomb. Before that, Redpanda, HashiCorp, and
-Microsoft. And before all of that I studied physics, which is going to matter
-more in this talk than it usually does in mine.
+Microsoft. And before all of that I studied physics.
 
 I write about what I learn at fieldtheories.blog.
 
@@ -104,7 +100,7 @@ which is exactly why this is the talk I wish I'd had in my first hour.**
 What I want to do today is introduce you to building applications in Rust that
 take radio as their input. We'll build three of them: a radio that plays music,
 a radio that picks up air traffic control, and a receiver that tracks the
-aircraft flying over this building.
+aircraft flying overhead.
 
 Those three look nothing like each other. **They sit on exactly the same
 foundation, and that foundation is the thing I actually want you to leave with.**
@@ -124,10 +120,10 @@ Now playing:
 
 [BRING THE AUDIO UP. Say nothing for a few seconds. Let it play.]
 
-That is ninety-seven point seven FM. Live, right now, in this room.
+That is ninety-seven point seven FM. Live, right now.
 
 There's an antenna on stage. It's picking up a broadcast from a transmitter on
-Mount Royal. That goes into a thirty dollar USB dongle, the dongle sends my
+Mount Royal. That goes into a USB dongle, the dongle sends my
 laptop a stream of numbers, and everything after that is Rust code that I wrote.
 
 **No radio chip, no decoder library. Numbers and arithmetic.**
@@ -148,7 +144,7 @@ published sources, CONFIRM AT THE VENUE during the break.
 <!--
 [1:20 · 4:05]
 
-Here's the pipeline that did that, start to finish.
+Here's the pipeline for processing radio signals.
 
 The antenna picks up electromagnetic waves out of the air. Those waves push the
 electrons in the metal up and down, and that motion is a current. The dongle
@@ -161,8 +157,7 @@ differences live in exactly one box, and that box is demodulation.
 Change the demodulation code, and change the length of your antenna, and the
 same hardware gives you music, or a controller's voice, or the position of an
 aircraft. Those three are what we're building today. The list doesn't stop
-there: ships, weather satellites, pagers, the tire pressure sensors in the cars
-outside.
+there: ships, weather satellites, pagers, the tire pressure sensors in the cars.
 
 **You don't need to understand every box on this yet. By the end of the talk,
 you will.**
@@ -218,7 +213,7 @@ it, across the surface of the pool, in every direction.
 
 [click] That is what happens when you accelerate a charged particle. Electrons
 moving up and down in a wire make electromagnetic waves that radiate outward
-through space. **That's a transmitter. That is all a transmitter is.**
+through space. **That is the transmitter.**
 
 ***
 
@@ -254,8 +249,7 @@ incoming EM wave. The antenna converts the wave back into electrical current.
 
 Now put a second bobber in the same pool, some distance away.
 
-[click] The waves reach it, and it starts to bob up and down too. Nobody touched
-it. The energy that moved the first bobber travelled across the pool and moved
+[click] The waves reach it, and it starts to bob up and down too. The energy that moved the first bobber travelled across the pool and moved
 this one.
 
 [click] That's a receiving antenna. The incoming wave pushes electrons in the
@@ -315,7 +309,7 @@ At that length it resonates: the electrons oscillate with maximum efficiency.
 
 <v-click>
 
-97.7 FM → wavelength ~3.1 m → **77 cm**, the antenna on this stage
+97.7 FM → wavelength ~3.1 m → **77 cm** per arm
 
 </v-click>
 
@@ -337,20 +331,20 @@ that length it resonates, and the electrons oscillate with maximum efficiency.
 
 [click] The station you were listening to a minute ago is at ninety-seven point
 seven. That wave is about three metres long, so a quarter of it is seventy-seven
-centimetres.
+centimetres — and on a dipole like this one, that's each arm.
 
-[POINT at the antenna on stage.] **Which is exactly this.** That's not a
-coincidence and it's not a rule of thumb — it's the length that resonates at the
-frequency we're receiving.
+[POINT at the antenna on stage.] This one is a little short of that, even fully
+extended. On a station this strong it makes no audible difference — but
+seventy-seven centimetres is the number it's reaching for.
 
 [click] **Same rule on every band. Only the number changes.** Hold onto that —
 it decides where the third demo has to live.
 
 ***
 
-SETUP: set the antenna to 77 cm BEFORE you walk on, and don't touch it again.
-Don't retune between the FM and AM demos; 77 cm is about a dB off ideal at
-119.9, which is nothing.
+SETUP: extend both arms fully and leave them alone. Do NOT claim it's exactly
+77 cm — it isn't, and half this room owns the same antenna.
+If you measure the real arm length, this slide can use the true number instead.
 Do NOT explain destructive interference. State the rule and move.
 This plants the callback collected on "So the Receiver Isn't in This Room."
 -->
@@ -378,10 +372,10 @@ Same dongle receives FM, AM, aviation, ADS-B. Just change the frequency and the 
 <!--
 [0:45 · 8:10]
 
-This is the hardware. A USB dongle, about thirty dollars. It was designed to be
-a television receiver, which is the entire reason it's cheap — somebody worked
+This is the hardware. A USB dongle, about thirty dollars. The chips inside were designed for
+a television receiver and it worked
 out you could ask the chip for the raw samples instead of the television
-picture, and that's the hobby.
+picture.
 
 Software-defined radio means exactly this: digitize a chunk of the spectrum, and
 do everything else in software. There's no FM circuit in here. There's no AM
@@ -439,7 +433,7 @@ somebody's Wi-Fi. That's the top row: the whole spectrum, arriving together, all
 the time.
 
 The tuner has one job. It slides that entire spectrum down, so that the station
-you asked for lands on zero — which is where cheap hardware can actually sample
+you asked for lands on zero — which is where hardware can actually sample
 it. Bottom row: your station sitting on zero, the sampling window catching it,
 and everything else slid away with it.
 
@@ -474,8 +468,7 @@ Two: run rtl_tcp as a separate process, and it serves the same bytestream over a
 TCP socket.
 
 And because that second one is just a socket — **the dongle does not have to be
-on the same machine as your code.** Hold onto that. It comes back at the end of
-the talk.
+on the same machine as your code.**
 
 ***
 
@@ -1188,8 +1181,8 @@ traffic control is a public broadcast.
 
 Backups if it's quiet: 119.3 (north tower), 118.9 (south arrival). VERIFY ALL
 THREE AT THE VENUE during the 30 minute break — these are from the published
-CYUL chart, not measured. Same 77 cm antenna that did FM — do NOT retune it
-between demos; at 119.9 it's about a dB off ideal, which is inaudible.
+CYUL chart, not measured. Same antenna that did FM, fully extended and
+untouched — do NOT retune it between demos.
 English or French, either is fine.
 ATC is bursty. If the tower is silent for 10+ seconds, say so and let it sit — a
 real pause is more convincing than a recording would be.
@@ -1379,7 +1372,7 @@ aircraft. Say it that way — the promise is being closed.
 
 1090 MHz wants a **7 cm** antenna and a **view of the sky**.
 
-This one is 77 cm, and we are indoors.
+This one is built for the FM band, and we are indoors.
 
 <v-click>
 
@@ -1395,8 +1388,8 @@ Remember the quarter wavelength, from the very beginning.
 Ten-ninety megahertz is a twenty-seven centimetre wave, so it wants a seven
 centimetre antenna. And a view of the sky.
 
-[POINT at the antenna.] This one is seventy-seven centimetres — eleven times too
-long. And we are indoors, in a concrete building.
+[POINT at the antenna.] This one is cut for a three metre wave — an order of
+magnitude too long. And we are indoors, in a concrete building.
 
 So the ADS-B receiver isn't in this room.
 
