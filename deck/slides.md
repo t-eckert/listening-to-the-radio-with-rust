@@ -21,12 +21,18 @@ Thomas Eckert
 RustConf 2026 | Montreal | 9 September 2026
 
 <!--
-Walk up. This cover slide is already up. The FM receiver is ALREADY RUNNING but
-SILENT: audio muted at the mixer or volume down. Don't touch it yet. Introduce
-yourself:
+[0:40 · 0:40]
 
-"Good afternoon, my name is Thomas Eckert. I want to talk to you about a hobby
-I've recently picked up using Rust to write tiny software-defined radio applications."
+[FM RECEIVER IS ALREADY RUNNING AND MUTED. Don't touch it.]
+
+Good afternoon. My name is Thomas Eckert, and I want to talk to you about a
+hobby I picked up a few months ago: writing very small software-defined radio
+applications in Rust.
+
+***
+
+Walk on with this slide already up. Audio muted at the mixer, not stopped — the
+reveal three slides from now needs the process still running.
 -->
 
 ---
@@ -74,15 +80,16 @@ I write about what I learn at **fieldtheories.blog**.
 </style>
 
 <!--
-Forty-five seconds, not more. The bonafides are here to buy trust for the
-physics, not to brag. Say them fast and move on. The through-line: I'm a
-software engineer who trained in physics, and SDR is the rare thing that needs
-both halves at once.
-Stay honest about the RF part: "I've built distributed systems for years, but
-radio I'm only a few months into, which is exactly why this is the talk I wish
-I'd had in my first hour."
-If you drift: you are here to share something cool that sits between your two
-backgrounds.
+[0:35 · 1:15]
+
+I'm a software engineer at Honeycomb. Before that, Redpanda, HashiCorp, and
+Microsoft. And before all of that I studied physics, which is going to matter
+more in this talk than it usually does in mine.
+
+I write about what I learn at fieldtheories.blog.
+
+**I've built distributed systems for years. Radio I'm only a few months into,
+which is exactly why this is the talk I wish I'd had in my first hour.**
 -->
 
 ---
@@ -92,7 +99,15 @@ backgrounds.
 <ThreeApplications class="mt-12" />
 
 <!--
-My goal with this talk is to introduce you to building applications in Rust using software defined radio as input. There is a wide range of things you can build using radio signals and Rust and they all sit on top of a common foundation you'll need to understand.
+[0:40 · 1:55]
+
+What I want to do today is introduce you to building applications in Rust that
+take radio as their input. We'll build three of them: a radio that plays music,
+a radio that picks up air traffic control, and a receiver that tracks the
+aircraft flying over this building.
+
+Those three look nothing like each other. **They sit on exactly the same
+foundation, and that foundation is the thing I actually want you to leave with.**
 -->
 
 ---
@@ -105,7 +120,25 @@ Now playing:
 ## 97.7 FM
 
 <!--
-What you are listening to is a live broadcast of 97.7 FM. This broadcast is picked up by the antenna you see on stage. It goes through the RTL-SDR dongle which produces a digitized version of the signal that I decode live on my laptop using Rust code to capture the music.
+[0:50 · 2:45]
+
+[BRING THE AUDIO UP. Say nothing for a few seconds. Let it play.]
+
+That is ninety-seven point seven FM. Live, right now, in this room.
+
+There's an antenna on stage. It's picking up a broadcast from a transmitter on
+Mount Royal. That goes into a thirty dollar USB dongle, the dongle sends my
+laptop a stream of numbers, and everything after that is Rust code that I wrote.
+
+**No radio chip, no decoder library. Numbers and arithmetic.**
+
+[LEAVE THE MUSIC PLAYING under the next slide.]
+
+***
+
+If it's an ad break or dead air, name it and keep moving: "that's a commercial,
+and I promise it's live." Station is CHOM 97.7, Mount Royal transmitter — from
+published sources, CONFIRM AT THE VENUE during the break.
 -->
 
 ---
@@ -113,15 +146,28 @@ What you are listening to is a live broadcast of 97.7 FM. This broadcast is pick
 <CoverageFlow class="mt-12" />
 
 <!--
-Here is the pipeline. The antenna picks up the electromagnetic waves in the air. These waves cause electrons in the antenna to oscillate, generating a current. The RTL-SDR dongle tunes to a frequency and transforms that current into a digital spectrum. This is rendered out as IQ signals which can be demodulated. 
+[1:20 · 4:05]
 
-The demodulation step is where we differentiate the applications. Depending on the antenna length and the demodulation code, we can get FM radio, AM radio, and aircraft tracking. Those, you will see demoed today. But there are other applications you can build with these same concepts.
+Here's the pipeline that did that, start to finish.
 
-Frame it as a promise, not a syllabus: "You don't need to understand every box
-on this yet. By the end of the talk, you will."
+The antenna picks up electromagnetic waves out of the air. Those waves push the
+electrons in the metal up and down, and that motion is a current. The dongle
+tunes to one slice of the spectrum and digitizes it, and what comes out the
+other side is a stream of pairs of numbers. We call those IQ samples.
 
-FADE THE MUSIC OUT as you finish this slide. The pivot to physics on the next
-slide happens in silence.
+Everything up to that point is the same for every application. All of it. The
+differences live in exactly one box, and that box is demodulation.
+
+Change the demodulation code, and change the length of your antenna, and the
+same hardware gives you music, or a controller's voice, or the position of an
+aircraft. Those three are what we're building today. The list doesn't stop
+there: ships, weather satellites, pagers, the tire pressure sensors in the cars
+outside.
+
+**You don't need to understand every box on this yet. By the end of the talk,
+you will.**
+
+[FADE THE MUSIC OUT as you finish. The next slide happens in silence.]
 -->
 
 ---
@@ -132,7 +178,11 @@ class: text-center
 ## Let's begin with the physics.
 
 <!--
+[0:10 · 4:15]
+
 Let's begin with the physics.
+
+[PAUSE. In silence, with the music gone. Let it sit before you move on.]
 -->
 
 ---
@@ -158,9 +208,23 @@ down in a wire create **electromagnetic waves** that radiate outward through spa
 </v-click>
 
 <!--
-Anchor quote: "Imagine a bobber in a pool of still water."
-Use the bobber metaphor. Slow down here. Let the audience build the mental image.
-If you drift: two bobbers. One makes waves, one receives them. Electrons up and down.
+[0:55 · 5:10]
+
+**Imagine a bobber sitting in a pool of still water.** Nothing's moving. The
+surface is flat.
+
+[click] You push it down and let it go. It oscillates. And waves spread out from
+it, across the surface of the pool, in every direction.
+
+[click] That is what happens when you accelerate a charged particle. Electrons
+moving up and down in a wire make electromagnetic waves that radiate outward
+through space. **That's a transmitter. That is all a transmitter is.**
+
+***
+
+SLOW DOWN. This image carries the next three slides; give them time to build it.
+If you drift: two bobbers, one makes waves, one receives them. Electrons up and
+down.
 -->
 
 ---
@@ -186,6 +250,20 @@ incoming EM wave. The antenna converts the wave back into electrical current.
 </v-click>
 
 <!--
+[0:50 · 6:00]
+
+Now put a second bobber in the same pool, some distance away.
+
+[click] The waves reach it, and it starts to bob up and down too. Nobody touched
+it. The energy that moved the first bobber travelled across the pool and moved
+this one.
+
+[click] That's a receiving antenna. The incoming wave pushes electrons in the
+metal up and down, and that motion is a current I can measure. **The antenna
+turns the wave back into electricity.**
+
+***
+
 The receiver bobber is deliberately a quarter period behind the transmitter,
 because the wave has to travel to reach it. Nobody will consciously notice; it
 just looks right.
@@ -205,8 +283,76 @@ Those waves *push* electrons up and down in a receiving antenna.
 </v-click>
 
 <!--
-Run wave-demo here (task wave). Let the animation play while you narrate the
-summary. Keep it to about forty seconds; this is a beat, not a section.
+[0:45 · 6:45]
+
+So: electrons moving up and down in a transmitting antenna make waves.
+
+[click] And those waves push electrons up and down in a receiving antenna.
+
+That's the whole physical link. **Everything else in this talk — every line of
+Rust — is about what you do with that current once you have it.**
+
+***
+
+[DEMO: task wave] Optional. Let it play under the summary, forty seconds max.
+This is a beat, not a section.
+-->
+
+---
+
+# How Long Is an Antenna?
+
+<Bobbers class="my-6" />
+
+The distance between two crests is the **wavelength**.
+
+<v-click>
+
+An antenna works best when it is a **quarter of the wavelength** long.
+At that length it resonates: the electrons oscillate with maximum efficiency.
+
+</v-click>
+
+<v-click>
+
+97.7 FM → wavelength ~3.1 m → **77 cm**, the antenna on this stage
+
+</v-click>
+
+<v-click>
+
+Same rule on every band. Only the number changes.
+
+</v-click>
+
+<!--
+[0:40 · 7:25]
+
+Look at that wave for a second. The distance between two crests is the
+wavelength, and it turns out to be the number that decides everything about your
+antenna.
+
+[click] **An antenna works best when it's a quarter of the wavelength long.** At
+that length it resonates, and the electrons oscillate with maximum efficiency.
+
+[click] The station you were listening to a minute ago is at ninety-seven point
+seven. That wave is about three metres long, so a quarter of it is seventy-seven
+centimetres.
+
+[POINT at the antenna on stage.] **Which is exactly this.** That's not a
+coincidence and it's not a rule of thumb — it's the length that resonates at the
+frequency we're receiving.
+
+[click] **Same rule on every band. Only the number changes.** Hold onto that —
+it decides where the third demo has to live.
+
+***
+
+SETUP: set the antenna to 77 cm BEFORE you walk on, and don't touch it again.
+Don't retune between the FM and AM demos; 77 cm is about a dB off ideal at
+119.9, which is nothing.
+Do NOT explain destructive interference. State the rule and move.
+This plants the callback collected on "So the Receiver Isn't in This Room."
 -->
 
 ---
@@ -229,6 +375,25 @@ Same dongle receives FM, AM, aviation, ADS-B. Just change the frequency and the 
 }
 </style>
 
+<!--
+[0:45 · 8:10]
+
+This is the hardware. A USB dongle, about thirty dollars. It was designed to be
+a television receiver, which is the entire reason it's cheap — somebody worked
+out you could ask the chip for the raw samples instead of the television
+picture, and that's the hobby.
+
+Software-defined radio means exactly this: digitize a chunk of the spectrum, and
+do everything else in software. There's no FM circuit in here. There's no AM
+circuit. **The same piece of plastic gives you music, a controller's voice, and
+aircraft positions. You change the frequency and you change the code.**
+
+***
+
+It's the RTL-SDR Blog V3, with the R820T2 tuner. The V4 is discontinued — don't
+recommend it from the stage.
+-->
+
 ---
 
 # Hardware: Two Chips
@@ -247,6 +412,19 @@ Same dongle receives FM, AM, aviation, ADS-B. Just change the frequency and the 
 
 </v-click>
 
+<!--
+[0:40 · 8:50]
+
+Two chips inside it matter.
+
+[click] The tuner, the R820T2. It decides which part of the spectrum you're
+listening to. That's the dial.
+
+[click] And the RTL2832U, which is an analog-to-digital converter. Eight bits
+per sample, pushed out over USB. **Eight bits is not much, and it turns out to
+be enough for everything in this talk.**
+-->
+
 ---
 
 # Hardware: The Tuner
@@ -254,20 +432,25 @@ Same dongle receives FM, AM, aviation, ADS-B. Just change the frequency and the 
 <TunerShift class="mt-6" />
 
 <!--
-Say this over the diagram; don't put it on the slide.
+[1:00 · 9:50]
 
-The antenna hears everything at once: FM, AM, aviation, cell towers, Wi-Fi.
-That's the top row, the whole spectrum arriving together.
+The antenna hears everything at once. FM, AM, aviation, the cell towers outside,
+somebody's Wi-Fi. That's the top row: the whole spectrum, arriving together, all
+the time.
 
-The tuner's one job: slide the whole spectrum down so the station you asked for
-lands at zero, where cheap hardware can sample it. Think of a radio dial: you're
-not filtering the other stations out, you're sliding the window. Bottom row:
-your station sits on 0, the ADC's sampling window catches it, everything else
-slid away with it.
+The tuner has one job. It slides that entire spectrum down, so that the station
+you asked for lands on zero — which is where cheap hardware can actually sample
+it. Bottom row: your station sitting on zero, the sampling window catching it,
+and everything else slid away with it.
 
-That's the whole takeaway: the tuner moves your station to zero. Mixers and
-local oscillators are for the repo, not the stage — don't get pulled into them
-here; IQ hasn't been introduced yet.
+Think of turning the dial on an old radio. You are not filtering the other
+stations out. **You're moving the window.**
+
+***
+
+Mixers and local oscillators are for the repo, not the stage. Don't get pulled
+into them here — IQ hasn't been introduced yet, so you'd be spending vocabulary
+you haven't earned. That's the conversation at the table afterwards.
 -->
 
 ---
@@ -281,11 +464,23 @@ There are two ways to get the raw IQ bytes into your code.
 Use the **`rtl_sdr`** crate to read from USB, or run **`rtl_tcp`** as a separate process to serve the IQ bytestream over TCP.
 
 <!--
-Two ways to get the raw IQ bytes into your code:
-- the rtl_sdr crate reads straight from the USB dongle, in-process;
-- rtl_tcp runs as a separate process and serves the IQ bytestream over TCP.
-Because rtl_tcp is just a TCP interface, the dongle doesn't have to be on the
-same machine as your code. (You can collect on that at the ADS-B reveal.)
+[0:45 · 10:35]
+
+Two ways to get those raw bytes into your program.
+
+One: the rtl-sdr crate reads straight off the USB device, in your process.
+
+Two: run rtl_tcp as a separate process, and it serves the same bytestream over a
+TCP socket.
+
+And because that second one is just a socket — **the dongle does not have to be
+on the same machine as your code.** Hold onto that. It comes back at the end of
+the talk.
+
+***
+
+This plants the ADS-B remote receiver. Collect the callback on "So the Receiver
+Isn't in This Room."
 -->
 
 ---
@@ -294,6 +489,16 @@ class: text-center
 ---
 
 ## What does this digital signal look like?
+
+<!--
+[0:10 · 10:45]
+
+So what does that digital signal actually look like?
+
+***
+
+One line, then move. The answer is the next two slides; don't preview it here.
+-->
 
 ---
 
@@ -325,12 +530,27 @@ Together, `I + jQ` is a complex number that encodes both the **amplitude** and t
 </v-click>
 
 <!--
-Anchor quote: "The dongle gives you pairs of bytes. Each pair is a point on the
-complex plane." The phase changes over time. At each instant, we project the
-signal onto two axes, cosine and sine. That gives us two numbers, I and Q. That
-is why they come in pairs.
-If you drift: points on a plane. Speed equals frequency. Distance equals
-amplitude. That is the whole game.
+[1:15 · 12:00]
+
+A radio signal at a single frequency is a cosine wave. It has an amplitude — how
+strong it is — and a phase — where in its cycle it happens to be at this instant.
+
+[click] The tuner has already slid it down to zero. Now, to capture both of
+those things, the amplitude and the phase, it samples the signal on two axes
+instead of one.
+
+[click] I, for in-phase. That's the cosine component.
+
+[click] Q, for quadrature. That's the sine component.
+
+[click] Put the two together as a complex number, I plus j Q, and you have the
+amplitude and the phase of the signal at that instant, in two numbers. **That's
+why they come off the dongle in pairs.**
+
+***
+
+Don't defend the choice of two axes; state it and move to the picture, which is
+the next slide and does the real work.
 -->
 
 ---
@@ -366,10 +586,27 @@ Everything in SDR comes back to these two: how fast it turns, how far out it sit
 </v-click>
 
 <!--
-This is the key conceptual slide, and it is the one section you must NOT trim if
-you are running long. Make sure the audience gets this before moving on.
-Frequency is rotation speed. Amplitude is distance from center.
+[1:10 · 13:10]
+
+The dongle gives you pairs of bytes. I, Q, I, Q, forever. **Each pair is a point
+on the complex plane.**
+
+[click] Take those points in order, and they trace out rotation around the
+origin.
+
+[click] How fast it turns is the frequency of the wave.
+
+[click] How far out it sits is the amplitude.
+
+[click] And that's the whole game. **Everything in software radio comes back to
+these two questions: how fast is it turning, and how far out does it sit.**
+
+***
+
+NEVER CUT THIS SLIDE, and never rush it. If they don't have this, nothing after
+it works. Check faces before you move on.
 -->
+
 
 ---
 layout: center
@@ -379,10 +616,13 @@ class: text-center
 ## Let's see this.
 
 <!--
-Advance to the live IQ demo on the next slide. Show how faster rotation equals a
-higher frequency and a bigger circle equals a higher amplitude. Let the audience
-see the connection. This is worth a full minute; it's the concept the rest of
-the talk stands on.
+[0:15 · 13:25]
+
+Let's see that.
+
+***
+
+Just advance. The demo is the next slide.
 -->
 
 ---
@@ -392,11 +632,30 @@ the talk stands on.
 <IqDemo class="mt-4" />
 
 <!--
-The iq-demo, live in the deck. The point on the right and the height of the wave
-on the left are the same instant of the signal. Faster rotation is a higher
-frequency; a bigger circle is a higher amplitude. Change frequency with [ and ],
-amplitude with - and =, or click the buttons. Or hit Auto-sweep to let both drift
-on their own while you talk; any manual control takes back over.
+[1:15 · 14:40]
+
+On the left is the wave drawn the way you'd normally draw it: going up and down
+over time. On the right is the same signal as a point going around a circle.
+Same signal, same instant, two pictures of it.
+
+[RAISE THE FREQUENCY: press ] a few times.]
+
+Watch the point when I raise the frequency. It goes around faster. **That is all
+a higher frequency is.**
+
+[RAISE THE AMPLITUDE: press =.]
+
+And when I turn the amplitude up, the circle gets bigger. The point sits further
+out from the centre.
+
+**Rotation speed is frequency. Distance from the centre is amplitude.** Every
+demo after this one is arithmetic on those two facts.
+
+***
+
+Keys: [ and ] for frequency, - and = for amplitude, or click the buttons.
+Auto-sweep drifts both while you talk; any manual key takes control back.
+Worth the full minute. This is the concept the rest of the talk stands on.
 -->
 
 ---
@@ -422,6 +681,24 @@ pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
 
 `0` → `-1.0`. `255` → `+1.0`. The midpoint, `127.5` → `0.0`.
 
+<!--
+[0:50 · 15:30]
+
+The dongle sends unsigned bytes, zero to two hundred and fifty-five. This is the
+function that turns them into the floats we actually do arithmetic on.
+
+[click] **Pairwise.** I, Q, I, Q — exactly as they come off the wire.
+
+[click] Then centre and scale. Zero becomes minus one. Two fifty-five becomes
+plus one. And the midpoint, a hundred and twenty-seven point five, becomes zero.
+
+**That's the whole bridge from USB bytes to complex numbers.**
+
+***
+
+Don't explain `Complex<f32>` to this room.
+-->
+
 ---
 layout: center
 class: text-center
@@ -430,10 +707,17 @@ class: text-center
 ## What's coming off the dongle right now
 
 <!--
-Switch to iq-print demo (task iq-print). Keep it brief, 5 to 10 seconds. These
-are the actual numbers coming off the dongle right now. Every demo that follows
-processes these. Then move on — the "let's build" turn belongs to the FM slide,
-two ahead.
+[0:25 · 15:55]
+
+[DEMO: task iq-print. Five to ten seconds of scroll, no more.]
+
+These are the actual numbers coming off the dongle. Right now, in this room.
+**Everything you're about to see is arithmetic on this.**
+
+***
+
+Resist elaborating here. The "let's build" turn is two slides away and it needs
+the energy more than this does.
 -->
 
 ---
@@ -445,16 +729,25 @@ Every demodulation asks one of two questions.
 <DemodFork class="mt-6" />
 
 <!--
-Anchor quote: "All demodulation comes back to measuring rotation speed or
-distance from the origin." One IQ point, two questions: how far from the origin
-(magnitude), or how fast it's turning (phase). That's the fork: amplitude
-modulation down one branch, frequency modulation down the other.
-Name two or three examples out loud rather than reading the list; the full tables
-are in the repo. "Ships, pagers, weather satellites, garage door openers. Every
-one is just one of these two questions."
+[0:45 · 16:40]
 
-TIME CHECK: the clock should read about 16:00 here. Past 18:00, take cut 1
-(FM Step 1) and cut 2 (FM Step 3).
+Every demodulator asks one of two questions about that
+point.
+
+How far is it from the origin? That's amplitude modulation.
+
+Or: how fast is it turning? That's frequency modulation.
+
+**All demodulation comes back to measuring rotation speed or distance from the
+origin.** Ships, pagers, weather satellites, garage door openers, the pressure
+sensor in your car tire. Every one of them is one of those two questions.
+
+***
+
+Name two or three out loud, don't read the list. The full tables are in the repo.
+
+TIME CHECK: the clock should read about 16:40 as you leave this slide. Past
+18:30, take the cuts marked on FM Step 1 and FM Step 3.
 -->
 
 ---
@@ -465,9 +758,18 @@ class: text-center
 ## Let's build an FM radio tuner
 
 <!--
-Anchor quote: "Multiply by the conjugate of the previous sample. Take the angle.
-That is FM demodulation." This is the callback to the cold open.
-If you drift: one line of math. Phase change is audio.
+[0:20 · 17:00]
+
+Let's build an FM radio tuner.
+
+[PAUSE.]
+
+That music you were listening to when we started — we're about to write the
+thing that produced it.
+
+***
+
+This is the turn. Everything before it was setup; lift the energy here.
 -->
 
 ---
@@ -477,21 +779,31 @@ If you drift: one line of math. Phase change is audio.
 <PipelineMap class="mt-2" />
 
 <!--
-Walk it in beats; the slide reveals with you.
-Base: the endpoints. "We start with a firehose of IQ and end with audio the sound
-card wants." Then the one scaffold sentence the deck never states anywhere else:
-"the dongle hands me about a million IQ points a second, and the width of that
-firehose is how much spectrum I can see at once."
-Click 1 (the three steps): "Three steps get us there: filter to one station,
-demodulate rotation into sound, de-emphasis to fix the treble. Those are the next
-three slides."
-Click 2 (the rates): "As we go we throw away samples we no longer need, so the
-rate falls: 960, 240, 48 kilohertz."
-Click 3 (the divisions): "And the divisions are whole numbers by design. 960 over
-4 is 240, 240 over 5 is 48. Pick numbers that don't divide evenly and you get a
-slow drift between how fast you make audio and how fast the sound card eats it."
-The 240->48 downsample is folded into Step 3; in the code it's Step 1's low-pass
-reused on the audio, with de-emphasis running at 48 kHz.
+[1:20 · 18:20]
+
+Here's the shape of it. We start with a firehose of IQ samples, and we end with
+audio that the sound card can play.
+
+The dongle produces about a million IQ points a second, and the width of that
+firehose is how much spectrum I can see at once.
+
+[click] Three steps get us from one end to the other. Filter, to pick one
+station out of everything else. Demodulate, to turn rotation into sound. And
+de-emphasis, to fix the treble. Those are the next three slides.
+
+[click] As we go, we throw away samples we don't need any more, so the rate
+falls: nine hundred and sixty kilohertz, then two forty, then forty-eight.
+
+[click] And those divisions are whole numbers on purpose. Nine sixty over four
+is two forty. Two forty over five is forty-eight. **Pick numbers that don't
+divide evenly and you get a slow drift between how fast you make audio and how
+fast the sound card eats it.**
+
+***
+
+The 240→48 downsample is folded into Step 3 — in the code it's Step 1's low-pass
+reused on the audio, with de-emphasis running at 48 kHz. Only say that if
+someone asks.
 -->
 
 ---
@@ -515,11 +827,23 @@ Everything that follows lives in **one file**.
 />
 
 <!--
-Show the file as a single tall column of collapsed sections, like a minimap, with
-the four step bands highlighted. The point is scale: the audience should see that
-the whole radio is smaller than they expected.
-Say: "This is the entire receiver. Not a sketch, not pseudocode. It compiles, it
-runs, and it is what was playing when you walked in."
+[0:50 · 19:10]
+
+Everything I'm about to show you lives in one file, and this is that file — every
+section collapsed, like a minimap, with the three steps picked out.
+
+Header and imports. The rates and constants, which really are the whole design
+in three numbers. Then the three steps. Then main, which is four calls in order.
+And then audio plumbing, which isn't radio at all — it's just pushing samples to
+the sound card.
+
+**This is the entire receiver. Not a sketch, not pseudocode. It compiles, it
+runs, and it is what was playing when you walked in.**
+
+***
+
+The point of this slide is scale — let them see it's smaller than they expected.
+Don't read the band labels out; they can read.
 -->
 
 ---
@@ -548,12 +872,27 @@ if self.countdown >= self.decimation {
 ```
 
 <!--
-The "antenna hears everything" idea deserves a picture: a wide spectrum with one
-channel boxed.
-Say: "The antenna does not tune. It hears every station at once, and the dongle
-hands you all of it. Tuning happens here, in software." Then: decimation is not
-just throwing data away, it is throwing away data you have proven you no longer need.
-FIRST CUT IF RUNNING LONG.
+[1:00 · 20:10]
+
+The antenna does not tune. It hears every station at once and the dongle sends
+you all of it — that's the wide band on the diagram. **Tuning happens here, in
+software.** A low-pass filter keeps the two hundred kilohertz that is our
+station and drops everything either side of it.
+
+[click] It also decimates in the same pass. We only do the expensive work on the
+samples we're going to keep.
+
+[click] And that expensive work is the convolution: each output is a weighted
+sum of the last n samples, with the same filter taps applied to I and to Q.
+
+**Decimation isn't throwing data away. It's throwing away data you've proven you
+no longer need.**
+
+***
+
+FIRST CUT IF RUNNING LONG (past 18:00 at "Many Signals, One Idea").
+If you cut it, say one sentence on the way past — "there's a filter first, to
+pick one station out of the noise" — because Step 2 doesn't make sense without it.
 -->
 
 ---
@@ -580,14 +919,27 @@ fn process(&mut self, input: &[Iq]) -> Vec<f32> {
 The audio _is_ the rate of phase change, the **rotation speed**.
 
 <!--
-This is THE slide of the section. Give the three lines of math room to breathe.
-Say: "FM encodes audio as the speed of rotation. So the audio is just how far the
-point turned between one sample and the next. Multiplying by the conjugate of the
-previous sample subtracts the previous angle. The angle of what is left is the
-rotation, and the rotation is the audio."
-Anchor quote: "Multiply by the conjugate of the previous sample. Take the angle.
-That is FM demodulation."
-NEVER CUT THIS SLIDE.
+[1:20 · 21:30]
+
+FM encodes the audio as the speed of rotation. So the audio is just how far the
+point turned between one sample and the next.
+
+[click] Multiplying by the conjugate of the previous sample subtracts the
+previous angle. What's left is the change.
+
+[click] Take the angle of what's left. That angle is the rotation — and the
+rotation is the audio.
+
+[click] **Multiply by the conjugate of the previous sample. Take the angle. That
+is FM demodulation.**
+
+Three lines. That's the demodulator.
+
+***
+
+NEVER CUT THIS SLIDE. It's the one the whole talk is pointed at — give the three
+lines room to breathe and let the silence do some work.
+If you drift: phase change is audio.
 -->
 
 ---
@@ -606,11 +958,21 @@ fn process(&mut self, samples: &mut [f32]) {
 75 μs in North America. 50 μs in Europe.
 
 <!--
-Small slide, low drama, it is the palate cleanser before the payoff.
-Say: "Stations boost their treble before transmitting, because hiss lives up
-there and a boosted signal survives it better. We undo the boost. Skip this and
-every station sounds harsh and thin."
+[0:40 · 22:10]
+
+One more step, and it's a small one.
+
+Stations boost their treble before they transmit, because hiss lives up at the
+top end and a boosted signal survives it better. So we undo the boost on the way
+out. That's this line: a running average that keeps the slow-moving part.
+
+Seventy-five microseconds in North America, fifty in Europe. **Skip it and every
+station sounds harsh and thin.**
+
+***
+
 SECOND CUT IF RUNNING LONG.
+Low drama on purpose — it's the palate cleanser before the payoff.
 -->
 
 ---
@@ -629,12 +991,33 @@ ring.push(&audio);                                      // speakers
 ```
 
 <!--
-This is the "it all fits" moment.
-Say: "That is the receiver. Filter, demodulate, filter, de-emphasise. Everything
-else in the file is reading bytes and talking to the sound card."
-Then BRING THE AUDIO BACK: task fm-single FREQ=97.7. Second play of the opening
-reveal track, and now they know what they are listening to. Let it run under the
-next slide.
+[1:00 · 23:10]
+
+And this is the loop, inside main.
+
+[click] Filter — pick one station.
+
+[click] Demodulate — rotation becomes sound.
+
+[click] Filter again, then de-emphasise.
+
+[click] And push it at the speakers.
+
+**That is the receiver. Everything else in that file is reading bytes and
+talking to the sound card.**
+
+[BRING THE AUDIO BACK: task fm-single FREQ=97.7]
+
+And now you know what you're listening to.
+
+[LEAVE IT RUNNING under the next slide.]
+
+***
+
+Second play of the opening track — the difference is they can now name every step
+that produced it. Don't talk over the first couple of seconds.
+
+TIME CHECK: about 23:10 leaving this slide.
 -->
 
 ---
@@ -648,18 +1031,30 @@ next slide.
 ]" />
 
 <!--
-Same map as the FM pipeline; walk it the same way, in the same beats. The only
-differences are the two middle names: Step 2 reads the distance from the origin
-instead of the rotation, and Step 3 blocks DC instead of de-emphasising. Same
-endpoints, same three rates, same whole-number divisions.
-Anchor quote: "AM is even simpler. Just take the magnitude, sqrt of I squared plus
-Q squared. That's it." Keep this section moving; its whole job is the one-line
-diff against FM.
-Say: "Same three rates as the FM receiver. Same two divisions. I didn't pick
-different numbers, because there was no reason to. Only the middle step changed."
+[0:50 · 24:00]
 
-TIME CHECK: about 22:30 here. Past 24:00, skip "Why You'd Still Want This" when
-you reach the time-signal section.
+Now AM. And here's the same map — same endpoints, same three rates, same two
+divisions.
+
+[click] Step one is the same filter.
+
+[click] Step two is where it differs. Instead of asking how fast the point is
+turning, we ask how far it is from the origin.
+
+[click] And step three blocks DC, instead of undoing a treble boost.
+
+**I didn't pick different numbers here, because there was no reason to. Only the
+middle step changed.**
+
+***
+
+Keep this whole section moving. Its job is the one-line diff against FM.
+
+TIME CHECK: about 24:00 leaving this slide.
+- Past 24:45 → skip "Time From the Sky" and open CHU with its line instead:
+  "everything so far turned radio into sound; this one turns it into a clock."
+- Past 26:45 → skip the clock section entirely. Go from the FM/AM summary
+  straight to "Antenna Length." Costs you the emotional beat; buys you 1:45.
 -->
 
 ---
@@ -683,10 +1078,18 @@ AM needs **nothing but this sample**: distance isn't.
 </v-click>
 
 <!--
-The two code blocks should sit side by side, FM above or left, AM below or right,
-with the differing line highlighted in both. This is the payoff slide of the section.
-Say: "FM needs the previous sample, because rotation is a difference. AM doesn't,
-because distance isn't."
+[0:50 · 24:50]
+
+FM, on top. How far did the point turn since last time.
+
+[click] AM, underneath. How far is the point from the origin. Square root of I
+squared plus Q squared. **That's the whole AM demodulator.**
+
+[click] Both of them together. One line each.
+
+[click] And there's a real difference hiding in there. FM needs the previous
+sample, because rotation is a difference. **AM needs nothing but this sample,
+because distance isn't.**
 -->
 
 ---
@@ -714,13 +1117,24 @@ Subtract it and you have a high-pass.
 </v-click>
 
 <!--
-The whole slide is one character of difference. The last click highlights only
-lines 3 and 7, which is the entire point.
-Say: "Step three in the FM receiver kept the slow-moving part. Step three here
-subtracts it. Same tracker, same three lines, one character apart, and one is a
-low-pass, the other a high-pass."
-Do not over-explain the DC offset; the envelope never goes negative, speakers
-want zero-centred, done.
+[0:50 · 25:40]
+
+The envelope never goes negative — it rides on top of the carrier. And speakers
+want audio centred on zero. So we take the offset out.
+
+Step three in the FM receiver kept the slow-moving part.
+
+[click] Step three here subtracts it.
+
+[click] And that's the entire difference. These two lines.
+
+[click] Same tracker, same three lines. **One character apart, and one of them
+is a low-pass and the other is a high-pass.**
+
+***
+
+Don't over-explain the DC offset. Envelope never goes negative, speakers want
+zero-centred, done.
 -->
 
 ---
@@ -752,15 +1166,35 @@ communications, but ATC is a public broadcast.</span>
 </v-click>
 
 <!--
-START THE AM DEMO HERE: task am-single FREQ=119.9 (CYUL main tower).
-Backups if it is quiet: 119.3 (north tower), 118.9 (south arrival). VERIFY ALL
-THREE AT THE VENUE during the 30 minute break; these are from the published CYUL
-chart, not measured. Vertical antenna, the same 2 m whip that did FM.
-You may hear ATC in English or French. ATC is bursty: if the tower is silent for
-10 or more seconds, say so and let it sit; a pause on a real channel is more
-convincing than a recording. But cap the whole listen at about 75 seconds even
-if it stays quiet — call it a quiet tower and move on. This is where overruns
-come from.
+[1:45 · 27:25]
+
+Here's the AM loop.
+
+[click] Two words changed. am_demod instead of fm_demod. dc_block instead of
+deemphasis.
+
+[click] **That's the whole diff between a music radio and an aviation radio.**
+
+[click] So let's point it at a hundred and nineteen point nine megahertz.
+Montréal-Trudeau tower.
+
+And before anyone worries about it: in Canada, receiving is legal. The law
+restricts transmitting, and it restricts sharing private communications. Air
+traffic control is a public broadcast.
+
+[DEMO: task am-single FREQ=119.9. Then stop talking and let it run.]
+
+***
+
+Backups if it's quiet: 119.3 (north tower), 118.9 (south arrival). VERIFY ALL
+THREE AT THE VENUE during the 30 minute break — these are from the published
+CYUL chart, not measured. Same 77 cm antenna that did FM — do NOT retune it
+between demos; at 119.9 it's about a dB off ideal, which is inaudible.
+English or French, either is fine.
+ATC is bursty. If the tower is silent for 10+ seconds, say so and let it sit — a
+real pause is more convincing than a recording would be.
+CAP THE LISTEN AT 75 SECONDS even if it stays quiet. Call it a quiet tower and
+move on. THIS IS WHERE OVERRUNS COME FROM.
 -->
 
 ---
@@ -784,6 +1218,22 @@ Same IQ data, different interpretation.
 
 </v-click>
 
+<!--
+[0:30 · 27:55]
+
+So: both of those produce audio, out of the same stream of numbers.
+
+[click] FM used the speed of rotation around the origin. AM used the distance
+from the origin.
+
+[click] Same IQ data. Different question. **That is the entire difference
+between the two receivers.**
+
+***
+
+[FADE THE AM AUDIO OUT here if it's still running.]
+-->
+
 ---
 
 # Time From the Sky
@@ -806,38 +1256,20 @@ One-way, no network, no handshake — nothing to log into.
 </v-click>
 
 <!--
-Anchor quote: "Everything so far has been listening. This one is about knowing
-what time it is." The shift: other demos turn radio into sound or data. This one
-turns radio into a clock.
--->
+[0:35 · 28:30]
 
----
+Everything we've built so far turns radio into sound.
 
-# Why You'd Still Want This
+[click] This one turns it into a clock.
 
-Your hardware has no WiFi, no cell, no GPS.
-How does it learn what time it is?
+[click] There are stations whose entire job is to broadcast what time it is,
+continuously, straight off a caesium atomic clock. One way. No network, no
+handshake, nothing to log into. **Your receiver just listens, and it knows what
+time it is.**
 
-<v-clicks>
+***
 
-- A sensor in a mine, a basement, a ship's hull
-- An air-gapped machine that will never reach an NTP server
-- A real-time clock that drifts seconds a week
-- GPS solves this, but it needs a view of the sky, and it's easy to jam
-
-</v-clicks>
-
-<v-click>
-
-Shortwave refracts off the ionosphere. It arrives from
-**thousands of kilometres away, through walls.**
-
-</v-click>
-
-<!--
-This is the "why should I care" slide. Aim it at the embedded and infrastructure
-people in the room; they have all met a drifting RTC. Do not oversell it against
-NTP; the point is the cases where NTP is not reachable. Keep to forty five seconds.
+Keep this short — it's the turn, not the story. The story is the next slide.
 -->
 
 ---
@@ -867,43 +1299,37 @@ I pointed the receiver at 7.850 MHz and found **noise where a station used to be
 </v-click>
 
 <!--
-This is the emotional beat of the talk and it is the reason the section survives
-the cut. Slow down and let the date land before the last line.
-Anchor quote: "I wrote a decoder for a radio station that doesn't exist anymore."
-If you drift: CHU ran 88 years, 15 km from my desk, and went silent two months
-before this talk.
--->
+[1:10 · 29:40]
 
----
+Fifteen kilometres from my desk in Ottawa there was a station called CHU, run by
+the National Research Council. Three frequencies, caesium clocks, broadcasting
+since nineteen thirty-eight. It's shortwave, so it refracts off the ionosphere:
+that signal comes back down thousands of kilometres away. People set their
+clocks by it right across the continent.
 
-# Antenna Length
+[click] I wrote a decoder for it. Bell one-oh-three FSK, three hundred baud, a
+BCD time code. And a quarter wavelength at seven point eight five megahertz is
+nine and a half metres of wire, which is why nobody has a good antenna for it.
 
-An antenna works best when its length is a **quarter of the wavelength**.
+[click] On the twenty-second of June, this year, the NRC shut it off. After
+eighty-eight years.
 
-At that length it resonates: electrons oscillate with maximum efficiency.
+[PAUSE. Let the date land before you click again.]
 
-<v-clicks>
+[click] I pointed the receiver at seven point eight five megahertz and found
+noise where a station used to be.
 
-- CHU (7.85 MHz) → wavelength 38 m → **9.5 m**
-- FM (88 MHz) → wavelength ~3.4 m → **85 cm**
-- ADS-B (1090 MHz) → wavelength ~27 cm → **7 cm**
+**I wrote a decoder for a radio station that doesn't exist any more.**
 
-</v-clicks>
+***
 
-<v-click>
-
-Same physics, two orders of magnitude apart.
-This is why you don't use the same antenna for everything.
-
-</v-click>
-
-<!--
-THE TRANSITION IS SPOKEN, not on a slide. Let the CHU line sit in silence for a
-beat first, then: "CHU was on 7.85 megahertz. Shortwave. And the length of that
-wave decides everything about what you can hear."
-Anchor quote: "An antenna resonates at a quarter of the wavelength."
-Do NOT explain destructive interference; state the rule and let the three numbers
-do the work. Gesture at the 2 m whip on stage when you say 85 cm.
+This is the emotional beat of the talk and it's why the section survived the cut.
+Don't rush the last two clicks.
+Keep the ionosphere claim about DISTANCE, not indoor reception — you measured HF
+at the desk as noise-limited, so "it gets through walls" is a line you'd be
+contradicting yourself on.
+If you drift: CHU ran 88 years, 15 km from my desk, silent two months before
+this talk.
 -->
 
 ---
@@ -926,13 +1352,25 @@ No request, no login. It's just in the air.
 </v-click>
 
 <!--
-The ADS-B intro, placed ahead of the remote-receiver slide so the audience knows
-what we're about to demo before we explain where the receiver lives. This is the
-third of the three we promised at the top: music, a voice, aircraft.
-Say: "Two demos down. FM was music, AM was a voice on the aviation band. The
-third is my favourite. Every aircraft up there is announcing itself right now:
-position, altitude, speed, callsign, twice a second, in the clear. It's ADS-B."
-The next slide explains why the receiver can't be in this room.
+[1:00 · 30:40]
+
+[HARD TURN. You've just come off the CHU elegy. Let one full beat of silence sit
+before you speak, and drop the tone rather than bouncing straight into
+enthusiasm.]
+
+Two demos down. FM gave us music. AM gave us a voice. The third one is my
+favourite, and it gives us aircraft.
+
+[click] Every plane with a transponder is broadcasting its position, its
+altitude, its speed and its callsign, on ten-ninety megahertz. Twice a second.
+Unencrypted.
+
+[click] No request, no login, no API key. **It's just in the air.**
+
+***
+
+This is the third of the three you promised at the top: music, a voice,
+aircraft. Say it that way — the promise is being closed.
 -->
 
 ---
@@ -941,7 +1379,7 @@ The next slide explains why the receiver can't be in this room.
 
 1090 MHz wants a **7 cm** antenna and a **view of the sky**.
 
-This whip is 2 m, and we are indoors.
+This one is 77 cm, and we are indoors.
 
 <v-click>
 
@@ -950,16 +1388,27 @@ This whip is 2 m, and we are indoors.
 </v-click>
 
 <!--
-This slide replaces the old on-stage antenna swap. It does two jobs at once: it
-is the payoff of the antenna rule, and it explains what the audience is about to
-look at. Point at the 2 m whip on stage, then upward.
-Say: "This antenna is wrong for 1090 megahertz, and this room is wrong too. So
-the ADS-B receiver isn't here. There's a Raspberry Pi upstairs by a window with a
-7 centimetre stub on it, and I'm going to talk to it over the network."
-COLLECT THE CALLBACK from the transport slide: "Remember the socket. This is what
-it was for."
-Do NOT apologise for the receiver being remote; it is a consequence of the physics
-you just explained.
+[1:00 · 31:40]
+
+Remember the quarter wavelength, from the very beginning.
+
+Ten-ninety megahertz is a twenty-seven centimetre wave, so it wants a seven
+centimetre antenna. And a view of the sky.
+
+[POINT at the antenna.] This one is seventy-seven centimetres — eleven times too
+long. And we are indoors, in a concrete building.
+
+So the ADS-B receiver isn't in this room.
+
+[click] There's a Raspberry Pi upstairs, next to a window, with a seven
+centimetre stub on it — and I'm going to talk to it over the network.
+
+Remember that socket, forty minutes ago. **This is what it was for.**
+
+***
+
+Do NOT apologise for the receiver being remote. It's a consequence of the
+physics you just explained, which makes it a payoff rather than an excuse.
 -->
 
 ---
@@ -970,15 +1419,22 @@ class: text-center
 ## Let's see what's flying overhead.
 
 <!--
-Anchor quote: "Every plane in the sky is announcing itself right now."
-skyward has been running on the Pi since well before your session, so there is
-nothing to launch: open the browser at the Pi and the map is already populated.
-Have the tab open and loaded BEFORE you walk on; do not type a URL on stage.
-START IT NOW and leave it up in a second window so it keeps filling UNDER the
-code slides.
+[0:30 · 32:10]
 
-TIME CHECK: about 32:30 here. Past 34:00, plan to name one aircraft at the
-payoff instead of three, and keep the dwell short.
+Let's see what's flying overhead right now.
+
+[SWITCH TO THE ALREADY-LOADED TAB. Do not type a URL on stage.]
+
+***
+
+skyward has been running on the Pi since long before your session — nothing to
+launch, the map is already populated. Have the tab open and loaded BEFORE you
+walk on.
+Leave it up in a second window so it keeps filling UNDER the code slides that
+follow.
+
+TIME CHECK: about 32:10 here. Past 33:40, name one aircraft at the payoff
+instead of three, and keep the dwell short.
 -->
 
 ---
@@ -1002,6 +1458,24 @@ Four DSP stages, and only the first one is radio.
 
 </v-click>
 
+<!--
+[0:30 · 32:40]
+
+Here's the whole thing, top to bottom.
+
+Magnitude — which is the AM demodulator again. Find the preamble. Slice out the
+bits. Check the CRC. Then track the aircraft and serve it over HTTP.
+
+[click] Each message is a hundred and twelve bits, and the whole burst is over
+in a hundred and twenty microseconds. **Four stages, and only the first one is
+radio.**
+
+***
+
+FIRST CUT IN THIS SECTION. "ADS-B: Four Stages" covers the same ground later and
+does it better. Past 32:40 here, skip straight to the demodulator slide.
+-->
+
 ---
 
 # ADS-B: Demodulation
@@ -1024,11 +1498,17 @@ Instead of audio, the pattern of high and low values encodes **bits**.
 </v-click>
 
 <!--
-Keep the two code blocks side by side if it fits; the whole point is that they
-are the same operation.
-Say: "This is the AM demodulator again. It is operating on raw bytes off the
-dongle instead of parsed complex numbers, because on a Pi at 2.4 million samples
-a second that conversion is the expensive part. But the maths is the maths."
+[0:40 · 33:20]
+
+ADS-B is on-off keyed. The carrier is either there or it isn't. Phase carries
+nothing at all, so magnitude is the entire demodulator.
+
+[click] **This is the AM demodulator again.** It's working on raw bytes off the
+dongle instead of parsed complex numbers, because on a Pi at two point four
+million samples a second that conversion is the expensive part. But the maths is
+the maths.
+
+[click] Instead of audio, the pattern of high and low values encodes bits.
 -->
 
 ---
@@ -1049,15 +1529,23 @@ message starts here, and exactly where every bit slot after it begins.
 </v-click>
 
 <!--
-This is the "how does a pulse become a bit" slide. Walk the diagram left to
-right: the preamble first, then read the four data bits off the picture: pulse
-early, pulse late, early, late → 1 0 1 0.
-Say: "It's the crudest possible encoding. The carrier is either on or off, with no
-amplitude, no phase, none of the tricks FM and AM used. The only thing that
-carries information is timing: which half of the microsecond the pulse lands in.
-That's why finding the preamble matters so much. It's not data, it's a tuning
-fork. Once you've locked onto that 8-microsecond pattern, you know where all 112
-bit slots are."
+[0:55 · 34:15]
+
+There's no volume to read here, and no phase to read. The only thing carrying
+information is timing — which half of the microsecond the pulse lands in.
+
+Each bit is one microsecond, split in half. A pulse in the first half is a one.
+A pulse in the second half is a zero. That's pulse-position modulation, and it's
+about the crudest encoding there is.
+
+[WALK THE DIAGRAM left to right.] Early, late, early, late. One, zero, one, zero.
+
+[click] The eight microsecond preamble is a fixed pattern. Find it and you know
+two things at once: a message starts here, and exactly where every bit slot
+after it begins. **It isn't data. It's a tuning fork.**
+
+***
+
 Do NOT get into CRC or sample rates here; that's the next slide.
 -->
 
@@ -1085,17 +1573,24 @@ it and throws the whole 112-bit message away**. Better nothing than a wrong alti
 </v-click>
 
 <!--
-The point of this slide: with 1.2 samples per half-slot, sloppy timing corrupts
-the message, so the decoder is fanatical about where it samples.
-Say: "We're sampling at 2.4 megahertz, so a half-microsecond half-slot is barely
-one sample wide. If I computed each bit's position from the previous bit, the
-rounding error would compound, and by bit 112 I'd be reading the wrong half of
-the slot. So every position is computed from the start of the frame, and the error
-stays flat instead of accumulating. And there's a backstop: a 24-bit CRC. If the
-timing slipped, or a plane's message collided with another, the checksum fails
-and we discard the whole thing. On a busy sky you throw away a lot of messages,
-and that's fine. A dropped position is invisible, a wrong altitude is dangerous."
-The us_to_sample helper is real; it's the floating-point µs→index map in demod.rs.
+[0:45 · 35:00]
+
+We're sampling at two point four megahertz, so each half-slot is about one point
+two samples wide. That's the whole problem with this decoder.
+
+[click] **Every bit is measured from the start of the frame, never from the
+previous bit.** Measure bit-to-bit and the rounding error compounds — by bit a
+hundred and twelve you're reading the wrong half of the slot.
+
+[click] Then sample the middle of each half. Whichever is louder is the bit.
+
+[click] And there's a backstop: a twenty-four bit CRC. If the timing slipped, or
+two aircraft talked over each other, the checksum fails and we bin the whole
+message. **A dropped position is invisible. A wrong altitude is dangerous.**
+
+***
+
+us_to_sample is real — the floating-point µs→index map in demod.rs.
 -->
 
 ---
@@ -1120,17 +1615,24 @@ finds **2,403** on the same bytes. Four-fifths of the signal is still on the tab
 </v-click>
 
 <!--
-The point of this slide is that the four stages are swappable and scored against
-each other, which is why the repo exists at all, and the headroom number makes
-that concrete instead of abstract. The pipeline itself was already walked two
-slides ago; don't re-walk it, go straight to the registry.
-Say: "Every stage has a deliberately naive version and a registry of
-alternatives, scored against each other on a golden capture. The baseline
-detector pulls 517 valid messages out of one file. Swap in a smarter detector and
-you get 2,403 from the same bytes. The naive pipeline works, and four-fifths of
-the signal is still on the table. The repo is a scoreboard, not a finished thing."
-Numbers are from skyward/fixtures/raw/golden.toml [headroom]. Do not oversell it;
-land the stat and move to the payoff.
+[0:40 · 35:40]
+
+Four stages — and every one of them is swappable.
+
+[click] Each has a deliberately naive version and a registry of alternatives,
+all scored against each other on the same golden capture. The baseline detector
+pulls five hundred and seventeen valid messages out of one file. Swap in a
+smarter detector and you get two thousand four hundred and three, from exactly
+the same bytes.
+
+The naive pipeline works, and four fifths of the signal is still sitting on the
+table. **The repo is a scoreboard, not a finished thing.**
+
+***
+
+Don't re-walk the pipeline; you did that already. Go straight to the registry.
+Numbers are from skyward/fixtures/raw/golden.toml [headroom]. Land the stat and
+move to the payoff — don't oversell it.
 -->
 
 ---
@@ -1147,11 +1649,24 @@ With a $30 dongle and a 7 cm antenna, on a Pi upstairs, we can see them all.
 </v-click>
 
 <!--
-Come back to skyward here. It has been accumulating for three or four minutes and
-should be busy. Name one aircraft OUT LOUD: callsign, altitude, where it is going.
-That specificity is the payoff of the whole section and of the talk; a list of hex
-codes is not a payoff. Let it sit for a few seconds in silence — then cap the
-dwell at 30 to 45 seconds and move on. If running short, this is where the spare
+[0:45 · 36:25]
+
+[BACK TO SKYWARD. It's been filling for four or five minutes; it should be busy.]
+
+Every plane in the sky above us is announcing itself right now.
+
+[NAME A REAL AIRCRAFT OUT LOUD: callsign, altitude, where it's going.]
+
+[click] With a thirty dollar dongle and a seven centimetre antenna, on a
+Raspberry Pi upstairs, we can see all of them.
+
+[LET IT SIT. A few seconds of silence.]
+
+***
+
+Name an actual aircraft — callsign, altitude, destination. That specificity is
+the payoff of the whole talk; a list of hex codes is not a payoff.
+Cap the dwell at 30–45 seconds. If you're running SHORT, this is where the spare
 time goes: name more aircraft.
 -->
 
@@ -1162,12 +1677,19 @@ time goes: name more aircraft.
 <CoverageFlow class="mt-12" />
 
 <!--
-The same slide from the start of the talk, unchanged on purpose. Walk it once,
-fast: waves push electrons, the dongle digitizes, IQ points, and then the fork —
-rotation gave us FM, distance gave us AM and ADS-B.
-Say: "This is the slide I showed you half an hour ago and asked you to take on
-faith. Now every box on it is something you've watched run."
-This is the close of the teaching; the two slides after it are the take-home.
+[0:35 · 37:00]
+
+This is the slide I put up half an hour ago and asked you to take on faith.
+
+Waves push electrons. The dongle digitizes. IQ points on a plane. And then the
+fork — rotation gave us FM, distance gave us AM and ADS-B.
+
+**Every box on it is now something you've watched run.**
+
+***
+
+Walk it once, fast. This is the close of the teaching; everything after it is
+take-home.
 -->
 
 ---
@@ -1215,9 +1737,18 @@ The whole talk leans on a handful of crates. Reach for these.
 </style>
 
 <!--
-Reference slide, not a read-aloud. It's here so people can photograph it. If you
-call out any, call out num-complex (`I + jQ` just works) and cpal (audio on any
-OS). Everything is pinned in the repo's Cargo files.
+[0:15 · 37:15]
+
+These are the crates it all leans on. This slide exists to be photographed, not
+read.
+
+If I call out two: num-complex, because I plus jQ just works. And cpal, because
+it gets audio out on any OS.
+
+***
+
+Reference slide. Pause long enough for cameras, then move. Everything is pinned
+in the repo's Cargo files.
 -->
 
 ---
@@ -1244,13 +1775,23 @@ I'll be here, and at the reception after.
 </v-click>
 
 <!--
-Anchor quote: "Everything I showed you today costs about $30 and runs on any laptop."
-NO Q&A: you traded it for the full 40 minutes, so close by pointing people
-somewhere instead.
-Say: "I'm not doing questions from the stage, because I'd rather you came and
-held the thing. The hardware is on this table. I'll be here until they throw us
-out, and then at the reception. There's a Discord channel for this talk."
-Then advance to the closer.
+[0:35 · 37:50]
+
+The dongle is about thirty dollars, the dipole kit about ten. **Everything I
+showed you today runs on that and a laptop.**
+
+No hardware yet? The wave demo and the IQ demo need none — those are the two
+visualizations you saw. And all of it is open source.
+
+[click] **The hardware is on the table at the front. Come and hold it.**
+
+I'm not taking questions from the stage — I traded that time for the talk — but
+I'll be here until they throw us out, and then at the reception.
+
+***
+
+NO Q&A. Close by pointing people somewhere rather than asking for questions,
+then advance straight to the closer.
 -->
 
 ---
@@ -1265,6 +1806,16 @@ The airwaves are public. The code is open.
 <div class="mt-8 opacity-60 text-sm">github.com/t-eckert/listening-to-the-radio-with-rust</div>
 
 <!--
-This slide stays on the projector while people pack up, so it carries only the
-closer and the repo. Say the two lines, then stop. Nothing after "Go listen."
+[0:15 · 38:05]
+
+The airwaves are public. The code is open.
+
+**Go listen.**
+
+[STOP. Nothing after that line.]
+
+***
+
+This slide stays up while people pack up. Say the two lines and stop — no thank
+yous, no coda. Walk to the hardware table.
 -->
