@@ -891,6 +891,35 @@ do the work. Gesture at the 2 m whip on stage when you say 85 cm.
 
 ---
 
+# ADS-B
+
+The third demo. FM gave us music, AM gave us a voice. This one gives us **aircraft**.
+
+<v-click>
+
+Every plane with a transponder broadcasts its **position, altitude, speed, and
+callsign** on **1090 MHz**. Twice a second. Unencrypted.
+
+</v-click>
+
+<v-click>
+
+No request, no login. It's just in the air.
+
+</v-click>
+
+<!--
+The ADS-B intro, placed ahead of the remote-receiver slide so the audience knows
+what we're about to demo before we explain where the receiver lives. This is the
+third of the three we promised at the top: music, a voice, aircraft.
+Say: "Two demos down. FM was music, AM was a voice on the aviation band. The
+third is my favourite. Every aircraft up there is announcing itself right now:
+position, altitude, speed, callsign, twice a second, in the clear. It's ADS-B."
+The next slide explains why the receiver can't be in this room.
+-->
+
+---
+
 # So the Receiver Isn't in This Room
 
 1090 MHz wants a **7 cm** antenna and a **view of the sky**.
@@ -900,12 +929,6 @@ This whip is 2 m, and we are indoors.
 <v-click>
 
 <RemoteReceiver class="my-6" />
-
-</v-click>
-
-<v-click>
-
-Antenna theory is why this box is upstairs and not on the table.
 
 </v-click>
 
@@ -937,13 +960,6 @@ Have the tab open and loaded BEFORE you walk on; do not type a URL on stage.
 START IT NOW and leave it up in a second window so it keeps filling UNDER the
 code slides.
 -->
-
----
-
-# ADS-B
-
-Every aircraft with a transponder broadcasts its position, altitude, speed, and
-callsign. **Twice per second. Unencrypted.**
 
 ---
 
