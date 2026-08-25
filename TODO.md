@@ -359,6 +359,63 @@ audience was watching an `rtl_tcp` stream come down from upstairs.
       to the Pi; the only `socket`/`tcp` mentions are on the transport slide itself and in
       the new explicitly-corrective note.
 
+## 16. Speaker-packet findings (2026-08-24)
+
+Read the RustConf speaker packet and the Aug 20 slides reminder. Answers the question of
+what the Aug 25 PDF actually is, and turns up three items that matter more than the deck.
+
+- [x] **The PDF is a backup, not the projected artifact.** *"We require all breakout
+      session speakers to bring their own laptops... You will present the slides from your
+      own laptop."* Keynotes/project updates/lightning talks use the AV machine; breakouts
+      do not. So Slidev runs live and the click-steps survive — **the 127-page
+      `--with-clicks` export is not needed.**
+- [x] **Submission requirements checked against `radio-talk.pdf`:** 16:9 confirmed
+      (735.12 × 414 pt = 1.7757 vs 1.7778, sub-pixel rounding); PDF accepted for
+      breakouts; Inter, Fira Code and KaTeX all embedded and subsetted, so the
+      "embed custom fonts" requirement is met.
+- [ ] **The organizers recommend prerecording live demos.** *"Please don't rely on WiFi
+      for your presentation... If you are planning a live demo, we recommend prerecording
+      it."* That is aimed squarely at the laptop→Pi ADS-B payoff. **This makes item 7
+      (rehearse the local-replay fallback) the highest-value open item** — the fallback is
+      pre-blessed.
+- [ ] **There is a scheduled radio test at the venue: Tuesday 8 September, 1–2 pm**, with
+      Tina Krauss at the Registration Desk, Level 5 (attendance marked optional). Nearly
+      every unchecked item in item 8 is answerable in that hour: confirm 97.7 and 119.9,
+      scan the airband for a live ATC frequency to record `atc.iq` (item 2), and find out
+      where the Pi can actually live.
+- [x] **Item 10 is mostly retired.** The packet: *"As a speaker, you will receive a
+      dedicated Discord channel"* and *"our team will share access information with you
+      directly the week before the conference."* So the channel is provided, not
+      requested, and it is safe to promise on stage — but the URL will not exist until
+      early September. **Note a contradiction:** the Aug 20 email lists "Request dedicated
+      Discord channel (optional)" as an Aug 25 action item while the packet says it is
+      automatic. Worth one email to clarify.
+- [ ] Tech prep for breakouts is **15 minutes prior to start time** at the AV table, which
+      confirms this file's existing note. The 30-minute break plan is still the right one,
+      but it is not something the packet promises.
+- [x] Recorded and livestreamed: all sessions go to the Rust Foundation YouTube channel.
+
+## 17. The deck does not run offline — fonts come from Google
+
+`outline.md` claimed "Runs entirely offline once installed." **Measured false.**
+
+- [x] `npx slidev build` output contains
+      `fonts.googleapis.com/css2?family=Inter:wght@200;400;600&family=Fira+Code:...`.
+      Only the KaTeX faces are bundled locally.
+- [x] **Verified behaviourally** with Playwright against the built deck: online, two
+      requests reach Google Fonts and `document.fonts` reports Inter loaded. With
+      `fonts.googleapis.com` and `fonts.gstatic.com` blocked, Inter and Fira Code both
+      report *not* loaded and the deck falls back to the system stacks.
+- [x] **Impact measured, not assumed:** slide 1 and slide 30 (code) were screenshotted
+      both ways. Near-identical, no reflow, code alignment preserved. The fallback is
+      genuinely fine.
+- [x] Corrected the false claim in `outline.md`.
+- [ ] **After the Aug 25 submission**, vendor Inter and Fira Code into `deck/public` with
+      local `@font-face` rules and set the Slidev font provider to none. Cheap, and it
+      removes a network dependency the packet explicitly warns about. **Deliberately not
+      done before the deadline** — a font change the day before submission risks a visual
+      regression across 51 slides for a benefit measured at nearly zero.
+
 ## 12. Minor consistency fixes
 
 - [x] Fixed the `outline.md` cadence sentence: dropped the dead "physical object passed

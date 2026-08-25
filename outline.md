@@ -56,8 +56,27 @@ npm run export   # radio-talk.pdf, one page per slide
 ```
 
 Presenting: laptop screen shows `/presenter` (notes, timer, next slide), projector shows
-the deck. Runs entirely offline once installed. The exported PDF is both the Aug 25
-submission and the last-resort backup if the browser misbehaves at the venue.
+the deck. The exported PDF is both the Aug 25 submission and the last-resort backup if the
+browser misbehaves at the venue.
+
+**You present from your own laptop.** The speaker packet is explicit: *"We require all
+breakout session speakers to bring their own laptops, chargers, and HDMI adapters. You
+will present the slides from your own laptop."* Only keynotes, project updates and
+lightning talks run off the AV provider's machine. So the submitted PDF is an archive and
+a backup, not the projected artifact — Slidev runs live, with the click-steps intact.
+**Bring an HDMI adapter.** The room provides a projector, podium, power, a slide advancer,
+and confidence monitors showing slides, speaker notes and a countdown timer.
+
+**It does *not* run entirely offline** (this file used to claim it did — measured false on
+2026-08-24). The built deck fetches Inter and Fira Code from `fonts.googleapis.com` at
+runtime. With those hosts blocked, `document.fonts` shows neither loaded and the deck
+falls back to the system sans and system monospace.
+
+The damage is cosmetic and small — a title slide and a code slide were rendered both ways
+and are near-identical, with no reflow — so this is **not** a reason to touch the deck
+before the submission. It is worth fixing afterwards by vendoring the two fonts into
+`deck/public`, because the packet warns *"don't rely on WiFi for your presentation as WiFi
+performance can fluctuate."*
 
 ---
 
