@@ -21,7 +21,7 @@ Thomas Eckert
 RustConf 2026 | Montreal | 9 September 2026
 
 <!--
-[0:40 · 0:40]
+[0:35 · 0:35]
 
 [FM RECEIVER IS ALREADY RUNNING AND MUTED. Don't touch it.]
 
@@ -47,9 +47,7 @@ I write about what I learn at **fieldtheories.blog**.
 
 </div>
 
-<!-- PHOTO PLACEHOLDER: swap this div for <img src="/me.jpg" class="about-photo" />
-     (drop me.jpg in deck/public/) once you've picked a photo. object-cover keeps it filling the half. -->
-<div class="about-photo"></div>
+<img src="/me.jpg" alt="Thomas Eckert" class="about-photo" />
 
 <style>
 .about-me-slide {
@@ -72,12 +70,13 @@ I write about what I learn at **fieldtheories.blog**.
   width: 50%;
   height: 100%;
   object-fit: cover;
+  object-position: 50% 30%;
   background: linear-gradient(160deg, #38bdf8 0%, #6366f1 48%, #d946ef 100%);
 }
 </style>
 
 <!--
-[0:35 · 1:15]
+[0:30 · 1:05]
 
 I'm a software engineer at Honeycomb. Before that, Redpanda, HashiCorp, and
 Microsoft. And before all of that I studied physics.
@@ -95,7 +94,7 @@ which is exactly why this is the talk I wish I'd had in my first hour.**
 <ThreeApplications class="mt-12" />
 
 <!--
-[0:40 · 1:55]
+[0:40 · 1:45]
 
 What I want to do today is introduce you to building applications in Rust that
 take radio as their input. We'll build three of them: a radio that plays music,
@@ -104,6 +103,16 @@ aircraft flying overhead.
 
 Those three look nothing like each other. **They sit on exactly the same
 foundation, and that foundation is the thing I actually want you to leave with.**
+
+All three are Rust, and I'll stop three times to show you where that mattered —
+not because we're at RustConf, but because a radio turns out to be a hard
+real-time program in a trench coat, and the language has opinions about those.
+
+***
+
+The three Rust stops are: the FM inner loop ("Why Rust"), the ADS-B message
+types, and the typestate click on "Four Stages." Promising three and delivering
+three is the same trick as music / a voice / aircraft.
 -->
 
 ---
@@ -116,7 +125,7 @@ Now playing:
 ## 97.7 FM
 
 <!--
-[0:50 · 2:45]
+[0:45 · 2:30]
 
 [BRING THE AUDIO UP. Say nothing for a few seconds. Let it play.]
 
@@ -142,7 +151,7 @@ published sources, CONFIRM AT THE VENUE during the break.
 <CoverageFlow class="mt-12" />
 
 <!--
-[1:20 · 4:05]
+[1:05 · 3:35]
 
 Here's the pipeline for processing radio signals.
 
@@ -173,7 +182,7 @@ class: text-center
 ## Let's begin with the physics.
 
 <!--
-[0:10 · 4:15]
+[0:10 · 3:45]
 
 Let's begin with the physics.
 
@@ -203,7 +212,7 @@ down in a wire create **electromagnetic waves** that radiate outward through spa
 </v-click>
 
 <!--
-[0:55 · 5:10]
+[0:45 · 4:30]
 
 **Imagine a bobber sitting in a pool of still water.** Nothing's moving. The
 surface is flat.
@@ -245,7 +254,7 @@ incoming EM wave. The antenna converts the wave back into electrical current.
 </v-click>
 
 <!--
-[0:50 · 6:00]
+[0:40 · 5:10]
 
 Now put a second bobber in the same pool, some distance away.
 
@@ -277,7 +286,7 @@ Those waves *push* electrons up and down in a receiving antenna.
 </v-click>
 
 <!--
-[0:45 · 6:45]
+[0:40 · 5:50]
 
 So: electrons moving up and down in a transmitting antenna make waves.
 
@@ -320,7 +329,7 @@ Same rule on every band. Only the number changes.
 </v-click>
 
 <!--
-[0:40 · 7:25]
+[0:35 · 6:25]
 
 Look at that wave for a second. The distance between two crests is the
 wavelength, and it turns out to be the number that decides everything about your
@@ -370,7 +379,7 @@ Same dongle receives FM, AM, aviation, ADS-B. Just change the frequency and the 
 </style>
 
 <!--
-[0:45 · 8:10]
+[0:35 · 7:00]
 
 This is the hardware. A USB dongle, about thirty dollars. The chips inside were designed for
 a television receiver and it worked
@@ -407,7 +416,7 @@ recommend it from the stage.
 </v-click>
 
 <!--
-[0:40 · 8:50]
+[0:35 · 7:35]
 
 Two chips inside it matter.
 
@@ -426,7 +435,7 @@ be enough for everything in this talk.**
 <TunerShift class="mt-6" />
 
 <!--
-[1:00 · 9:50]
+[0:50 · 8:25]
 
 The antenna hears everything at once. FM, AM, aviation, the cell towers outside,
 somebody's Wi-Fi. That's the top row: the whole spectrum, arriving together, all
@@ -458,7 +467,7 @@ There are two ways to get the raw IQ bytes into your code.
 Use the **`rtl_sdr`** crate to read from USB, or run **`rtl_tcp`** as a separate process to serve the IQ bytestream over TCP.
 
 <!--
-[0:45 · 10:35]
+[0:40 · 9:05]
 
 Two ways to get those raw bytes into your program.
 
@@ -472,8 +481,12 @@ on the same machine as your code.**
 
 ***
 
-This plants the ADS-B remote receiver. Collect the callback on "So the Receiver
-Isn't in This Room."
+This sets up the ADS-B receiver being elsewhere — but as a **contrast**, not a
+match. Do not promise that the Pi works this way, because it doesn't: it runs
+skyward and serves HTTP. What carries over is the general idea that a socket
+puts distance between the dongle and the code. The callback on "So the Receiver
+Isn't in This Room" is "here's the other way to solve that, and here's why I
+picked it."
 -->
 
 ---
@@ -484,7 +497,7 @@ class: text-center
 ## What does this digital signal look like?
 
 <!--
-[0:10 · 10:45]
+[0:05 · 9:10]
 
 So what does that digital signal actually look like?
 
@@ -523,7 +536,7 @@ Together, `I + jQ` is a complex number that encodes both the **amplitude** and t
 </v-click>
 
 <!--
-[1:15 · 12:00]
+[1:05 · 10:15]
 
 A radio signal at a single frequency is a cosine wave. It has an amplitude — how
 strong it is — and a phase — where in its cycle it happens to be at this instant.
@@ -579,7 +592,7 @@ Everything in SDR comes back to these two: how fast it turns, how far out it sit
 </v-click>
 
 <!--
-[1:10 · 13:10]
+[1:00 · 11:15]
 
 The dongle gives you pairs of bytes. I, Q, I, Q, forever. **Each pair is a point
 on the complex plane.**
@@ -609,7 +622,7 @@ class: text-center
 ## Let's see this.
 
 <!--
-[0:15 · 13:25]
+[0:10 · 11:25]
 
 Let's see that.
 
@@ -625,7 +638,7 @@ Just advance. The demo is the next slide.
 <IqDemo class="mt-4" />
 
 <!--
-[1:15 · 14:40]
+[1:05 · 12:30]
 
 On the left is the wave drawn the way you'd normally draw it: going up and down
 over time. On the right is the same signal as a point going around a circle.
@@ -675,7 +688,7 @@ pub fn bytes_to_iq(raw: &[u8]) -> Vec<IqSample> {
 `0` → `-1.0`. `255` → `+1.0`. The midpoint, `127.5` → `0.0`.
 
 <!--
-[0:50 · 15:30]
+[0:40 · 13:10]
 
 The dongle sends unsigned bytes, zero to two hundred and fifty-five. This is the
 function that turns them into the floats we actually do arithmetic on.
@@ -700,7 +713,7 @@ class: text-center
 ## What's coming off the dongle right now
 
 <!--
-[0:25 · 15:55]
+[0:20 · 13:30]
 
 [DEMO: task iq-print. Five to ten seconds of scroll, no more.]
 
@@ -722,7 +735,7 @@ Every demodulation asks one of two questions.
 <DemodFork class="mt-6" />
 
 <!--
-[0:45 · 16:40]
+[0:40 · 14:10]
 
 Every demodulator asks one of two questions about that
 point.
@@ -739,8 +752,8 @@ sensor in your car tire. Every one of them is one of those two questions.
 
 Name two or three out loud, don't read the list. The full tables are in the repo.
 
-TIME CHECK: the clock should read about 16:40 as you leave this slide. Past
-18:30, take the cuts marked on FM Step 1 and FM Step 3.
+TIME CHECK: the clock should read about 14:10 as you leave this slide. Past
+15:45, take the cuts marked on FM Step 1 and FM Step 3.
 -->
 
 ---
@@ -751,7 +764,7 @@ class: text-center
 ## Let's build an FM radio tuner
 
 <!--
-[0:20 · 17:00]
+[0:15 · 14:25]
 
 Let's build an FM radio tuner.
 
@@ -772,7 +785,7 @@ This is the turn. Everything before it was setup; lift the energy here.
 <PipelineMap class="mt-2" />
 
 <!--
-[1:20 · 18:20]
+[1:10 · 15:35]
 
 Here's the shape of it. We start with a firehose of IQ samples, and we end with
 audio that the sound card can play.
@@ -820,7 +833,7 @@ Everything that follows lives in **one file**.
 />
 
 <!--
-[0:50 · 19:10]
+[0:40 · 16:15]
 
 Everything I'm about to show you lives in one file, and this is that file — every
 section collapsed, like a minimap, with the three steps picked out.
@@ -865,7 +878,7 @@ if self.countdown >= self.decimation {
 ```
 
 <!--
-[1:00 · 20:10]
+[0:50 · 17:05]
 
 The antenna does not tune. It hears every station at once and the dongle sends
 you all of it — that's the wide band on the diagram. **Tuning happens here, in
@@ -912,7 +925,7 @@ fn process(&mut self, input: &[Iq]) -> Vec<f32> {
 The audio _is_ the rate of phase change, the **rotation speed**.
 
 <!--
-[1:20 · 21:30]
+[1:10 · 18:15]
 
 FM encodes the audio as the speed of rotation. So the audio is just how far the
 point turned between one sample and the next.
@@ -951,7 +964,7 @@ fn process(&mut self, samples: &mut [f32]) {
 75 μs in North America. 50 μs in Europe.
 
 <!--
-[0:40 · 22:10]
+[0:35 · 18:50]
 
 One more step, and it's a small one.
 
@@ -984,7 +997,7 @@ ring.push(&audio);                                      // speakers
 ```
 
 <!--
-[1:00 · 23:10]
+[0:50 · 19:40]
 
 And this is the loop, inside main.
 
@@ -1010,7 +1023,73 @@ And now you know what you're listening to.
 Second play of the opening track — the difference is they can now name every step
 that produced it. Don't talk over the first couple of seconds.
 
-TIME CHECK: about 23:10 leaving this slide.
+TIME CHECK: about 19:40 leaving this slide.
+-->
+
+---
+
+# Why Rust
+
+**960,000 samples a second.** Roughly a microsecond each — and the sound card
+never waits.
+
+```rust {all|1|2|4}
+let ring   = Arc::new(AudioRing::new(AUDIO_RATE as usize * 2));
+let stream = start_audio(AUDIO_RATE, ring.clone())?;  // audio thread drains
+
+ring.push(&audio);                                    // decode thread fills
+```
+
+<v-clicks>
+
+- Two threads sharing one buffer. `Send` and `Sync` make that a **compile error**
+  or a guarantee — never a 3 a.m. crackle.
+- **No garbage collector.** At a microsecond a sample, a pause isn't a glitch, it's silence.
+- Two dependencies. Ten crates in the entire tree. Nothing to `apt install`.
+
+</v-clicks>
+
+<!--
+[1:15 · 20:55]
+
+I want to stop on the language for a second, because this is the one slide where
+I make a case instead of showing you a picture.
+
+Nine hundred and sixty thousand samples a second. That's about a microsecond
+each, and the sound card is going to ask for more audio whether or not I'm ready.
+There's no catching up. This is a hard real-time program wearing a hobby project's
+clothes.
+
+[click] So: two threads. That ring buffer is filled by the loop you just read and
+drained by the audio callback, at the same time.
+
+[click] And the compiler will not let me share it until I've said how. Send and
+Sync aren't documentation, they're a proof obligation. In C I'd have written the
+same thing and found out I was wrong at three in the morning through a speaker.
+
+[click] No garbage collector — which matters more here than in almost anything
+else I write. A pause of a few milliseconds in a web service is a slow request.
+A pause of a few milliseconds here is a hole in the music.
+
+[click] And two dependencies. Ten crates in the whole tree. Nothing to install,
+no build system to fight — which is genuinely why this stayed fun long enough to
+become a talk.
+
+***
+
+NINETY SECONDS MAX. This is RustConf; nobody needs converting. The point is what
+the *constraint* is, not that Rust is nice.
+
+TIME CHECK: about 20:55 leaving this slide. Past 22:05, drop the third bullet
+(dependency count) — "The Crates" makes that point again at the end anyway.
+Numbers verified 2026-08-24: `cargo tree -p fm-single` = 2 direct deps, 10 crates.
+The 2.4 MHz / 400 ns figures belong to ADS-B on the Pi, NOT this receiver.
+
+[OPTIONAL, if the room feels like an audio crowd] "And before someone finds me at
+the reception — yes, that's a mutex inside an audio callback, which is the one
+thing you're told never to do. A real engineer would use a lock-free queue. It's
+forty lines and it hasn't dropped a sample yet." Costs 15 s, buys a lot of
+goodwill from the people most likely to be checking.
 -->
 
 ---
@@ -1024,7 +1103,7 @@ TIME CHECK: about 23:10 leaving this slide.
 ]" />
 
 <!--
-[0:50 · 24:00]
+[0:40 · 21:35]
 
 Now AM. And here's the same map — same endpoints, same three rates, same two
 divisions.
@@ -1043,10 +1122,10 @@ middle step changed.**
 
 Keep this whole section moving. Its job is the one-line diff against FM.
 
-TIME CHECK: about 24:00 leaving this slide.
-- Past 24:45 → skip "Time From the Sky" and open CHU with its line instead:
+TIME CHECK: about 21:35 leaving this slide.
+- Past 22:10 → skip "Time From the Sky" and open CHU with its line instead:
   "everything so far turned radio into sound; this one turns it into a clock."
-- Past 26:45 → skip the clock section entirely. Go from the FM/AM summary
+- Past 23:55 → skip the clock section entirely. Go from the FM/AM summary
   straight to "Antenna Length." Costs you the emotional beat; buys you 1:45.
 -->
 
@@ -1071,7 +1150,7 @@ AM needs **nothing but this sample**: distance isn't.
 </v-click>
 
 <!--
-[0:50 · 24:50]
+[0:40 · 22:15]
 
 FM, on top. How far did the point turn since last time.
 
@@ -1110,7 +1189,7 @@ Subtract it and you have a high-pass.
 </v-click>
 
 <!--
-[0:50 · 25:40]
+[0:45 · 23:00]
 
 The envelope never goes negative — it rides on top of the carrier. And speakers
 want audio centred on zero. So we take the offset out.
@@ -1159,7 +1238,7 @@ communications, but ATC is a public broadcast.</span>
 </v-click>
 
 <!--
-[1:45 · 27:25]
+[1:25 · 24:25]
 
 Here's the AM loop.
 
@@ -1212,7 +1291,7 @@ Same IQ data, different interpretation.
 </v-click>
 
 <!--
-[0:30 · 27:55]
+[0:25 · 24:50]
 
 So: both of those produce audio, out of the same stream of numbers.
 
@@ -1249,7 +1328,7 @@ One-way, no network, no handshake — nothing to log into.
 </v-click>
 
 <!--
-[0:35 · 28:30]
+[0:30 · 25:20]
 
 Everything we've built so far turns radio into sound.
 
@@ -1292,7 +1371,7 @@ I pointed the receiver at 7.850 MHz and found **noise where a station used to be
 </v-click>
 
 <!--
-[1:10 · 29:40]
+[1:00 · 26:20]
 
 Fifteen kilometres from my desk in Ottawa there was a station called CHU, run by
 the National Research Council. Three frequencies, caesium clocks, broadcasting
@@ -1345,7 +1424,7 @@ No request, no login. It's just in the air.
 </v-click>
 
 <!--
-[1:00 · 30:40]
+[0:50 · 27:10]
 
 [HARD TURN. You've just come off the CHU elegy. Let one full beat of silence sit
 before you speak, and drop the tone rather than bouncing straight into
@@ -1381,7 +1460,7 @@ This one is built for the FM band, and we are indoors.
 </v-click>
 
 <!--
-[1:00 · 31:40]
+[1:00 · 28:10]
 
 Remember the quarter wavelength, from the very beginning.
 
@@ -1396,12 +1475,24 @@ So the ADS-B receiver isn't in this room.
 [click] There's a Raspberry Pi upstairs, next to a window, with a seven
 centimetre stub on it — and I'm going to talk to it over the network.
 
-Remember that socket, forty minutes ago. **This is what it was for.**
+Now, remember the two transports from earlier. rtl_tcp would let me put the
+dongle upstairs and run the decoder down here — and **that is not what I did.**
+Ten-ninety runs at two point four megahertz. That's nearly five megabytes a
+second of raw IQ, and I am not pushing that across conference WiFi.
+
+So the Pi runs the whole radio. What crosses the building isn't samples, it's
+answers.
 
 ***
 
 Do NOT apologise for the receiver being remote. It's a consequence of the
 physics you just explained, which makes it a payoff rather than an excuse.
+
+ACCURACY, don't undo this: **the Pi does not use rtl_tcp.** skyward is a hosted
+application there — it reads the dongle directly over USB (`SKYWARD_SOURCE=usb`,
+the recommended shape in skyward/docs/RASPBERRY_PI.md) and serves HTTP. The
+laptop is a browser talking to it. The 4.8 MB/s figure is that doc's, and is why
+direct USB is recommended over a localhost socket.
 -->
 
 ---
@@ -1412,7 +1503,7 @@ class: text-center
 ## Let's see what's flying overhead.
 
 <!--
-[0:30 · 32:10]
+[0:25 · 28:35]
 
 Let's see what's flying overhead right now.
 
@@ -1426,7 +1517,7 @@ walk on.
 Leave it up in a second window so it keeps filling UNDER the code slides that
 follow.
 
-TIME CHECK: about 32:10 here. Past 33:40, name one aircraft at the payoff
+TIME CHECK: about 28:35 here. Past 29:50, name one aircraft at the payoff
 instead of three, and keep the dwell short.
 -->
 
@@ -1452,7 +1543,7 @@ Four DSP stages, and only the first one is radio.
 </v-click>
 
 <!--
-[0:30 · 32:40]
+[0:25 · 29:00]
 
 Here's the whole thing, top to bottom.
 
@@ -1466,7 +1557,7 @@ radio.**
 ***
 
 FIRST CUT IN THIS SECTION. "ADS-B: Four Stages" covers the same ground later and
-does it better. Past 32:40 here, skip straight to the demodulator slide.
+does it better. Past 29:00 here, skip straight to the demodulator slide.
 -->
 
 ---
@@ -1491,7 +1582,7 @@ Instead of audio, the pattern of high and low values encodes **bits**.
 </v-click>
 
 <!--
-[0:40 · 33:20]
+[0:35 · 29:35]
 
 ADS-B is on-off keyed. The carrier is either there or it isn't. Phase carries
 nothing at all, so magnitude is the entire demodulator.
@@ -1522,7 +1613,7 @@ message starts here, and exactly where every bit slot after it begins.
 </v-click>
 
 <!--
-[0:55 · 34:15]
+[0:45 · 30:20]
 
 There's no volume to read here, and no phase to read. The only thing carrying
 information is timing — which half of the microsecond the pulse lands in.
@@ -1566,7 +1657,7 @@ it and throws the whole 112-bit message away**. Better nothing than a wrong alti
 </v-click>
 
 <!--
-[0:45 · 35:00]
+[0:40 · 31:00]
 
 We're sampling at two point four megahertz, so each half-slot is about one point
 two samples wide. That's the whole problem with this decoder.
@@ -1584,6 +1675,71 @@ message. **A dropped position is invisible. A wrong altitude is dangerous.**
 ***
 
 us_to_sample is real — the floating-point µs→index map in demod.rs.
+-->
+
+---
+
+# ADS-B: What 112 Bits Actually Say
+
+```rust {all|2|3|4-6|8}
+pub enum Message {
+    Identification   { callsign: String, category: (u8, u8) },
+    AirbornePosition { altitude: Altitude, cpr: CprFrame },
+    Velocity { ground_speed: Option<Knots>,
+               track:        Option<TrackDeg>,
+               vertical_rate: Option<FeetPerMinute>, .. },
+    // ...
+    Unsupported { type_code: u8 },
+}
+```
+
+<v-click>
+
+`Knots`, `TrackDeg`, `FeetPerMinute` — not `f32`. **Track is not heading**; they
+differ by the wind correction angle, sometimes by fifteen degrees.
+
+</v-click>
+
+<!--
+[1:15 · 32:15]
+
+So the CRC passed, and we have a hundred and twelve good bits. What's in them?
+
+This is the type they turn into. It's the whole vocabulary an aircraft has.
+
+[click] Type codes one to four are identification — the callsign it filed its
+flight plan under. That's the "AIR CANADA eight-seven-two" you see on the map.
+
+[click] Nine to eighteen are position. Altitude, and a compressed pair of
+coordinates I have to combine two messages to unpack.
+
+[click] Nineteen is velocity. How fast it's going over the ground, which
+direction, and whether it's climbing or descending.
+
+[click] And then this one, which is my favourite line in the file. Unsupported —
+recognised, not decoded. It's every message type I haven't gotten to yet, kept
+visible instead of quietly dropped, so the thing can tell me what I'm still
+missing.
+
+[click] Now look at the field types. Not f32 — Knots, TrackDeg, FeetPerMinute.
+The first version of this passed bare floats around for both heading and track,
+and those are genuinely different things. Track is the direction you're moving.
+Heading is where the nose points. In a crosswind they can be fifteen degrees
+apart, and ADS-B sends you track.
+
+Rust makes that distinction free. One line, a newtype, and the compiler stops me
+from ever putting a heading where a track belongs. The comment I left in that
+file says it better than I can: **"naming it wrong is the kind of error that
+survives all the way onto a conference slide."**
+
+***
+
+DOUBLE DUTY: this is the "what's in the message" slide and the "why Rust" slide
+at once. Lead with the aircraft, land on the types.
+Source: skyward/crates/adsb-core/src/decode.rs and units.rs. The `..` in
+Velocity elides gnss_vertical_rate; SurfacePosition and Airspeed are elided
+entirely for legibility — say "there are a couple more" if asked.
+The quoted comment is real, at the top of units.rs.
 -->
 
 ---
@@ -1607,8 +1763,15 @@ finds **2,403** on the same bytes. Four-fifths of the signal is still on the tab
 
 </v-click>
 
+<v-click>
+
+`Candidate` → `RawFrame` → `Validated`. The decoder takes only `Validated`, so a
+frame that failed CRC **can't reach the map** — not by discipline, by type.
+
+</v-click>
+
 <!--
-[0:40 · 35:40]
+[0:50 · 33:05]
 
 Four stages — and every one of them is swappable.
 
@@ -1620,6 +1783,15 @@ the same bytes.
 
 The naive pipeline works, and four fifths of the signal is still sitting on the
 table. **The repo is a scoreboard, not a finished thing.**
+
+[click] And one more thing the types do for me. What travels between those stages
+isn't bytes, it's a ladder — a Candidate is somewhere the detector *thinks* a
+message starts, a RawFrame is sliced but unchecked, and a Validated is one that
+passed CRC. The decoder will only accept the last one.
+
+So the thing I said two slides ago — that a wrong altitude is worse than no
+altitude — isn't me remembering to check. **A frame that failed its checksum
+cannot reach that map, because there's no type that would carry it there.**
 
 ***
 
@@ -1642,7 +1814,7 @@ With a $30 dongle and a 7 cm antenna, on a Pi upstairs, we can see them all.
 </v-click>
 
 <!--
-[0:45 · 36:25]
+[0:35 · 33:40]
 
 [BACK TO SKYWARD. It's been filling for four or five minutes; it should be busy.]
 
@@ -1670,7 +1842,7 @@ time goes: name more aircraft.
 <CoverageFlow class="mt-12" />
 
 <!--
-[0:35 · 37:00]
+[0:30 · 34:10]
 
 This is the slide I put up half an hour ago and asked you to take on faith.
 
@@ -1730,13 +1902,17 @@ The whole talk leans on a handful of crates. Reach for these.
 </style>
 
 <!--
-[0:15 · 37:15]
+[0:15 · 34:25]
 
 These are the crates it all leans on. This slide exists to be photographed, not
 read.
 
 If I call out two: num-complex, because I plus jQ just works. And cpal, because
 it gets audio out on any OS.
+
+And notice how short it is. The FM receiver is two dependencies — ten crates in
+the whole tree. There's no SDK, no C library to install first, no build system
+between you and the antenna. **That's the part that let this stay a hobby.**
 
 ***
 
@@ -1768,7 +1944,7 @@ I'll be here, and at the reception after.
 </v-click>
 
 <!--
-[0:35 · 37:50]
+[0:25 · 34:50]
 
 The dongle is about thirty dollars, the dipole kit about ten. **Everything I
 showed you today runs on that and a laptop.**
@@ -1799,7 +1975,7 @@ The airwaves are public. The code is open.
 <div class="mt-8 opacity-60 text-sm">github.com/t-eckert/listening-to-the-radio-with-rust</div>
 
 <!--
-[0:15 · 38:05]
+[0:15 · 35:05]
 
 The airwaves are public. The code is open.
 

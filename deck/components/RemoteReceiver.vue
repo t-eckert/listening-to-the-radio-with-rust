@@ -1,9 +1,12 @@
 <script setup>
 // The ADS-B receiver is not on stage: a Raspberry Pi with a 7 cm antenna sits by
 // an upstairs window and is reached from the stage laptop over the network. This
-// is the payoff of the antenna rule (right antenna, view of the sky) and it
-// collects the earlier "socket" callback — the code doesn't care that the dongle
-// is in another room.
+// is the payoff of the antenna rule (right antenna, view of the sky).
+//
+// The link drawn here is HTTP, NOT rtl_tcp. skyward is a hosted application on
+// the Pi: it reads the dongle directly over USB and serves JSON and SSE. Raw IQ
+// never crosses the network. Keep the wire label generic ("network") or name
+// HTTP — do not label it with a socket or a sample stream.
 const LINK_CY = 176 // both boxes share this vertical centre so the link is level
 </script>
 

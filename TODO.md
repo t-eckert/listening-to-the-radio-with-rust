@@ -88,7 +88,11 @@ slides earlier. Also, skyward's own `runs/baseline.json` shows the naive pipelin
       second, ~1 µs each." (Corrected the one falsehood — the 2.4 MHz/400 ns rate —
       rather than a full rewrite; the existing bullets, "No C dependencies," and
       zero-cost-iterators claims were already accurate. The static-binary/213-tests
-      enrichment is still available if you want to add it.)
+      enrichment is still available if you want to add it. **Correction 2026-08-24:
+      it's 206 tests, not 213** — `cargo test --workspace` in skyward reports
+      `passed: 206 failed: 0` across 11 binaries. 213 is the count of `#[test]`
+      attributes in the tree, which is not the same thing. Use 206 if it goes on a
+      slide. The static-binary claim is still unverified — see item 6.)
 - [x] Updated the speaker note's "2.4 million" quote to "960 thousand… about a
       microsecond each," plus a reminder that 2.4 MHz/400 ns is the ADS-B rate.
 - [x] **Verify:** rendered slide 27 shows the corrected numbers; 960 kS/s traces to
@@ -123,22 +127,39 @@ multi-file receivers, not the two binaries the talk actually uses.
 
 ## 6. The Pi has never run skyward — prove the whole remote path (skyward repo; Thomas-led)
 
-No evidence skyward has ever run on a Raspberry Pi: no aarch64 cross-build has been
-performed (no target in `rust-toolchain.toml`; the guide's "non-event" line is a claim,
-not a log), no systemd units exist, and the USB source is unimplemented — live operation
-needs `rtl_tcp` as a separate process that nothing supervises. This is the closing
-payoff's foundation and potentially days of yak-shaving.
+**Most of this item is stale as of 2026-08-24 — skyward has moved.** Re-checked against
+the repo while correcting the deck's `rtl_tcp` wording (item 15). Corrections:
 
-- [ ] Cross-build (or build on the Pi) and run the full stack — `rtl_tcp` + `skyward run`
-      — on the actual Pi with the real dongle and 7 cm antenna.
-- [ ] Write two systemd units (`rtl_tcp.service`, `skyward.service`) with
-      `Restart=always`, and enable them; the stack must survive a process kill and a
-      power cycle unattended.
-- [ ] Commit the uncommitted work: the entire `client/` UI, `web.rs`, `build.rs`, and
-      modified files are working-tree-only. Six commits total, no CI.
+- ~~"the USB source is unimplemented"~~ — **it is implemented.** `be08fa8 source: the
+  dongle over USB, and a link that comes back`. `UsbSource::open` binds librtlsdr
+  directly; `SKYWARD_SOURCE=usb` is now the *recommended* deployment and `rtl_tcp` is the
+  fallback. There is no second process to supervise.
+- ~~"no systemd units exist"~~ — **they do.** `deploy/systemd/skyward.service` and
+  `rtl_tcp.service`, from `f251a20`.
+- ~~"the uncommitted work is working-tree-only"~~ — **committed.** Only an untracked
+  `LICENSE` remains in the working tree.
+- There is now `docs/RASPBERRY_PI.md` (a step-by-step deploy guide) and
+  `docs/PI_AUDIT.md` (a 12-finding readiness audit, 9 fixed).
+
+**What still stands, and it is the important part.** `docs/PI_AUDIT.md` states its own
+boundary plainly: *"No step was run on a Raspberry Pi, and no RTL-SDR was attached."*
+Everything above is code and documentation, not a Pi that has ever decoded an aircraft.
+`rust-toolchain.toml` still pins only `1.94.1` with no aarch64 target, and the audit's
+finding 3 says cross-compiling needs a C cross-toolchain and is not dependency-free.
+
+- [ ] Build (on the Pi, or cross with the C toolchain the audit names) and run
+      `skyward run` on the actual Pi with the real dongle and 7 cm antenna.
+      **Use `--features usb`** — the direct-USB path is the one the docs recommend and
+      the one the talk now describes on stage.
+- [ ] Install and enable `deploy/systemd/skyward.service`; confirm it survives a process
+      kill and a power cycle unattended. (`rtl_tcp.service` is only needed for the
+      fallback shape.)
 - [ ] **Verify:** Pi runs unattended for several hours; `curl http://<pi>/healthz` and
-      `/api/v1/aircraft` from another machine return live data; `kill` the rtl_tcp
-      process and watch it recover.
+      `/api/v1/aircraft` from another machine return live data; `kill` the skyward
+      process and watch systemd bring it back.
+- [ ] **Verify the claim the talk now makes out loud:** that the Pi is doing the whole
+      radio and serving answers. `curl http://<pi>/api/v1/aircraft` from the laptop is
+      that proof.
 
 ## 7. Rehearse the local-replay ADS-B fallback (skyward repo; mostly Thomas)
 
@@ -170,14 +191,21 @@ But fixtures are gitignored and local-only (the `fixtures fetch` subcommand refe
       introduction (the cold open depends on it). Add to the setup checklist in
       `outline.md`.
 
-## 9. Timing has never been measured — do one full timed run-through (Thomas)
+## 9. Timing measured at 32:00 — no pre-emptive cuts (Thomas) — DONE
 
-The 37.5-minute table is additive guesswork; cold opens and three live demos are exactly
-what runs long.
+- [x] **Measured 32:00 on 2026-08-19**, timed run-through with Ernest Kissiedu.
+- [x] **Verified:** 32:00 is under the 38:00 bar, so the pre-planned cuts are **not**
+      applied pre-emptively. They remain a live contingency behind the TIME CHECK cues.
+- [ ] Per-section times were not captured, only the total. Take them at the next
+      rehearsal if one happens before Montreal. **This is now the highest-value timing
+      item:** the deck's speaker-note clock is rebased on a single uniform 0.84 scaling
+      of this run (see item 13), and per-section times would replace that guess with
+      measurements.
 
-- [ ] One complete timed rehearsal against the presenter view, demos included (file
-      sources are fine). Record per-section times next to the table in `outline.md`.
-- [ ] **Verify:** actual total ≤ 38:00, or apply the pre-planned cuts and re-time.
+The estimate table in `outline.md` ran 7.5 minutes long; it has since been rebuilt from
+the deck's calibrated stamps (item 13) and no longer disagrees. Note that 32:00 understates the
+live figure: section 9's ATC listen could not be rehearsed (`atc.iq` does not exist), and
+live delivery drifts longer than rehearsal.
 
 ## 10. The Discord channel doesn't exist yet
 
@@ -201,6 +229,133 @@ still on the table" — which turns the closing invitation into a hook for this 
 - [x] **Verify:** numbers match `golden.toml` `[headroom]` — `baseline_crc_ok = 517`,
       `better_detector_crc_ok = 2403` (517/2403 ≈ 0.22, so ~four-fifths on the table).
       Confirmed rendered on slide 44.
+
+## 13. Ernest's feedback: "more Rust cheerleading" — DONE
+
+Timed run-through 2026-08-19. Feedback was overwhelmingly positive (cadence, presence,
+makes a complex subject understandable). One substantive note: **say more about why Rust
+and what makes it good for this**.
+
+Root cause found: **there used to be a "Why Rust" slide and it was deleted by accident.**
+`c2614e6` added it; it is present in `66cd6f9` and gone in `3a26ba6` (the FM/AM pipeline
+rework). Its crate table survived as the standalone "The Crates" slide; the argument did
+not. So the deck said "Rust" in the title, the intro, and a crate list, and nowhere made
+a case.
+
+- [x] **Restored "Why Rust"** as slide 30, after "FM: The Whole Loop" — rewritten, not
+      reverted. Argues from the `Arc<AudioRing>` hand-off at `fm-single/src/main.rs:213`
+      (a real two-thread share in the file the audience just read) rather than three
+      abstract bullets. 1:15.
+- [x] **Added "ADS-B: What 112 Bits Actually Say"** as slide 45, between "Why Timing Is
+      Everything" and "Four Stages". Double duty, as requested: the audience sees the
+      `Message` enum from `skyward/crates/adsb-core/src/decode.rs` — so they see what an
+      aircraft actually transmits — and the `Knots`/`TrackDeg`/`FeetPerMinute` newtypes
+      make the Rust case without a bullet list. Closes on the real comment from
+      `units.rs`: *"naming it wrong is the kind of error that survives all the way onto a
+      conference slide."* 1:15.
+- [x] **Typestate click on "ADS-B: Four Stages"** — `Candidate → RawFrame → Validated`,
+      so "a wrong altitude is dangerous" is enforced by the type rather than by
+      discipline. One `<v-click>`, no new slide. +0:15.
+- [x] **Seasoning:** the "Three Things" note now promises three Rust stops (mirroring
+      music / a voice / aircraft), and "The Crates" note gained the dependency-count
+      argument.
+- [x] **Verified (numbers):** `cargo tree -p fm-single` → 2 direct deps, 10 crates in the
+      whole tree. Both slide claims trace to source: `decode.rs`, `units.rs`, `types.rs`,
+      `fm-single/src/main.rs:213`.
+- [x] **Verified (renders):** `npx slidev build` clean; `npx slidev export --format png
+      --range 30,45,46` produced all three and they were inspected — code blocks fit, no
+      overflow, click-step highlighting lands on the intended lines.
+- [x] **Verified (deck integrity):** `@slidev/parser` reports **51 slides**; the exported
+      `radio-talk.pdf` contains **51 pages**. Both new slides appear at 30 and 45.
+- [x] **Re-stamped every speaker-note timestamp.** The `[dur · cum]` series is now a true
+      running sum again (it was, before the inserts; verified programmatically). All six
+      absolute TIME CHECK cues shifted to match.
+- [ ] **Re-export the PDF before the Aug 25 submission if the deck changes again.** The
+      current `radio-talk.pdf` (2.5 MB, 51 pages, 2026-08-24 21:15) includes all of the
+      above plus the About Me photo — page 1 was rendered and confirmed non-blank. See
+      item 14 for the silent blank-export failure mode.
+
+### Timing: the note clock is now calibrated, not estimated
+
+- [x] **Rescaled the whole `[duration · cumulative]` series onto the measured run.** The
+      old series summed to 38:05 on the run that measured **32:00**, so every slide that
+      run covered was multiplied by **0.8403** (1920/2285). The 2:55 of material added
+      since (Why Rust 1:15, message types 1:15, typestate +0:15, Rust thesis +0:10) has
+      never been spoken, so it was left at face value. **32:00 + 2:55 = 34:55**, and the
+      series lands exactly there.
+- [x] Cumulatives rounded to 5 s and durations derived back out of them, so rounding
+      cannot accumulate down the deck.
+- [x] All eleven absolute TIME CHECK times remapped through the same curve by
+      interpolation (thresholds fall between slides, so a flat multiply would have been
+      wrong).
+- [x] **Verified:** 51 stamps, series is an exact running sum, total 34:55, no slide
+      rounded to a zero duration, and all five "leaving this slide" checkpoints equal
+      their own slide's cumulative.
+- [x] Rebuilt the `outline.md` timing table from the deck's real stamps rather than from
+      estimates — and fixed its section boundaries, which had drifted out of sync with
+      the deck after the no-antenna-swap rework (§11 "antenna length" is slide 10, in the
+      physics section; the "receiver isn't in this room" payoff is slide 39, in ADS-B).
+      All 51 slides are now accounted for.
+- [ ] **The 0.8403 factor is a guess, not a measurement.** It assumes every section ran
+      long by the same proportion, which is certainly false. Replace it with real
+      per-section times at the next rehearsal — see item 9.
+
+**34:55 against a 38:00 target and a 40:00 ceiling.** Treat it as a floor, not spare
+time: section 9's ATC listen (~75 s) has never been rehearsed because `atc.iq` does not
+exist, and live delivery drifts longer than rehearsal.
+
+## 14. About Me photo — DONE
+
+- [x] `deck/public/me.jpg` added from `~/Desktop/IMG_8241.jpeg`, and the PHOTO
+      PLACEHOLDER div on the About Me slide replaced with
+      `<img src="/me.jpg" alt="Thomas Eckert" class="about-photo" />`.
+- [x] **Rotation baked in, EXIF neutralised.** The original carries EXIF
+      `Orientation = 6` over landscape pixel data — it *displays* portrait only because
+      viewers honour the tag. `sips` copies the tag without applying it, so a naive
+      resize produced a file whose pixels were still landscape. The asset is now genuinely
+      portrait (1200×1600) with the tag rewritten to `1`, so nothing downstream can
+      double-rotate it. Original left untouched on the Desktop; it is the only
+      full-resolution copy (4284×5712).
+- [x] Added `object-position: 50% 30%` so `object-fit: cover` crops to the face rather
+      than the frame centre.
+- [x] **Verified:** slide 2 rendered to PNG and inspected — upright, face well placed in
+      the right half, nothing cropped off the head.
+
+**Watch out when exporting.** `npm run export` silently produced a **12 KB, 51-page,
+entirely blank** PDF once during this session. It reported `✓ exported to
+./radio-talk.pdf` exactly as it does on success. Re-running it produced the correct
+2.5 MB file. **Always check the byte size after exporting** — a healthy export of this
+deck is >2 MB — and ideally open page 1. A blank submission on Aug 25 would be
+unrecoverable.
+
+## 15. The Pi link is HTTP, not `rtl_tcp` — wording corrected
+
+The deck spends a slide on `rtl_tcp` ("From Dongle to Your Code") and then, forty minutes
+later, said this at the remote-receiver reveal:
+
+> Remember that socket, forty minutes ago. **This is what it was for.**
+
+That is wrong. `skyward` is a hosted application on the Pi: it reads the dongle directly
+over USB and serves JSON and SSE. Raw IQ never crosses the network. The line implied the
+audience was watching an `rtl_tcp` stream come down from upstairs.
+
+- [x] Rewrote that beat as a deliberate **contrast** rather than a match: `rtl_tcp` *would*
+      let you split dongle from decoder, "and that is not what I did" — 2.4 MS/s is ~4.8
+      MB/s of raw IQ, which is not going across conference WiFi. The Pi runs the whole
+      radio and sends answers. Costs ~10 s and is a better beat than the one it replaces.
+- [x] Fixed the production aside on "From Dongle to Your Code", which told you to set up a
+      callback the ADS-B section would then contradict.
+- [x] Fixed the `RemoteReceiver.vue` header comment, which said the diagram "collects the
+      earlier socket callback" — the wire it draws is HTTP. Added a note not to relabel it
+      with a socket or a sample stream.
+- [x] Added "The ADS-B link is HTTP, not `rtl_tcp`" to `outline.md`, with the 4.8 MB/s
+      reasoning from `skyward/docs/RASPBERRY_PI.md`.
+- [x] **The `rtl_tcp` slide itself is unchanged**, as requested. Its claim — that a socket
+      means the dongle need not be on the same machine as your code — is true and is now
+      the setup for a contrast instead of a false promise.
+- [x] **Verified:** no remaining reference in `deck/slides.md` ties `rtl_tcp` or a socket
+      to the Pi; the only `socket`/`tcp` mentions are on the transport slide itself and in
+      the new explicitly-corrective note.
 
 ## 12. Minor consistency fixes
 

@@ -81,6 +81,23 @@ Two receivers, in two places. **There is no antenna swap on stage.**
 `/healthz`. It supersedes `demos/adsb-decoder`, `demos/adsb-api`, and
 `demos/flight-tracker`, none of which are used in the talk any more.
 
+### The ADS-B link is HTTP, not `rtl_tcp`
+
+Worth stating plainly because the deck spends a slide on `rtl_tcp` earlier and it would
+be easy to imply the Pi works that way. **It does not.** `skyward` is a hosted
+application on the Pi: it opens the dongle directly over USB (`SKYWARD_SOURCE=usb`, the
+recommended shape in `skyward/docs/RASPBERRY_PI.md`) and serves JSON and SSE. The laptop
+is a browser. Raw IQ never crosses the network.
+
+That doc's own reasoning for preferring direct USB: it "removes a process, a unit, and a
+localhost socket carrying 4.8 MB/s." 1090 MHz is sampled at 2.4 MS/s, and 2.4 M × 2 bytes
+is ~4.8 MB/s — which is also the on-stage reason for the choice, and the deck now says it
+out loud rather than implying `rtl_tcp`.
+
+`rtl_tcp` is still supported by `skyward` (`SKYWARD_SOURCE=tcp:HOST:PORT`) and is still
+the right answer when the dongle is on a different machine from the decoder. It is just
+not what the talk is running.
+
 **The ADS-B view is a web UI served by `skyward`, opened in a browser on the laptop** —
 a map plus an aircraft list, fed by the SSE stream. **Being built separately, in the
 `skyward` repo.** Not a work item for this repo.
@@ -188,26 +205,78 @@ Re-estimated 2026-08-18 against the 50-slide deck (controlled reveal, extra AM s
 crates at the end, map bookend + standalone closer added), using the dwell times the
 speaker notes themselves prescribe.
 
-| # | Section | Min | Cum | Payoff |
-|---|---------|-----|-----|--------|
-| 0 | Title + about me | 1.5 | 1.5 | |
-| 1 | Three things (the promise) | 0.5 | 2.0 | |
-| 2 | FM reveal — audio up, name the station | 1.0 | 3.0 | **audio** |
-| 3 | Coverage map + physics pivot | 1.0 | 4.0 | |
-| 4 | Physics (bobbers) + `wave-demo` | 3.5 | 7.5 | animation |
-| 5 | RTL-SDR: dongle, two chips, tuner, transport | 3.0 | 10.5 | |
-| 6 | I/Q + complex plane + `iq-demo` + bytes + `iq-print` | 5.5 | 16.0 | animation |
-| 7 | Many signals, one idea | 1.0 | 17.0 | |
-| 8 | FM: pipeline, one file, 3 steps, whole loop + audio | 5.5 | 22.5 | **audio** |
-| 9 | AM: same pipeline, diff slides, live ATC | 4.0 | 26.5 | **audio** |
-| 10 | Time signals: CHU story | 2.5 | 29.0 | story |
-| 11 | Antenna length → why the receiver is upstairs | 2.0 | 31.0 | reveal |
-| 12 | ADS-B: intro, map, code, payoff | 6.5 | 37.5 | **live data** |
-| 13 | Map bookend + crates | 0.75 | 38.25 | closure |
-| 14 | Getting started + "Go listen." | 1.25 | 39.5 | |
+Calibrated 2026-08-24 (see below). Cumulatives are taken straight from the deck's own
+speaker-note stamps, which are now the single source of truth for timing — if this table
+and `deck/slides.md` ever disagree, the deck is right.
 
-**39.5 min against a 40-minute ceiling — zero slack.** Rehearse once with a timer; unless
-that run lands at 37:00 or under, take cuts 1 and 2 below pre-emptively rather than live.
+| # | Section | Slides | Min | Cum | Payoff |
+|---|---------|--------|-----|-----|--------|
+| 0 | Title + about me | 1–2 | 1.1 | 1:05 | |
+| 1 | Three things (the promise) + Rust thesis | 3 | 0.7 | 1:45 | |
+| 2 | FM reveal — audio up, name the station | 4 | 0.8 | 2:30 | **audio** |
+| 3 | Coverage map + physics pivot | 5–6 | 1.2 | 3:45 | |
+| 4 | Antenna physics (bobbers) + `wave-demo` + antenna length | 7–10 | 2.7 | 6:25 | animation |
+| 5 | RTL-SDR: dongle, two chips, tuner, transport | 11–14 | 2.7 | 9:05 | |
+| 6 | I/Q + complex plane + `iq-demo` + bytes + `iq-print` | 15–21 | 4.4 | 13:30 | animation |
+| 7 | Many signals, one idea | 22 | 0.7 | 14:10 | |
+| 8 | FM: pipeline, one file, 3 steps, whole loop + audio, **Why Rust** | 23–30 | 6.8 | 20:55 | **audio** |
+| 9 | AM: same pipeline, diff slides, live ATC | 31–35 | 3.9 | 24:50 | **audio** |
+| 10 | Time signals: CHU story | 36–37 | 1.5 | 26:20 | story |
+| 11 | ADS-B: intro, why the receiver is upstairs, map reveal | 38–40 | 2.1 | 28:25 | reveal |
+| 12 | ADS-B code: pipeline → **message types** → four stages | 41–46 | 4.5 | 32:55 | **live data** |
+| 13 | Payoff + map bookend + crates | 47–49 | 1.3 | 34:15 | closure |
+| 14 | Getting started + "Go listen." | 50–51 | 0.7 | 34:55 | |
+
+Section boundaries follow the deck's actual order, which the old table did not — its
+§11 ("antenna length") and §12 ("ADS-B") had drifted apart from the slides after the
+no-antenna-swap rework. Antenna length is slide 10, inside the physics section; the
+"receiver isn't in this room" payoff is slide 39, inside ADS-B. All 51 slides are
+accounted for, and the rows sum to the deck's own total.
+
+**Measured 32:00 (2026-08-19, timed run-through with Ernest Kissiedu).** The table above
+is the pre-run estimate and ran **7.5 minutes long**; treat it as an upper bound, not a
+plan. The rule set here was "unless that run lands at 37:00 or under, take cuts 1 and 2
+pre-emptively" — 32:00 clears it, so **no pre-emptive cuts.** The cut list below is a live
+contingency only.
+
+Two known reasons the measured number understates the room: section 9's ATC listen
+(~75 s) could not be rehearsed because `atc.iq` does not exist yet, and live delivery
+drifts longer than rehearsal.
+
+### The speaker-note clock is now calibrated (2026-08-24)
+
+**The `[duration · cumulative]` marks in `deck/slides.md` are no longer estimates. They
+are rebased on the measured run, and the series now ends at 34:55.** Read them as the
+clock; if presenter view says 21:35 and the room clock says 21:30, you are on time.
+
+How it was done, so it can be redone after the next rehearsal:
+
+- The old series summed to 38:05 on the run that actually measured **32:00** — it ran
+  ~19% long. Every slide the run covered had its duration multiplied by
+  **0.8403** (= 1920 / 2285).
+- The material added after that run has never been spoken, so it was **not** scaled. It
+  sits at face value: "Why Rust" 1:15, "ADS-B: What 112 Bits Actually Say" 1:15, the
+  typestate click +0:15, the Rust thesis in "Three Things" +0:10 — 2:55 in total.
+- **32:00 + 2:55 = 34:55**, which is where the series lands.
+- Cumulatives were rounded to the nearest 5 s and the per-slide durations derived back
+  out of them, so rounding cannot accumulate down the deck. Verified: 51 stamps, the
+  series is an exact running sum, no slide rounded to zero.
+- All eleven absolute TIME CHECK times were remapped through the same curve by
+  interpolation, so thresholds that fall between slides moved correctly. Verified: all
+  five "leaving this slide" checkpoints equal their own slide's cumulative.
+
+**34:55 against a 38:00 target and a 40:00 ceiling.** That is about 3 minutes of headroom
+and it is the first honest number the deck has had. Two things still push it up: section
+9's ATC listen (~75 s) has never been rehearsed because `atc.iq` does not exist, and live
+delivery drifts longer than rehearsal. So treat 34:55 as a floor with ~3 minutes of
+absorption above it — not as spare time to fill.
+
+The cut list below stays a live contingency. No pre-emptive cuts.
+
+**After the next timed run**, take per-section times and replace the scaling with real
+measurements — a uniform 0.84 is the best available guess, not a measurement, and it
+assumes every section ran long by the same proportion, which is certainly false.
+
 TIME CHECK cues are embedded in the speaker notes at Many Signals (~16:00), the AM
 pipeline (~22:30), and the ADS-B reveal (~32:30), each naming the cut to take if behind.
 The variable-dwell demos are where overruns actually come from; the ATC listen is capped
@@ -227,6 +296,16 @@ during the RTL-SDR section and note it in that slide.)
 - Two demodulation table slides merged into one "magnitude or phase" slide.
 - "Why Rust" moved out of an abstract interlude and placed next to the FM inner loop.
 - Ecosystem crate table folded into the same slide.
+- **"Why Rust" was then lost by accident** in commit `3a26ba6` (the FM/AM pipeline
+  rework) and went unnoticed until Ernest's 2026-08-19 feedback. Restored 2026-08-24 —
+  rewritten rather than reverted, so it argues from the `Arc<AudioRing>` hand-off in the
+  file the audience just read instead of from three abstract bullets. The crate table
+  stayed where it went, as the standalone "The Crates" slide.
+- **Rust is now a three-stop thread**, promised in the "Three Things" note and paid off
+  at: "Why Rust" (FM inner loop), "ADS-B: What 112 Bits Actually Say" (the `Message`
+  enum and the `Knots`/`TrackDeg`/`FeetPerMinute` newtypes), and a typestate click on
+  "ADS-B: Four Stages" (`Candidate → RawFrame → Validated`). Same trick as
+  music / a voice / aircraft: promise three, deliver three.
 - "Why Not Longer?" (destructive interference) cut entirely.
 - WWV cut entirely, taking the deck's one incorrect physics claim and the direct-sampling
   detail with it. The antenna ladder now opens on CHU's 7.85 MHz.
@@ -254,7 +333,10 @@ during the RTL-SDR section and note it in that slide.)
   claimed every demo read from `rtl_tcp`, but `fm-single` reads raw IQ on **stdin**, piped
   from `rtl_sdr` (`Taskfile.yml`), while `fm-receiver` and `am-receiver` default to
   `tcp:127.0.0.1:1234`. The slide now states that difference instead of papering over it,
-  and plants the socket idea that the ADS-B reveal collects on.
+  and plants the socket idea that the ADS-B reveal collects on — **as a contrast.**
+  The Pi does *not* use `rtl_tcp`: `skyward` reads the dongle directly over USB
+  (`SKYWARD_SOURCE=usb`) and serves HTTP, so what crosses the building is JSON, not
+  samples. The ADS-B note now says so explicitly. See "The ADS-B link is HTTP" below.
 
 ### If running long (cut in this order)
 
@@ -263,6 +345,14 @@ during the RTL-SDR section and note it in that slide.)
 3. **"Why You'd Still Want This"** in the time-signal section. Saves ~45 s; the CHU story
    survives on its own.
 4. **Shorten ADS-B accumulation** — name one aircraft instead of three.
+5. **The typestate click on "ADS-B: Four Stages."** Saves ~15 s and costs nothing
+   structural — it's one `<v-click>`, not a slide.
+6. **"Why Rust" third bullet** (the dependency count). Saves ~15 s; "The Crates" makes
+   the same point at the end.
+
+Do **not** cut the "Why Rust" slide or "ADS-B: What 112 Bits Actually Say" wholesale.
+They are the answer to the only substantive note the talk has received, and the second
+one is also the only place the audience sees what a message actually contains.
 
 Never cut: "Points on the Complex Plane", "FM — Step 2: Demodulate", "So the Receiver Isn't
 in This Room" (it is the only thing that explains the remote Pi).
