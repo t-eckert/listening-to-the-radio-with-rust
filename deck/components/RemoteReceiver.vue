@@ -21,7 +21,7 @@ const LINK_CY = 176 // both boxes share this vertical centre so the link is leve
     </defs>
 
     <!-- remote unit, upstairs -->
-    <text x="240" y="66" class="rr-where">7th floor, by a window</text>
+    <text x="240" y="66" class="rr-where">upstairs, by a window</text>
     <rect x="70" y="80" width="340" height="192" rx="14"
           fill="#eef2ff" stroke="#818cf8" stroke-width="2" />
     <text x="240" y="124" class="rr-line" fill="#3730a3">7 cm antenna</text>

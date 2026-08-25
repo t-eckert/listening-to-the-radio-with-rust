@@ -180,7 +180,9 @@ But fixtures are gitignored and local-only (the `fixtures fetch` subcommand refe
 ## 8. Venue unknowns — confirm this week (Thomas; human coordination, not code)
 
 - [ ] Confirm the "7th floor by a window" room actually exists at the venue: access,
-      power, permission, and network. The slide hardcodes it.
+      power, permission, and network. **The slide no longer hardcodes the floor** — it
+      reads "upstairs, by a window" as of 2026-08-24, so the deck survives being given a
+      different room. This is now an operational question only, not a slide dependency.
 - [ ] Confirm the hardline Tina offered, and test laptop→Pi reachability on venue
       infrastructure — conference WiFi commonly has client isolation that silently
       blocks peer-to-peer even when both devices are online.
