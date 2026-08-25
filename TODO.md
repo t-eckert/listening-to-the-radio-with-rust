@@ -238,11 +238,18 @@ Timed run-through 2026-08-19. Feedback was overwhelmingly positive (cadence, pre
 makes a complex subject understandable). One substantive note: **say more about why Rust
 and what makes it good for this**.
 
-Root cause found: **there used to be a "Why Rust" slide and it was deleted by accident.**
-`c2614e6` added it; it is present in `66cd6f9` and gone in `3a26ba6` (the FM/AM pipeline
-rework). Its crate table survived as the standalone "The Crates" slide; the argument did
-not. So the deck said "Rust" in the title, the intro, and a crate list, and nowhere made
-a case.
+History: `c2614e6` added a "Why Rust" slide; it is present in `66cd6f9` and gone in
+`3a26ba6` (the FM/AM pipeline rework, 2026-08-18 21:41). Its crate table survived as the
+standalone "The Crates" slide; the argument did not. So the deck said "Rust" in the title,
+the intro, and a crate list, and nowhere made a case.
+
+**That removal was deliberate, not accidental** (corrected 2026-08-24 — an earlier note in
+this file called it an accident, which was wrong). The 2026-08-18 decision was recorded at
+the time with an explicit rationale: *"no point selling Rust at RustConf."* Ernest's
+run-through the next day is the evidence against that reasoning — the room he stood in
+wanted the case made. So this is a reversal of a judgement call, not the repair of a
+mistake, and the rewrite reflects that: it argues from the constraint and from code the
+audience has just read, rather than selling the language.
 
 - [x] **Restored "Why Rust"** as slide 30, after "FM: The Whole Loop" — rewritten, not
       reverted. Argues from the `Arc<AudioRing>` hand-off at `fm-single/src/main.rs:213`
