@@ -272,10 +272,19 @@ a case.
 - [x] **Re-stamped every speaker-note timestamp.** The `[dur · cum]` series is now a true
       running sum again (it was, before the inserts; verified programmatically). All six
       absolute TIME CHECK cues shifted to match.
-- [ ] **Re-export the PDF before the Aug 25 submission if the deck changes again.** The
-      current `radio-talk.pdf` (2.5 MB, 51 pages, 2026-08-24 21:15) includes all of the
-      above plus the About Me photo — page 1 was rendered and confirmed non-blank. See
-      item 14 for the silent blank-export failure mode.
+- [x] **SUBMITTED 2026-08-24** as `Eckert_Thomas_Listening-to-the-Radio-with-Rust.pdf`
+      via the RustConf slides form. 51 pages, 2,617,917 bytes, sha256 `3780f61f…`,
+      735.12 × 414 pt (16:9). Page 1 rasterized and confirmed non-blank before sending
+      (see item 14 for the silent blank-export failure mode). Contains the restored
+      "Why Rust" slide, the ADS-B message-types slide, the typestate click, the About Me
+      photo, the calibrated 35:05 note clock, and the corrected rtl_tcp wording.
+
+**The deck is now free to change again.** The organizers consider the submitted file
+final and ask for no last-minute changes, but breakout speakers present from their own
+laptop (item 16), so the projected deck and the archived PDF are different artifacts.
+Anything that lands between now and 9 September will be seen live and not in the
+submission. Keep changes worth that gap — and if the Discord URL arrives, adding it to
+"Getting Started" is exactly the kind of change that qualifies.
 
 ### Timing: the note clock is now calibrated, not estimated
 
