@@ -593,7 +593,16 @@ by cloud-init, on WiFi, dongle attached.
 - [ ] While on site, capture tier 3's fallback file — this is still item 1's open task:
       `task capture FREQ=97.7 SECS=150 OUT=chom.iq`, then `task capture-check OUT=chom.iq`
       before trusting it. At the venue 97.7 *is* CHOM.
-- [ ] Power-cycle the Pi once and confirm `rtl-tcp.service` and `tailscaled` both come
-      back unattended. Never tested.
+- [x] **Reboot tested 2026-09-06 — everything comes back unattended.** Back on SSH in
+      ~30 s. `rtl-tcp`, `tailscaled` and `ssh` all enabled and active; `rtl_tcp` claimed
+      the dongle by itself (journal shows the R820T found, tuned to 97.7, gain set) and
+      listens on `0.0.0.0:1234`; both interfaces up with `eth0` still the preferred route;
+      tailnet address unchanged. **Critically, the two `nmcli` properties survived** —
+      `ipv4.link-local fallback` and `ipv4.dhcp-timeout 15` were set on a *netplan-generated*
+      connection, so the open question was whether netplan would regenerate over them at
+      boot. It does not. Post-reboot `link-check` over Ethernet was the cleanest run of the
+      session: 13 of 13 seconds at exactly 1.92 MB/s.
+      The only thing that changed across the reboot was `tailscale0`'s IPv6 *link-local*
+      address, which is regenerated every boot and means nothing.
 - [ ] Write the trigger criterion into `outline.md` once measured, e.g. "if `link-check`
       fails at <time>, AM/FM runs from file and the Pi is not mentioned."
