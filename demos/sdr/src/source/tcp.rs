@@ -6,6 +6,8 @@ use std::net::TcpStream;
 // rtl_tcp command bytes
 const CMD_SET_FREQ: u8 = 0x01;
 const CMD_SET_SAMPLE_RATE: u8 = 0x02;
+const CMD_SET_GAIN_MODE: u8 = 0x03; // 0 = auto, 1 = manual
+const CMD_SET_GAIN: u8 = 0x04; // tenths of a dB, manual mode only
 const CMD_SET_DIRECT_SAMPLING: u8 = 0x09;
 
 pub struct TcpSource {
@@ -66,6 +68,22 @@ impl SdrSource for TcpSource {
 
     fn sample_rate(&self) -> u32 {
         self.sample_rate
+    }
+
+    /// Without this the trait's default no-op applied, so `--gain` on a TCP
+    /// source did nothing and said nothing — the receiver ran at whatever gain
+    /// `rtl_tcp` was started with while reporting the gain you asked for.
+    ///
+    /// Manual gain also needs the mode command first. Sending only the gain
+    /// looks like it worked and has no effect.
+    fn set_gain(&mut self, gain: Option<i32>) -> Result<()> {
+        match gain {
+            Some(tenths) => {
+                self.send_command(CMD_SET_GAIN_MODE, 1)?;
+                self.send_command(CMD_SET_GAIN, tenths as u32)
+            }
+            None => self.send_command(CMD_SET_GAIN_MODE, 0),
+        }
     }
 
     fn set_direct_sampling(&mut self, mode: u32) -> Result<()> {

@@ -1,0 +1,9 @@
+[package]
+name = "iq-tcp"
+version.workspace = true
+edition.workspace = true
+
+# No dependencies, for the same reason as `iq-play`: this is stage tooling. It
+# never appears on a slide, and it must never be the reason something fails at
+# the podium.
+[dependencies]

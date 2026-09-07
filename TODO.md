@@ -441,3 +441,138 @@ what the Aug 25 PDF actually is, and turns up three items that matter more than 
 - [x] Regenerated `radio-talk.pdf` via `npm run export` (400 KB → 432 KB, 46 pages,
       confirmed via `mdls`). Includes the two new ADS-B bit-encoding slides and all the
       edits above.
+
+## 18. AM/FM remote receiver — a Pi where the signal is (2026-09-06)
+
+The stage-fallback ladder for AM/FM had two rungs: live off the laptop's dongle, or a
+recorded `.iq` file. Nothing in between. A main stage is the worst room in the building
+for VHF, so the likely failure is "no signal here", and the answer to that is not a
+recording — it is a dongle somewhere else.
+
+- [x] Added `demos/iq-tcp` — a dependency-free `rtl_tcp` client that writes the same
+      bytes to stdout that `rtl_sdr -` does. `fm-single` and `am-single` are untouched,
+      because they read stdin and cannot tell the difference. The file on the slide does
+      not change.
+- [x] Added `rtl-tcp-fake` in the same crate: serves a recorded `.iq` with the real
+      greeting, commands and pacing, so the laptop half can be rehearsed and tested with
+      no hardware in the room. Test fixture only — never point at it from a stage.
+- [x] Tasks: `fm-remote`, `am-remote`, `link-check`, `pi-serve`, `fake-pi`. All carry
+      `preconditions` naming the missing binary and saying to run `task alias` before
+      the session, matching the tier-1 and tier-3 tasks. `task alias` links both new
+      binaries.
+- [x] `demos/REMOTE-RECEIVER.md` — the runbook: Pi setup, the systemd unit, the
+      bandwidth arithmetic, the error table, and the trigger criterion.
+- [x] **`link-check` is a real gate, not advice.** 960 kS/s of 8-bit IQ is 1.92 MB/s
+      sustained, uncompressed. It reports the delivered rate *and the worst one-second
+      window* — an average can look fine while the audio stutters — and exits non-zero
+      if the link cannot carry it.
+- [x] **Verified (protocol):** against `rtl-tcp-fake`, `iq-tcp` strips the 12-byte
+      greeting and reproduces the served file byte-for-byte (3,840,000 bytes, `cmp`
+      clean) and sends `set_sample_rate 960000`, `set_freq 101700000`, `set_gain_mode 1`,
+      `set_gain 200` in that order. Gain mode before gain matters: manual gain is
+      silently ignored without it.
+- [x] **Verified (end to end, by measurement):** `task fm-remote` and `task fm-file`
+      fed from the same `fm.iq` produce **bit-identical audio** — 622,575 of 622,575
+      samples equal over 12.97 s, max difference 0.000e+00. The remote path is not
+      "close enough"; it is the same numbers.
+- [x] **Verified (failure modes):** unreachable host fails in 4 s rather than hanging
+      (exit 1), connection refused and non-`rtl_tcp` greeting both give a named cause,
+      missing arguments exit 2, and `--probe` returns OK on a full-rate link and TOO
+      SLOW (exit 1) on one throttled to 1.0 MB/s.
+- [x] **Fixed a latent bug found on the way:** `TcpSource::set_gain` was the trait's
+      default no-op, so `am-receiver --gain 40` over TCP printed `Gain: 40.0 dB` and
+      sent nothing — the tuner stayed on whatever `rtl_tcp` was started with. Shown
+      before the fix (only `set_freq` and `set_sample_rate` reached the server) and
+      after (`set_gain_mode 1`, `set_gain 400`). `fm-receiver` has no gain flag, so
+      only AM was affected, which is the demo where gain matters most.
+- [ ] **Not verified: any real hardware.** No RTL-SDR was attached to this machine, so
+      no step here has touched a real `rtl_tcp`, a real dongle, a real Pi, or a real
+      network. The protocol half is proven against a faithful fake; the hardware half is
+      not proven at all.
+- [ ] Do the Pi setup at home on real hardware — `rtl_test -t` naming the tuner,
+      `rtl_tcp -a 0.0.0.0`, then `task link-check HOST=…` from the laptop over WiFi.
+      **Verify:** `task fm-remote` plays clean continuous FM by ear for two minutes with
+      no dropouts.
+- [ ] Decide whether the Pi travelling to Montreal is the `skyward` Pi or a second one.
+      `skyward` holds the dongle over USB and `rtl_tcp` needs a dongle of its own, so
+      **one dongle cannot do both** — but the two `eeprom/dev*.bin` files say there are
+      two dongles, and `rtl_tcp -d 1` would serve the second. Also note that ADS-B wants
+      1090 MHz at a window and FM wants 97.7; the same window is fine for both.
+- [ ] If this path is used on stage, do **not** present it as a counter-example to the
+      ADS-B slide's "4.8 MB/s is not going over conference WiFi". Both are true: this is
+      half the rate, for one short demo, on a link that was measured first.
+
+### Real-hardware run, 2026-09-06 (item 18 continued)
+
+The Pi exists now: card flashed from `2026-06-18-raspios-trixie-arm64-lite`, configured
+by cloud-init, on WiFi, dongle attached.
+
+- [x] **Proven on hardware.** `rtl_test` names a Rafael Micro R820T with 29 gains,
+      `dvb_usb_rtl28xxu` is not loaded, `rtl_tcp` serves `0.0.0.0:1234` from a systemd
+      unit, and live FM at 101.7 through `task fm-remote` matches the known-good `fm.iq`
+      capture on every statistic measured (rms 0.1107 vs 0.1132, crest 2.52 vs 2.47,
+      81.7% vs 82.4% of energy below 1 kHz, zero clipping at gain 20).
+- [x] **Sustained throughput over home WiFi: 1.91 MB/s against 1.92 needed**, 26 of 27
+      seconds between 1.90 and 1.94. Enough, with effectively no headroom. Read the
+      per-second series at the venue, not the verdict; any second below ~1.85 means
+      tier 3.
+- [x] **Bug found by hardware: `iq-tcp` tried only the first resolved address.**
+      `radio.local` resolves over mDNS to an IPv6 link-local address *and* an IPv4 one,
+      IPv6 first, and `rtl_tcp -a 0.0.0.0` is IPv4-only — so a healthy server refused
+      the connection. Now tries every address, IPv4 first. This would have looked exactly
+      like a dead Pi on stage.
+- [x] **Bug found by hardware: `--probe` counted `rtl_tcp`'s ramp-up**, producing a
+      "TOO SLOW" verdict that 30 s of streaming did not reproduce. Now excludes a 2 s
+      warm-up and prints the per-second series.
+- [x] **Runbook contradiction fixed.** `REMOTE-RECEIVER.md` told you to run
+      `rtl_test -t`, which is the direct-sampling trap `sdr/src/source/usb.rs` documents:
+      `-t` enables direct sampling, aborts, and leaves it set in the dongle's registers,
+      after which every tuned frequency reads as noise. Plain `rtl_test` names the tuner
+      without touching it.
+- [x] **Card-prep gotchas recorded**, because both cost a round trip: current Raspberry
+      Pi OS uses cloud-init (`user-data`/`network-config`), *not* `custom.toml`; and
+      `ssh.service` ships disabled, so cloud-init installs the key but never enables the
+      service. With no account password there is no console fallback either. Fix is an
+      empty `ssh` file on the boot partition, or `systemctl enable --now ssh` in
+      `runcmd` — before first boot, since cloud-init caches `instance_id` and will not
+      re-run `runcmd`.
+- [x] **Tailscale authorised and measured.** `radio` is on the tailnet; `tailscale ping` reports a **direct** path, not DERP. Throughput over
+      the tailnet equals the LAN (1.92 MB/s average, worst second 1.91 vs the LAN's 1.89 —
+      marginally steadier, presumably WireGuard pacing). `task fm-remote HOST=radio` plays
+      live FM by MagicDNS. This is the real answer to venue client isolation, which was
+      the failure this path was most exposed to.
+- [x] **Gate rule corrected after a false negative.** Judging on the worst single second
+      failed a tailnet that delivered 22 of 23 seconds at exactly the required rate. Now:
+      3 s warm-up excluded, per-second series always printed, verdict on the average plus
+      a tolerance of one slow second. Both halves checked against the fake — 1.0 MB/s
+      fails on dips (11 of 11), 1.80 MB/s fails on the average with zero dips. A false
+      negative is the expensive direction here: it sends you to tier 3 for nothing.
+- [ ] Still unmeasured: **the venue network.** Every number above is a home mesh with two
+      machines on it. Read the per-second series on site, not the verdict.
+
+### Venue test, Tuesday 2026-09-08 (talk is Wednesday 2026-09-09)
+
+- [ ] **Blocker, do this at home first:** the Pi knows one SSID (`Winona Mesh`). At the
+      venue it joins nothing, and `wlan0` is `optional: false` so it waits at boot — with
+      no SSH and no console fallback, since the `pi` account has no password. Add the
+      venue SSID *and* a phone hotspot via `nmcli` over SSH before leaving. cloud-init
+      cannot do it: `instance_id` is cached and `network-config` will not re-run. See
+      "Before you leave home" in `demos/REMOTE-RECEIVER.md`.
+- [ ] Three venue conditions that cannot be fixed from the floor, and which the hotspot
+      is the answer to: a **captive portal** (the Pi cannot click a form), **WPA2-Enterprise**
+      (needs an identity, not a PSK), and **client isolation** (Tailscale already covers
+      this one). Ask Tina which of the three applies *before* Tuesday if possible.
+- [ ] Place the Pi where it will actually live and apply the item 8 placement lesson:
+      antenna on the tripod ~40 cm back from the glass, never suction-cupped.
+- [ ] `tailscale ping radio` — direct or DERP. DERP will not carry the stream.
+- [ ] `task link-check HOST=radio SECS=30` — **read the per-second series, not the
+      verdict.** Repeated seconds below ~1.85 mean tier 3 regardless of what it says.
+- [ ] Find the right FM gain at the venue. Montreal's field is stronger than Ottawa's, so
+      expect **below** the 20 that measured clean at home; 30 railed the ADC there.
+- [ ] While on site, capture tier 3's fallback file — this is still item 1's open task:
+      `task capture FREQ=97.7 SECS=150 OUT=chom.iq`, then `task capture-check OUT=chom.iq`
+      before trusting it. At the venue 97.7 *is* CHOM.
+- [ ] Power-cycle the Pi once and confirm `rtl-tcp.service` and `tailscaled` both come
+      back unattended. Never tested.
+- [ ] Write the trigger criterion into `outline.md` once measured, e.g. "if `link-check`
+      fails at <time>, AM/FM runs from file and the Pi is not mentioned."

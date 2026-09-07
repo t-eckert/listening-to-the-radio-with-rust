@@ -110,6 +110,81 @@ tasks:
       - sh: test -f {{.FILE | default "atc.iq"}}
         msg: "no such IQ file: {{.FILE | default \"atc.iq\"}} — record one with `task capture`"
 
+  fm-remote:
+    desc: FM from a remote rtl_tcp — a Pi where the signal is (HOST required, FREQ MHz, GAIN dB)
+    cmds:
+      # Same pipeline as `fm-single`, with the dongle at the other end of a
+      # socket instead of a USB port. `fm-single` is byte-for-byte the file on
+      # the slide; it never learns that the samples came over a network.
+      - >-
+        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}}
+        --frequency {{.FREQ | default "97.7"}} --gain {{.GAIN | default "30"}}
+        | bin/fm-single {{.WAV}}
+    dir: demos
+    preconditions:
+      - sh: test -n "{{.HOST}}"
+        msg: "set HOST to the remote receiver, e.g. `task fm-remote HOST=radio.local`"
+      - sh: test -x bin/iq-tcp
+        msg: "bin/iq-tcp is missing — run `task alias` before the session, not on stage"
+      - sh: test -x bin/fm-single
+        msg: "bin/fm-single is missing — run `task alias` before the session, not on stage"
+
+  am-remote:
+    desc: AM from a remote rtl_tcp (HOST required, FREQ MHz, GAIN dB). WAV=out.wav to record
+    cmds:
+      # GAIN stays high, as in `am-single`: aviation AM is weak and
+      # intermittent, the opposite problem to broadcast FM.
+      - >-
+        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}}
+        --frequency {{.FREQ | default "119.9"}} --gain {{.GAIN | default "40"}}
+        | bin/am-single {{.WAV}}
+    dir: demos
+    preconditions:
+      - sh: test -n "{{.HOST}}"
+        msg: "set HOST to the remote receiver, e.g. `task am-remote HOST=radio.local`"
+      - sh: test -x bin/iq-tcp
+        msg: "bin/iq-tcp is missing — run `task alias` before the session, not on stage"
+      - sh: test -x bin/am-single
+        msg: "bin/am-single is missing — run `task alias` before the session, not on stage"
+
+  link-check:
+    desc: Measure whether the network to the remote receiver carries 1.92 MB/s (HOST, SECS)
+    cmds:
+      # Run this at the venue, on venue infrastructure, before the session.
+      # Exits non-zero if the link cannot keep up, so it is a real gate.
+      - >-
+        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}}
+        --frequency {{.FREQ | default "97.7"}} --probe {{.SECS | default "10"}}
+    dir: demos
+    preconditions:
+      - sh: test -n "{{.HOST}}"
+        msg: "set HOST to the remote receiver, e.g. `task link-check HOST=radio.local`"
+      - sh: test -x bin/iq-tcp
+        msg: "bin/iq-tcp is missing — run `task alias` first"
+
+  pi-serve:
+    desc: Start rtl_tcp on the remote receiver over ssh (HOST required, USER, GAIN dB)
+    cmds:
+      # Leave this running in its own terminal. rtl_tcp must bind 0.0.0.0, not
+      # its default 127.0.0.1, or it is only reachable from the Pi itself.
+      - >-
+        ssh {{.USER | default "pi"}}@{{.HOST}}
+        'rtl_tcp -a 0.0.0.0 -s 960000 -f $(echo "{{.FREQ | default "97.7"}} * 1000000" | bc | cut -d. -f1) -g {{.GAIN | default "30"}}'
+    preconditions:
+      - sh: test -n "{{.HOST}}"
+        msg: "set HOST to the remote receiver, e.g. `task pi-serve HOST=radio.local`"
+
+  fake-pi:
+    desc: Rehearse the remote path with no Pi — serves a recorded IQ file as rtl_tcp (FILE)
+    cmds:
+      # Not for stage use. This exists so `task fm-remote HOST=127.0.0.1` can be
+      # rehearsed, and tested, on a laptop with no hardware in the room.
+      - bin/rtl-tcp-fake {{.FILE | default "fm.iq"}} --bind {{.BIND | default "127.0.0.1:1234"}}
+    dir: demos
+    preconditions:
+      - sh: test -x bin/rtl-tcp-fake
+        msg: "bin/rtl-tcp-fake is missing — run `task alias` first"
+
   adsb:
     desc: Decode ADS-B aircraft signals at 1090 MHz
     cmds:
@@ -167,6 +242,8 @@ tasks:
       - ln -sf ../target/release/fm-single bin/fm-single
       - ln -sf ../target/release/am-single bin/am-single
       - ln -sf ../target/release/iq-play bin/iq-play
+      - ln -sf ../target/release/iq-tcp bin/iq-tcp
+      - ln -sf ../target/release/rtl-tcp-fake bin/rtl-tcp-fake
       - ln -sf ../target/release/adsb-decoder bin/adsb
       - ln -sf ../target/release/flight-tracker bin/tracker
       - ln -sf ../target/release/adsb-api bin/adsb-api
