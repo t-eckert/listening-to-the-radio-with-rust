@@ -552,7 +552,28 @@ by cloud-init, on WiFi, dongle attached.
 
 ### Venue test, Tuesday 2026-09-08 (talk is Wednesday 2026-09-09)
 
-- [ ] **Blocker, do this at home first:** the Pi knows one SSID (`Winona Mesh`). At the
+- [x] **Ethernet configured and measured (2026-09-06).** Thomas will have a hardline at
+      the venue. No config was needed to prefer it — NM's default metrics are 100 for
+      Ethernet and 600 for WiFi, so a cable takes over automatically with WiFi as standby,
+      and `radio.local` follows to the wired address. Set `ipv4.link-local fallback` and
+      `ipv4.dhcp-timeout 15` on `netplan-eth0` so a dead drop, or a cable straight from
+      laptop to Pi, still works via 169.254 + mDNS.
+      **Measured:** Ethernet 1.92 MB/s average, worst second **1.91**, all 22 seconds
+      within 1.91–1.93, RTT 1.0 ms — against WiFi's worst second 1.89 and RTT of 14–186 ms.
+      Both pass; Ethernet's win is the spread and the jitter, not the average.
+- [x] **Failover tested by disconnecting eth0 mid-stream.** The Pi self-heals: route moves
+      to WiFi in seconds, `rtl-tcp.service` stays active (it binds `0.0.0.0`), tailnet
+      address unchanged, Ethernet resumes on reconnect. **But the in-flight stream dies** —
+      9.7 s of audio, then `no data for 5 s`. Tailscale reroutes new connections, not that
+      one, and there is no backlog to resume because `rtl_tcp` drops what it cannot send.
+      On stage: a kicked cable ends the demo. Restart reconnects fine; go to tier 3 and
+      do not debug.
+- [ ] **Consider auto-reconnect in `iq-tcp`** — on read timeout or EOF, reconnect, re-send
+      the tuning commands, and keep writing to the same stdout, so a brief outage becomes a
+      gap in the audio rather than a dead pipeline. ~30 lines, testable against
+      `rtl-tcp-fake` by killing and restarting it. **Thomas's call whether to add code two
+      days out**; the current fail-fast behaviour is safe and legible, just not graceful.
+- [ ] **Still do at home:** the Pi knows one SSID (`Winona Mesh`). At the
       venue it joins nothing, and `wlan0` is `optional: false` so it waits at boot — with
       no SSH and no console fallback, since the `pi` account has no password. Add the
       venue SSID *and* a phone hotspot via `nmcli` over SSH before leaving. cloud-init

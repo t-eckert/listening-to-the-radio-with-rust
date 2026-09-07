@@ -179,6 +179,66 @@ than the raw LAN — worst second 1.91 MB/s versus 1.89 — presumably WireGuard
 pacing smoothing the bursts. Encryption overhead is irrelevant here; a Pi 4 does
 WireGuard an order of magnitude faster than 15 Mbit/s.
 
+## Prefer Ethernet, and what it actually buys
+
+A hardline removes the three things WiFi exposes this path to at once: the
+throughput margin, the captive portal, and client isolation. Measured at home on
+2026-09-06, 25-second samples with warm-up excluded:
+
+| path | average | worst second | spread | RTT |
+|---|---|---|---|---|
+| Ethernet (gigabit) | 1.92 MB/s | **1.91** | 1.91–1.93 | 1.0 ms |
+| 5 GHz WiFi | 1.92 MB/s | 1.89 | 1.89–1.95 | 100 ms avg, **14–186** |
+
+Both pass. The difference is not the average — a live source cannot exceed
+realtime, so the average is pinned either way — it is the spread and the latency
+jitter. WiFi's 14–186 ms RTT is what produced its wider per-second range, and it
+is the thing a busier venue network will make worse.
+
+**No configuration is needed to prefer it.** NetworkManager's default route
+metrics are 100 for Ethernet and 600 for WiFi, so plugging a cable in takes over
+automatically while WiFi stays up as a standby, and `radio.local` follows to the
+wired address on its own. Two properties are worth setting on the wired profile
+anyway, for the case where the venue drop is not what you were promised:
+
+```bash
+sudo nmcli connection modify netplan-eth0 ipv4.link-local fallback
+sudo nmcli connection modify netplan-eth0 ipv4.dhcp-timeout 15
+```
+
+`link-local fallback` covers a dead port or an unmanaged switch with no DHCP: the
+Pi self-assigns a `169.254.x.x` address, macOS does the same, and mDNS works over
+link-local — so **a cable straight from laptop to Pi works with no network
+involved at all.** That is the one topology that needs no venue cooperation
+whatsoever, and it is worth knowing you have it.
+
+### What happens when the cable is kicked
+
+Tested by disconnecting `eth0` mid-stream:
+
+- The Pi recovers on its own. The default route moves to WiFi within seconds,
+  `rtl-tcp.service` stays active because it binds `0.0.0.0` rather than an
+  address, and the tailnet address does not change. On reconnect, Ethernet
+  resumes as the preferred route.
+- **The stream in flight does not survive.** It delivered 9.7 s of audio and then
+  failed with `no data for 5 s — the link or the Pi is gone`. Tailscale reroutes
+  *new* connections, not this one, and waiting longer would not have rescued it:
+  `rtl_tcp` goes on producing 1.92 MB/s into a buffer it eventually drops, so
+  there is no backlog worth resuming after a multi-second gap.
+
+That is the right behaviour for a stage — you learn in five seconds rather than
+staring at silence — but it means a kicked cable ends the demo. Restarting the
+task reconnects fine. If it happens live, go to tier 3 and do not debug.
+
+### Which HOST to use at the venue
+
+`HOST=radio` over the tailnet works in every topology, including the likely one
+where the Pi is on the venue's wired network and the laptop is on venue WiFi —
+different subnets, across which `radio.local` mDNS often does not resolve. Use it
+as the default. `HOST=radio.local` is the same-network shortcut and avoids
+depending on the tailnet at all; at home both measured identically. Whichever you
+use, `link-check` it first.
+
 ## Before you leave home: give the Pi a second network
 
 The card was configured with one SSID. At a venue that SSID does not exist, so
