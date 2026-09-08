@@ -290,9 +290,9 @@ Let's look at that wave again. The distance between two crests is the wavelength
 
 [click] The station you were listening to a minute ago is at ninety-seven point seven. That wave is about three meters long, so a quarter of it is seventy-seven centimeters — and on a dipole like this one, that's each arm.
 
-[POINT at the antenna on stage.] This one is a little short of that, even fully extended. On a station this strong it makes no audible difference — but seventy-seven centimeters is the number it's reaching for.
+[POINT at the antenna on stage.] This one is a little short of that, even fully extended. On a station this strong it makes no audible difference — but seventy-seven is what it should be.
 
-[click] **Same rule on every band. Only the number changes.** Hold onto that — it decides where the third demo has to live.
+[click] **Same rule on every band. Only the number changes.** Hold onto that — it's why the third demo isn't in this room.
 -->
 
 ---
@@ -362,7 +362,7 @@ Two chips inside it matter.
 
 The antenna hears everything at once. FM, AM, aviation, the cell towers outside, somebody's Wi-Fi. That's the top row: the whole spectrum, arriving together, all the time.
 
-The tuner has one job. It slides that entire spectrum down, so that the station you asked for lands on zero — which is where hardware can actually sample it. Bottom row: your station sitting on zero, the sampling window catching it, and everything else slid away with it.
+The tuner does one thing. It slides that entire spectrum down, so that the station you asked for lands on zero — which is where hardware can actually sample it. Bottom row: your station sitting on zero, the sampling window catching it, and everything else slid away with it.
 
 Think of turning the dial on a radio. You are not filtering the other stations out. **You're moving the window.**
 
@@ -641,7 +641,7 @@ This is the turn. Everything before it was setup; lift the energy here.
 <!--
 [1:10 · 15:35]
 
-Here's the shape of it. We start with a firehose of IQ samples, and we end with audio that the sound card can play.
+Here's the pipeline. We start with a firehose of IQ samples, and we end with audio that the sound card can play.
 
 The dongle produces about a million IQ points a second, and the width of that firehose is how much spectrum I can see at once.
 
@@ -724,7 +724,7 @@ The antenna hears every station at once and the dongle sends us all of it — th
 
 [click] And that expensive work is the convolution: each output is a weighted sum of the last n samples, with the same filter taps applied to I and to Q.
 
-**Decimation isn't throwing data away. It's throwing away data you've proven you no longer need.**
+We only keep one sample in four, because after the filter the other three don't carry anything new.
 
 ***
 
@@ -761,11 +761,11 @@ FM encodes the audio as frequency, which we see in the IQ values as the speed of
 
 [click] Multiplying by the conjugate of the previous sample subtracts the previous angle. What's left is the change.
 
-[click] Take the angle of what's left. That angle is the rotation — and the rotation is the audio.
+[click] Take the angle of what's left. That angle is how far it turned, and that's the audio.
 
 [click] **Multiply by the conjugate of the previous sample. Take the angle. That is FM demodulation.**
 
-Three lines. That's the demodulator.
+That's the whole demodulator, in three lines.
 
 ***
 
@@ -855,7 +855,7 @@ ring.push(&audio);                                    // decode thread fills
 
 - Two threads sharing one buffer. `Send` and `Sync` make that a **compile error**
   or a guarantee — never a 3 a.m. crackle.
-- **No garbage collector.** At a microsecond a sample, a pause isn't a glitch, it's silence.
+- **No garbage collector.** At a microsecond a sample, a garbage collector pause is a gap in the audio.
 - Two dependencies. Ten crates in the entire tree. Nothing to `apt install`.
 
 </v-clicks>
@@ -863,15 +863,15 @@ ring.push(&audio);                                    // decode thread fills
 <!--
 [1:15 · 20:55]
 
-Nine hundred and sixty thousand samples a second. That's about a microsecond each, and the sound card is going to ask for more audio whether or not I'm ready. There's no catching up. This is a hard real-time program.
+Nine hundred and sixty thousand samples a second. That's about a microsecond each, and the sound card is going to ask for more audio whether or not I'm ready. This is a hard real-time program.
 
 [click] So: two threads. That ring buffer is filled by the loop you just read and drained by the audio callback, at the same time.
 
-[click] And the compiler will not let me share it until I've said how. Send and Sync aren't documentation, they're a proof obligation. In C I'd have written the same thing and found out I was wrong at three in the morning through a speaker.
+[click] And the compiler will not let me share it until I've said how. The compiler makes me say how the two threads share it before it'll build. In C I'd have written the same thing and found out I was wrong by hearing it crackle.
 
 [click] No garbage collector — which matters more here than in almost anything else I write. A pause of a few milliseconds in a web service is a slow request. A pause of a few milliseconds here is a hole in the music.
 
-[click] And two dependencies. Ten crates in the whole tree. Nothing to install, no build system to fight — which is genuinely why this stayed fun long enough to become a talk.
+[click] And two dependencies. Ten crates in the whole tree. Nothing to install, no build system to fight — which is why this stayed fun long enough to become a talk.
 
 ***
 
@@ -928,9 +928,9 @@ im.atan2(re) * self.gain
 
 <v-click>
 
-FM needs the **previous sample**: rotation is a difference.
+FM needs the **previous sample**, because it measures a change.
 
-AM needs **nothing but this sample**: distance isn't.
+AM only needs **this one**.
 
 </v-click>
 
@@ -943,7 +943,7 @@ FM, on top. How far did the point turn since last time.
 
 [click] Both of them together. One line each.
 
-[click] And there's a real difference hiding in there. FM needs the previous sample, because rotation is a difference. **AM needs nothing but this sample, because distance isn't.**
+[click] And there's one difference worth noticing. FM needs the previous sample, because rotation is a difference. **AM needs nothing but this sample, because distance isn't.**
 -->
 
 ---
@@ -1097,7 +1097,7 @@ Everything we've built so far turns radio into sound.
 
 [click] This one turns it into a clock.
 
-[click] There are stations whose entire job is to broadcast what time it is, continuously, straight off a caesium atomic clock. One way. No network, no handshake, nothing to log into. **Your receiver just listens, and it knows what time it is.**
+[click] There are stations whose entire job is to broadcast what time it is, continuously, straight off a caesium atomic clock. It's one way. You don't connect to anything, you just listen. **Your receiver just listens, and it knows what time it is.**
 
 ***
 
@@ -1152,12 +1152,11 @@ This is the emotional beat of the talk and it's why the section survived the cut
 
 # ADS-B
 
-The third demo. FM gave us music, AM gave us a voice. This one gives us **aircraft**.
+The third demo. FM gave us music, AM gave us a voice. This one gives us information about the aircraft above us.
 
 <v-click>
 
-Every plane with an ADS-B transponder broadcasts its **position, altitude, speed, and
-callsign** on **1090 MHz**. Twice a second. Unencrypted.
+Every plane with an ADS-B transponder broadcasts its **position, altitude, speed, and callsign** on **1090 MHz**. Twice a second. Unencrypted.
 
 </v-click>
 
@@ -1212,7 +1211,7 @@ So the ADS-B receiver isn't in this room.
 
 Now, remember the two transports from earlier. rtl_tcp would let me put the dongle upstairs and run the decoder down here — and **that is not what I did.** Ten-ninety runs at two point four megahertz. That's nearly five megabytes a second of raw IQ, and I am not pushing that across conference WiFi.
 
-So the Pi runs the whole radio. What crosses the building isn't samples, it's answers.
+So the Pi does the whole decode, and all that comes down to the laptop is a list of aircraft.
 
 ***
 
@@ -1259,7 +1258,7 @@ IQ samples (2.4 MHz)
 <v-click>
 
 Each message is a 112-bit burst, 120 μs long.
-Four DSP stages, and only the first one is radio.
+After the first stage, it's all bit-twiddling.
 
 </v-click>
 
@@ -1303,7 +1302,7 @@ Instead of audio, the pattern of high and low values encodes **bits**.
 
 ADS-B is on-off keyed. The carrier is either there or it isn't. Phase carries nothing at all, so magnitude is the entire demodulator.
 
-[click] **This is the AM demodulator again.** It's working on raw bytes off the dongle instead of parsed complex numbers, because on a Pi at two point four million samples a second that conversion is the expensive part. But the maths is the maths.
+[click] **This is the AM demodulator again.** It's working on raw bytes off the dongle instead of parsed complex numbers, because on a Pi at two point four million samples a second that conversion is the expensive part. Same math, different container.
 
 [click] Instead of audio, the pattern of high and low values encodes bits.
 -->
@@ -1334,7 +1333,7 @@ Each bit is one microsecond, split in half. A pulse in the first half is a one. 
 
 [WALK THE DIAGRAM left to right.] Early, late, early, late. One, zero, one, zero.
 
-[click] The eight microsecond preamble is a fixed pattern. Find it and you know two things at once: a message starts here, and exactly where every bit slot after it begins. **It isn't data. It's a tuning fork.**
+[click] The eight microsecond preamble is a fixed pattern. Find it and you know two things at once: a message starts here, and exactly where every bit slot after it begins.
 
 ***
 
@@ -1360,7 +1359,7 @@ bits[bit_idx] = if early > late { 1 } else { 0 };
 <v-click>
 
 Drift by half a slot and the last bits land in the wrong half. **CRC-24 catches
-it and throws the whole 112-bit message away**. Better nothing than a wrong altitude.
+it and throws the whole 112-bit message away**. We'd rather lose a message than show a wrong altitude.
 
 </v-click>
 
@@ -1373,7 +1372,7 @@ We're sampling at two point four megahertz, so each half-slot is about one point
 
 [click] Then sample the middle of each half. Whichever is louder is the bit.
 
-[click] And there's a backstop: a twenty-four bit CRC. If the timing slipped, or two aircraft talked over each other, the checksum fails and we bin the whole message. **A dropped position is invisible. A wrong altitude is dangerous.**
+[click] And there's a backstop: a twenty-four bit CRC. If the timing slipped, or two aircraft talked over each other, the checksum fails and we throw the whole message away. **A dropped position is invisible. A wrong altitude is dangerous.**
 
 ***
 
@@ -1408,7 +1407,7 @@ differ by the wind correction angle, sometimes by fifteen degrees.
 
 So the CRC passed, and we have a hundred and twelve good bits. What's in them?
 
-This is the type they turn into. It's the whole vocabulary an aircraft has.
+This is the type they turn into. This is everything an aircraft can say.
 
 [click] Type codes one to four are identification — the callsign it filed its flight plan under. That's the "AIR CANADA eight-seven-two" you see on the map.
 
@@ -1418,7 +1417,7 @@ This is the type they turn into. It's the whole vocabulary an aircraft has.
 
 [click] And then this one, which is my favourite line in the file. Unsupported — recognised, not decoded. It's every message type I haven't gotten to yet, kept visible instead of quietly dropped, so the thing can tell me what I'm still missing.
 
-[click] Now look at the field types. Not f32 — Knots, TrackDeg, FeetPerMinute. The first version of this passed bare floats around for both heading and track, and those are genuinely different things. Track is the direction you're moving. Heading is where the nose points. In a crosswind they can be fifteen degrees apart, and ADS-B sends you track.
+[click] Now look at the field types. Not f32 — Knots, TrackDeg, FeetPerMinute. The first version of this passed bare floats around for both heading and track, and those are different things. Track is the direction you're moving. Heading is where the nose points. In a crosswind they can be fifteen degrees apart, and ADS-B sends you track.
 
 Rust makes that distinction free. One line, a newtype, and the compiler stops me from ever putting a heading where a track belongs. The comment I left in that file says it better than I can: **"naming it wrong is the kind of error that survives all the way onto a conference slide."**
 
@@ -1444,14 +1443,14 @@ Pipeline::new(
 
 Every stage has a naive baseline and a registry of alternatives, scored on the
 same capture. The baseline detector finds **517** valid messages; a smarter one
-finds **2,403** on the same bytes. Four-fifths of the signal is still on the table.
+finds **2,403** on the same bytes. The naive detector is finding about a fifth of what's there.
 
 </v-click>
 
 <v-click>
 
 `Candidate` → `RawFrame` → `Validated`. The decoder takes only `Validated`, so a
-frame that failed CRC **can't reach the map** — not by discipline, by type.
+frame that failed CRC **can't reach the map**, because the decoder's argument type is `Validated` and nothing else constructs one.
 
 </v-click>
 
@@ -1462,9 +1461,9 @@ Four stages — and every one of them is swappable.
 
 [click] Each has a deliberately naive version and a registry of alternatives, all scored against each other on the same golden capture. The baseline detector pulls five hundred and seventeen valid messages out of one file. Swap in a smarter detector and you get two thousand four hundred and three, from exactly the same bytes.
 
-The naive pipeline works, and four fifths of the signal is still sitting on the table. **The repo is a scoreboard, not a finished thing.**
+The naive pipeline works, and it's finding about a fifth of what's there. I'm nowhere near done with this decoder.
 
-[click] And one more thing the types do for me. What travels between those stages isn't bytes, it's a ladder — a Candidate is somewhere the detector *thinks* a message starts, a RawFrame is sliced but unchecked, and a Validated is one that passed CRC. The decoder will only accept the last one.
+[click] And one more thing the types do for me. Each stage hands the next one a different type. A Candidate is somewhere the detector *thinks* a message starts, a RawFrame is sliced but unchecked, and a Validated is one that passed CRC. The decoder will only accept the last one.
 
 So the thing I said two slides ago — that a wrong altitude is worse than no altitude — isn't me remembering to check. **A frame that failed its checksum cannot reach that map, because there's no type that would carry it there.**
 
@@ -1575,7 +1574,7 @@ These are the crates it all leans on. This slide exists to be photographed, not 
 
 If I call out two: num-complex, because I plus jQ just works. And cpal, because it gets audio out on any OS.
 
-And notice how short it is. The FM receiver is two dependencies — ten crates in the whole tree. There's no SDK, no C library to install first, no build system between you and the antenna. **That's the part that let this stay a hobby.**
+And notice how short it is. The FM receiver is two dependencies — ten crates in the whole tree. There's no SDK, no C library to install first, no build system to fight. **That's the part that let this stay a hobby.**
 
 ***
 
