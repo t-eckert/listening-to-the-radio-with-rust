@@ -21,7 +21,7 @@ const branch = (cy) => {
 
 <template>
   <svg viewBox="0 0 1000 284" class="transport" role="img"
-       aria-label="the rtl_sdr crate reading over USB and the rtl_tcp process serving over TCP both converge into one 'your code' box">
+       aria-label="the rtl-sdr-rs crate reading over USB and the rtl_tcp process serving over TCP both converge into one 'your code' box">
     <defs>
       <marker id="tr-arrow" viewBox="0 0 10 10" refX="8" refY="5"
               markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -39,7 +39,7 @@ const branch = (cy) => {
     <text x="196" :y="TOP_CY - 6" class="tr-where">crate</text>
     <rect :x="SRC_X" :y="TOP_CY - SRC_H / 2" :width="SRC_W" :height="SRC_H" rx="12"
           fill="#eef2ff" stroke="#818cf8" stroke-width="2" />
-    <text :x="SRC_X + SRC_W / 2" :y="TOP_CY + 6" class="tr-mono" fill="#312e81">rtl_sdr</text>
+    <text :x="SRC_X + SRC_W / 2" :y="TOP_CY + 6" class="tr-mono" fill="#312e81">rtl-sdr-rs</text>
 
     <!-- source 2: rtl_tcp, a separate process serving over TCP -->
     <text x="196" :y="BOT_CY - 6" class="tr-where">separate process</text>
