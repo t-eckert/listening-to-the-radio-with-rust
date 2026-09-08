@@ -1240,22 +1240,21 @@ TIME CHECK: about 27:55 here. Past 29:10, name one aircraft at the payoff instea
 
 # ADS-B: The Pipeline
 
-```
-IQ samples (2.4 MHz)
-  → magnitude          sqrt(I² + Q²), same as AM
-  → preamble detect    find the 8 μs ADS-B signature
-  → bit slice          112 bits from pulse positions
-  → CRC-24 validate    discard what the air damaged
-  → track              pair CPR frames into a position
-  → HTTP               JSON and an SSE stream
-```
+<AdsbPipeline class="mt-1" />
 
-<v-click>
+<div v-click="1" class="pipe-note">
 
-Each message is a 112-bit burst, 120 μs long.
-After the first stage, it's all bit-twiddling.
+Each message is a **112-bit burst, 120 μs long** — and only the first stage is radio.
 
-</v-click>
+</div>
+
+<style>
+.pipe-note {
+  margin-top: 0.9rem;
+  text-align: center;
+  color: #cbd5e1;
+}
+</style>
 
 <!--
 [0:25 · 28:20]
@@ -1594,14 +1593,6 @@ concepts with no dongle needed.
 **All the code is open source**
 - Talk demos (FM, AM, the receivers): `github.com/t-eckert/listening-to-the-radio-with-rust`
 - Aircraft tracker (the map you saw): `github.com/t-eckert/skyward`
-
-<v-click>
-
-**The hardware is on the table at the front. Come hold it.**
-
-I'll be here, and at the reception after.
-
-</v-click>
 
 <!--
 [0:25 · 34:10]
