@@ -102,7 +102,7 @@ While I've been building distributed systems for years, software defined radio i
 
 What I want to do today is introduce you to building applications in Rust that take radio as their input. We'll build three of them: a radio that plays music, a radio that picks up air traffic control, and a receiver that tracks the aircraft flying overhead.
 
-While this applications look very different, they sit on the same foundation of demodulating signals from a receiver.
+While these applications look very different, they sit on the same foundation of demodulating signals from a receiver.
 -->
 
 ---
@@ -143,7 +143,7 @@ The antenna picks up electromagnetic waves out of the air. Those waves push the 
 
 Everything up to that point is the same for every application. The difference is in how the signals are demodulated.
 
-Change the demodulation code, and change the length of your antenna, and the same hardware gives you music, or a controller's voice, or the position of an aircraft. Those three are what we're building today. The list doesn't stop there: ships, weather satellites, pagers, the tire pressure sensors in the cars.
+Change the demodulation code, and change the length of your antenna, and the same hardware gives you music, or a controller's voice, or the position of an aircraft. Those three are what we're building today. The list doesn't stop there: ships, weather satellites, pagers, the tire pressure sensor in your car.
 
 [FADE THE MUSIC OUT as you finish. The next slide happens in silence.]
 -->
@@ -318,7 +318,7 @@ Same dongle receives FM, AM, aviation, ADS-B. Just change the frequency and the 
 <!--
 [0:35 · 7:00]
 
-This is the hardware. A USB dongle, about thirty dollars. The chips inside were designed for a television receiver and it worked out you could ask the chip for the raw samples instead of the television picture.
+This is the hardware. A USB dongle, about thirty dollars. The chips inside were designed for a television receiver and it turned out you could ask the chip for the raw samples instead of the television picture.
 
 Software-defined radio means exactly this: digitize a chunk of the spectrum, and do everything else in software. There's no FM circuit in here. There's no AM circuit. All of the radio specific stuff is done in code.
 -->
@@ -364,7 +364,7 @@ The antenna hears everything at once. FM, AM, aviation, the cell towers outside,
 
 The tuner has one job. It slides that entire spectrum down, so that the station you asked for lands on zero — which is where hardware can actually sample it. Bottom row: your station sitting on zero, the sampling window catching it, and everything else slid away with it.
 
-Think of turning the dial on an radio. You are not filtering the other stations out. **You're moving the window.**
+Think of turning the dial on a radio. You are not filtering the other stations out. **You're moving the window.**
 
 ***
 
@@ -586,25 +586,6 @@ Don't explain `Complex<f32>` to this room.
 -->
 
 ---
-layout: center
-class: text-center
----
-
-## What's coming off the dongle right now
-
-<!--
-[0:20 · 13:30]
-
-[DEMO: task iq-print. Five to ten seconds of scroll, no more.]
-
-These are the actual numbers coming off the dongle. Right now, in this room. **Everything you're about to see is arithmetic on this.**
-
-***
-
-Resist elaborating here. The "let's build" turn is two slides away and it needs the energy more than this does.
--->
-
----
 
 # Many Signals, One Idea
 
@@ -691,14 +672,14 @@ Everything that follows lives in **one file**.
     { label: 'Step 2  demodulate', note: 'turn rotation of IQ into sound', lines: 39, step: true },
     { label: 'Step 3  de-emphasis', note: 'undo the treble boost from the transmitter', lines: 29, step: true },
     { label: 'main', note: 'four calls, in order', lines: 70 },
-    { label: 'audio plumbing', note: 'not radio; samples to the sound card', lines: 58 },
+    { label: 'audio plumbing', note: 'not radio; samples to the sound card', lines: 57 },
   ]"
 />
 
 <!--
 [0:40 · 16:15]
 
-We can write this whole pipeline in a single file in 327 lines. The actual file is in a repo that I'll share at the end of the talk.
+We can write this whole pipeline in a single file in 326 lines. The actual file is in a repo that I'll share at the end of the talk.
 
 Here is a minimap of that file.
 
@@ -713,7 +694,7 @@ The point of this slide is scale — let them see it's smaller than they expecte
 
 # FM Step 1: Filter
 
-We have already selected a portion of the spectrum, but we need to filter out the noise from nearby stations with a low pass filter.
+We have already selected a portion of the spectrum, but we need to filter out the nearby stations with a low pass filter.
 
 <SpectrumBand channel="97.7" span="960 kHz of spectrum, all at once" width="200 kHz, one station" />
 
@@ -737,7 +718,7 @@ if self.countdown >= self.decimation {
 <!--
 [0:50 · 17:05]
 
-The antenna hears every station at once and the dongle sends you all of it — that's the wide band on the diagram. In software, a low-pass filter keeps the two hundred kilohertz that is our station and drops everything either side of it.
+The antenna hears every station at once and the dongle sends us all of it — that's the wide band on the diagram. In software, a low-pass filter keeps the two hundred kilohertz that is our station and drops everything either side of it.
 
 [click] It also decimates in the same pass. We only do the expensive work on the samples we're going to keep.
 
@@ -747,14 +728,14 @@ The antenna hears every station at once and the dongle sends you all of it — t
 
 ***
 
-FIRST CUT IF RUNNING LONG (past 18:00 at "Many Signals, One Idea"). If you cut it, say one sentence on the way past — "there's a filter first, to pick one station out of the noise" — because Step 2 doesn't make sense without it.
+FIRST CUT IF RUNNING LONG (past 15:45 at "Many Signals, One Idea"). If you cut it, say one sentence on the way past — "there's a filter first, to pick one station out of the noise" — because Step 2 doesn't make sense without it.
 -->
 
 ---
 
 # FM Step 2: Demodulate
 
-We get the audio out of the change in angle between each sample.
+We get the audio out of the change in angle between one sample and the next.
 
 ```rust {all|6-7|9|all}
 fn process(&mut self, input: &[Iq]) -> Vec<f32> {
@@ -776,7 +757,7 @@ The audio _is_ the rate of phase change, the **rotation speed**.
 <!--
 [1:10 · 18:15]
 
-FM encodes the audio as the speed of rotation. So the audio is just how far the point turned between one sample and the next.
+FM encodes the audio as frequency, which we see in the IQ values as the speed of rotation. So the audio is just how far the point turned between one sample and the next.
 
 [click] Multiplying by the conjugate of the previous sample subtracts the previous angle. What's left is the change.
 
@@ -811,7 +792,7 @@ fn process(&mut self, samples: &mut [f32]) {
 
 One more step, and it's a small one.
 
-Stations boost their treble before they transmit, because hiss lives up at the top end and a boosted signal survives it better. So we undo the boost on the way out. That's this line: a running average that keeps the slow-moving part.
+Stations boost their treble before they transmit, because hiss lives up at the top end and a boosted signal survives it better. So we undo the boost on the way out. That's the whole step: a running average that keeps the slow-moving part.
 
 Seventy-five microseconds in North America, fifty in Europe. **Skip it and every station sounds harsh and thin.**
 
@@ -824,21 +805,21 @@ SECOND CUT IF RUNNING LONG. Low drama on purpose — it's the palate cleanser be
 
 # FM: The Whole Loop
 
-This is how the loop is called within `main()`. 
+This is the loop inside `main()`.
 
 ```rust {all|1|2|3-4|6}
-let tuned     = iq_filter.process(&iq);                 // step 1
-let raw_audio = fm_demod.process(&tuned);               // step 2
+let tuned     = iq_filter.process(&iq);                 // Pick the station
+let raw_audio = fm_demod.process(&tuned);               // Get the audio
 let mut audio = audio_filter.process_real(&raw_audio);
-deemphasis.process(&mut audio);                         // step 3
+deemphasis.process(&mut audio);                         // De-emphasize the boost
 
-ring.push(&audio);                                      // speakers
+ring.push(&audio);                                      // Play the audio!
 ```
 
 <!--
 [0:50 · 19:40]
 
-And this is the loop, inside main.
+Inside of our main function, this is the loop where we call these functions.
 
 [click] Filter — pick one station.
 
@@ -849,12 +830,6 @@ And this is the loop, inside main.
 [click] And push it at the speakers.
 
 **That is the receiver. Everything else in that file is reading bytes and talking to the sound card.**
-
-[BRING THE AUDIO BACK: task fm-single FREQ=97.7]
-
-And now you know what you're listening to.
-
-[LEAVE IT RUNNING under the next slide.]
 
 ***
 
@@ -867,10 +842,9 @@ TIME CHECK: about 19:40 leaving this slide.
 
 # Why Rust
 
-**960,000 samples a second.** Roughly a microsecond each — and the sound card
-never waits.
+960,000 samples a second gives us a microsecond per sample.
 
-```rust {all|1|2|4}
+```rust {all|2,4}
 let ring   = Arc::new(AudioRing::new(AUDIO_RATE as usize * 2));
 let stream = start_audio(AUDIO_RATE, ring.clone())?;  // audio thread drains
 
@@ -889,9 +863,7 @@ ring.push(&audio);                                    // decode thread fills
 <!--
 [1:15 · 20:55]
 
-I want to stop on the language for a second, because this is the one slide where I make a case instead of showing you a picture.
-
-Nine hundred and sixty thousand samples a second. That's about a microsecond each, and the sound card is going to ask for more audio whether or not I'm ready. There's no catching up. This is a hard real-time program wearing a hobby project's clothes.
+Nine hundred and sixty thousand samples a second. That's about a microsecond each, and the sound card is going to ask for more audio whether or not I'm ready. There's no catching up. This is a hard real-time program.
 
 [click] So: two threads. That ring buffer is filled by the loop you just read and drained by the audio callback, at the same time.
 
@@ -922,6 +894,8 @@ TIME CHECK: about 20:55 leaving this slide. Past 22:05, drop the third bullet (d
 
 <!--
 [0:40 · 21:35]
+
+[STOP fm-single NOW: Ctrl-C in its terminal. One dongle, one process — am-single needs it three slides from here, and it will fail to open the device if fm-single is still holding it.]
 
 Now AM. And here's the same map — same endpoints, same three rates, same two divisions.
 
@@ -1057,7 +1031,7 @@ Here's the AM loop.
 
 And before anyone worries about it: in Canada, receiving is legal. The law restricts transmitting, and it restricts sharing private communications. Air traffic control is a public broadcast.
 
-[DEMO: task am-single FREQ=119.9. Then stop talking and let it run.]
+[DEMO: task am-single FREQ=119.9. fm-single must already be stopped. Then stop talking and let it run.]
 
 ***
 
@@ -1188,7 +1162,7 @@ The third demo. FM gave us music, AM gave us a voice. This one gives us **aircra
 
 <v-click>
 
-Every plane with a transponder broadcasts its **position, altitude, speed, and
+Every plane with an ADS-B transponder broadcasts its **position, altitude, speed, and
 callsign** on **1090 MHz**. Twice a second. Unencrypted.
 
 </v-click>
@@ -1206,7 +1180,7 @@ No request, no login. It's just in the air.
 
 Two demos down. FM gave us music. AM gave us a voice. The third one is my favourite, and it gives us aircraft.
 
-[click] Every plane with a transponder is broadcasting its position, its altitude, its speed and its callsign, on ten-ninety megahertz. Twice a second. Unencrypted.
+[click] Every plane with an ADS-B transponder is broadcasting its position, its altitude, its speed and its callsign, on ten-ninety megahertz. Twice a second. Unencrypted.
 
 [click] No request, no login, no API key. **It's just in the air.**
 
