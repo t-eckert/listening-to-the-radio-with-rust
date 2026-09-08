@@ -127,6 +127,10 @@ There's an antenna on stage. It's picking up a broadcast from a transmitter on M
 
 ***
 
+START IT BEFORE YOU WALK ON, from demos/: `task fm-single FREQ=97.7 GAIN=3.7`
+
+GAIN verified at the podium 2026-09-08 with the antenna seated: clean window is 2.7-14.4, and 3.7 leaves the most headroom (peak 56/127, no clipping). The Taskfile default of 30 clips hard here — do NOT take the default. Demodulated audio measured RMS 0.0804 against 0.1118 for the recorded fm.iq, with the same hiss ratio, so it sounds like the reference.
+
 If it's an ad break or dead air, name it and keep moving: "that's a commercial, and I promise it's live." Station is CHOM 97.7, Mount Royal transmitter.
 -->
 
@@ -893,7 +897,7 @@ TIME CHECK: about 20:55 leaving this slide. Past 22:05, drop the third bullet (d
 <!--
 [0:40 · 21:35]
 
-[STOP fm-single NOW: Ctrl-C in its terminal. One dongle, one process — am-single needs it three slides from here, and it will fail to open the device if fm-single is still holding it.]
+[STOP fm-single NOW: Ctrl-C in its terminal. Nothing after this needs the dongle — ADS-B comes off the Pi over HTTP — but the FM audio must not run underneath this section.]
 
 Now AM. And here's the same map — same endpoints, same three rates, same two divisions.
 
@@ -1009,15 +1013,12 @@ That is the same five lines as the FM receiver, with two words changed.
 
 <v-click>
 
-Let's tune to 119.9 MHz, Montréal-Trudeau tower.
-
-<span class="opacity-70">In Canada, receiving is legal. The law restricts transmitting and sharing private
-communications, but ATC is a public broadcast.</span>
+Point it at 119.9 MHz and it is an aviation radio, listening to Montréal-Trudeau tower.
 
 </v-click>
 
 <!--
-[1:25 · 24:25]
+[0:45 · 23:45]
 
 Here's the AM loop.
 
@@ -1025,15 +1026,11 @@ Here's the AM loop.
 
 [click] **That's the whole diff between a music radio and an aviation radio.**
 
-[click] So let's point it at a hundred and nineteen point nine megahertz. Montréal-Trudeau tower.
-
-And before anyone worries about it: in Canada, receiving is legal. The law restricts transmitting, and it restricts sharing private communications. Air traffic control is a public broadcast.
-
-[DEMO: task am-single FREQ=119.9. fm-single must already be stopped. Then stop talking and let it run.]
+[click] Point it at a hundred and nineteen point nine megahertz, and you are listening to Montréal-Trudeau tower.
 
 ***
 
-Backups if it's quiet: 119.3 (north tower), 118.9 (south arrival). VERIFY ALL THREE AT THE VENUE during the 30 minute break — these are from the published CYUL chart, not measured. Same antenna that did FM, fully extended and untouched — do NOT retune it between demos. English or French, either is fine. ATC is bursty. If the tower is silent for 10+ seconds, say so and let it sit — a real pause is more convincing than a recording would be. CAP THE LISTEN AT 75 SECONDS even if it stays quiet. Call it a quiet tower and move on. THIS IS WHERE OVERRUNS COME FROM.
+NO DEMO HERE. Cut 2026-09-08 at the venue test and re-verified with the antenna properly seated: 119.9, 119.3 and 118.9 all sit within 3 dB of the noise floor, and 133.7 (ATIS) shows nothing at all. A 20-second listen demodulated to flat noise with no speech in it. FM at 97.7, off the same antenna in the same spot, was clipping the ADC. Do not improvise a live listen — the risk is dead air. Say the line and go to the contrast slide.
 -->
 
 ---
@@ -1058,17 +1055,13 @@ Same IQ data, different interpretation.
 </v-click>
 
 <!--
-[0:25 · 24:50]
+[0:25 · 24:10]
 
 So: both of those produce audio, out of the same stream of numbers.
 
 [click] FM used the speed of rotation around the origin. AM used the distance from the origin.
 
 [click] Same IQ data. Different question. **That is the entire difference between the two receivers.**
-
-***
-
-[FADE THE AM AUDIO OUT here if it's still running.]
 -->
 
 ---
@@ -1091,7 +1084,7 @@ caesium atomic clock.
 </v-click>
 
 <!--
-[0:30 · 25:20]
+[0:30 · 24:40]
 
 Everything we've built so far turns radio into sound.
 
@@ -1129,7 +1122,7 @@ I pointed the receiver at 7.850 MHz and found **noise where a station used to be
 </v-click>
 
 <!--
-[1:00 · 26:20]
+[1:00 · 25:40]
 
 Fifteen kilometres from my desk in Ottawa there was a station called CHU, run by the National Research Council. Three frequencies, caesium clocks, broadcasting since nineteen thirty-eight. It's shortwave, so it refracts off the ionosphere: that signal comes back down thousands of kilometres away. People set their clocks by it right across the continent.
 
@@ -1156,18 +1149,12 @@ The third demo. FM gave us music, AM gave us a voice. This one gives us informat
 
 <v-click>
 
-Every plane with an ADS-B transponder broadcasts its **position, altitude, speed, and callsign** on **1090 MHz**. Twice a second. Unencrypted.
-
-</v-click>
-
-<v-click>
-
-No request, no login. It's just in the air.
+Every plane with an ADS-B transponder broadcasts its **position, altitude, speed, and callsign** on **1090 MHz**. Twice a second. Unencrypted for any other aircraft, satellite, tower, or enthusiast to receive.
 
 </v-click>
 
 <!--
-[0:50 · 27:10]
+[0:50 · 26:30]
 
 [HARD TURN. You've just come off the CHU elegy. Let one full beat of silence sit before you speak, and drop the tone rather than bouncing straight into enthusiasm.]
 
@@ -1188,7 +1175,7 @@ This is the third of the three you promised at the top: music, a voice, aircraft
 
 1090 MHz wants a **7 cm** antenna and a **view of the sky**.
 
-This one is built for the FM band, and we are indoors.
+The one on stage is set up for the FM band, and we are indoors.
 
 <v-click>
 
@@ -1197,7 +1184,7 @@ This one is built for the FM band, and we are indoors.
 </v-click>
 
 <!--
-[1:00 · 28:10]
+[1:00 · 27:30]
 
 Remember the quarter wavelength, from the very beginning.
 
@@ -1207,7 +1194,7 @@ Ten-ninety megahertz is a twenty-seven centimetre wave, so it wants a seven cent
 
 So the ADS-B receiver isn't in this room.
 
-[click] There's a Raspberry Pi upstairs, next to a window, with a seven centimetre stub on it — and I'm going to talk to it over the network.
+[click] There's a Raspberry Pi upstairs on the seventh floor, with a seven centimetre stub on it — and I'm going to talk to it over the network.
 
 Now, remember the two transports from earlier. rtl_tcp would let me put the dongle upstairs and run the decoder down here — and **that is not what I did.** Ten-ninety runs at two point four megahertz. That's nearly five megabytes a second of raw IQ, and I am not pushing that across conference WiFi.
 
@@ -1217,7 +1204,9 @@ So the Pi does the whole decode, and all that comes down to the laptop is a list
 
 Do NOT apologise for the receiver being remote. It's a consequence of the physics you just explained, which makes it a payoff rather than an excuse.
 
-ACCURACY, don't undo this: **the Pi does not use rtl_tcp.** skyward is a hosted application there — it reads the dongle directly over USB (`SKYWARD_SOURCE=usb`, the recommended shape in skyward/docs/RASPBERRY_PI.md) and serves HTTP. The laptop is a browser talking to it. The 4.8 MB/s figure is that doc's, and is why direct USB is recommended over a localhost socket.
+ACCURACY, don't undo this: it is on the seventh floor but it is NOT next to a window. Measured 2026-09-08: three metres from the glass gave zero messages, while out in the room it gave 186-222 msg/min. At 1090 MHz a window that faces a wall buys masonry, not sky -- the dipole does better collecting scattered signal from the whole room. Do not re-add "next to a window"; it is both false and the opposite of what worked.
+
+ACCURACY, don't undo this either: **the Pi does not use rtl_tcp.** skyward is a hosted application there — it reads the dongle directly over USB (`SKYWARD_SOURCE=usb`, the recommended shape in skyward/docs/RASPBERRY_PI.md) and serves HTTP. The laptop is a browser talking to it. The 4.8 MB/s figure is that doc's, and is why direct USB is recommended over a localhost socket.
 -->
 
 ---
@@ -1228,7 +1217,7 @@ class: text-center
 ## Let's see what's flying overhead.
 
 <!--
-[0:25 · 28:35]
+[0:25 · 27:55]
 
 Let's see what's flying overhead right now.
 
@@ -1238,7 +1227,7 @@ Let's see what's flying overhead right now.
 
 skyward has been running on the Pi since long before your session — nothing to launch, the map is already populated. Have the tab open and loaded BEFORE you walk on. Leave it up in a second window so it keeps filling UNDER the code slides that follow.
 
-TIME CHECK: about 28:35 here. Past 29:50, name one aircraft at the payoff instead of three, and keep the dwell short.
+TIME CHECK: about 27:55 here. Past 29:10, name one aircraft at the payoff instead of three, and keep the dwell short.
 -->
 
 ---
@@ -1263,17 +1252,21 @@ After the first stage, it's all bit-twiddling.
 </v-click>
 
 <!--
-[0:25 · 29:00]
+[0:25 · 28:20]
 
-Here's the whole thing, top to bottom.
+This application is more complicated, but it relies on the same fundamentals.
 
-Magnitude — which is the AM demodulator again. Find the preamble. Slice out the bits. Check the CRC. Then track the aircraft and serve it over HTTP.
+We demodulate the magnitude of the signal, just like we did with AM. But instead of being an analog signal.
+
+
+
+ Find the preamble. Slice out the bits. Check the CRC. Then track the aircraft and serve it over HTTP.
 
 [click] Each message is a hundred and twelve bits, and the whole burst is over in a hundred and twenty microseconds. **Four stages, and only the first one is radio.**
 
 ***
 
-FIRST CUT IN THIS SECTION. "ADS-B: Four Stages" covers the same ground later and does it better. Past 29:00 here, skip straight to the demodulator slide.
+FIRST CUT IN THIS SECTION. "ADS-B: Four Stages" covers the same ground later and does it better. Past 28:20 here, skip straight to the demodulator slide.
 -->
 
 ---
@@ -1298,7 +1291,7 @@ Instead of audio, the pattern of high and low values encodes **bits**.
 </v-click>
 
 <!--
-[0:35 · 29:35]
+[0:35 · 28:55]
 
 ADS-B is on-off keyed. The carrier is either there or it isn't. Phase carries nothing at all, so magnitude is the entire demodulator.
 
@@ -1325,7 +1318,7 @@ message starts here, and exactly where every bit slot after it begins.
 </v-click>
 
 <!--
-[0:45 · 30:20]
+[0:45 · 29:40]
 
 There's no volume to read here, and no phase to read. The only thing carrying information is timing — which half of the microsecond the pulse lands in.
 
@@ -1364,7 +1357,7 @@ it and throws the whole 112-bit message away**. We'd rather lose a message than 
 </v-click>
 
 <!--
-[0:40 · 31:00]
+[0:40 · 30:20]
 
 We're sampling at two point four megahertz, so each half-slot is about one point two samples wide. That's the whole problem with this decoder.
 
@@ -1403,7 +1396,7 @@ differ by the wind correction angle, sometimes by fifteen degrees.
 </v-click>
 
 <!--
-[1:15 · 32:15]
+[1:15 · 31:35]
 
 So the CRC passed, and we have a hundred and twelve good bits. What's in them?
 
@@ -1455,7 +1448,7 @@ frame that failed CRC **can't reach the map**, because the decoder's argument ty
 </v-click>
 
 <!--
-[0:50 · 33:05]
+[0:50 · 32:25]
 
 Four stages — and every one of them is swappable.
 
@@ -1486,7 +1479,7 @@ With a $30 dongle and a 7 cm antenna, on a Pi upstairs, we can see them all.
 </v-click>
 
 <!--
-[0:35 · 33:40]
+[0:35 · 33:00]
 
 [BACK TO SKYWARD. It's been filling for four or five minutes; it should be busy.]
 
@@ -1510,7 +1503,7 @@ Name an actual aircraft — callsign, altitude, destination. That specificity is
 <CoverageFlow class="mt-12" />
 
 <!--
-[0:30 · 34:10]
+[0:30 · 33:30]
 
 This is the slide I put up half an hour ago and asked you to take on faith.
 
@@ -1568,7 +1561,7 @@ The whole talk leans on a handful of crates. Reach for these.
 </style>
 
 <!--
-[0:15 · 34:25]
+[0:15 · 33:45]
 
 These are the crates it all leans on. This slide exists to be photographed, not read.
 
@@ -1605,7 +1598,7 @@ I'll be here, and at the reception after.
 </v-click>
 
 <!--
-[0:25 · 34:50]
+[0:25 · 34:10]
 
 The dongle is about thirty dollars, the dipole kit about ten. **Everything I showed you today runs on that and a laptop.**
 
@@ -1632,7 +1625,7 @@ The airwaves are public. The code is open.
 <div class="mt-8 opacity-60 text-sm">github.com/t-eckert/listening-to-the-radio-with-rust</div>
 
 <!--
-[0:15 · 35:05]
+[0:15 · 34:25]
 
 The airwaves are public. The code is open.
 

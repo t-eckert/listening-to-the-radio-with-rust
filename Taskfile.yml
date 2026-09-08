@@ -1,30 +1,33 @@
 # https://taskfile.dev
 version: '3'
-
 tasks:
   default:
     cmds:
       - task --list-all
     silent: true
-
   present:
     desc: Run the slide deck with presenterm
     cmds:
       - presenterm slides.md
     silent: true
-
   rtl-tcp:
     desc: Start the RTL-SDR TCP server
     cmds:
       - rtl_tcp -a 127.0.0.1
     silent: true
-
   fm:
     desc: Listen to FM radio (set FREQ to your local station in MHz, e.g. 100.3)
     cmds:
       - cargo run -p fm-receiver -- --frequency {{.FREQ | default "100.3"}}
     dir: demos
-
+  fm-stage:
+    # Venue-verified 2026-09-08 at the podium, antenna seated, long elements.
+    # NOT 107.3/19.7 -- those were measured off-stage; at the podium 107.3 is
+    # only +9.5 dB over the floor and gain 19.7 clips (14.4 already does).
+    # 97.7 at 3.7 measured RMS 0.0804 against 0.1118 for the recorded fm.iq.
+    desc: FM exactly as verified at this venue's podium
+    cmds:
+      - "task fm-single FREQ=97.7 GAIN=3.7"
   fm-single:
     desc: Same radio, one file, piped from rtl_sdr (FREQ MHz, GAIN dB). WAV=out.wav to record
     cmds:
@@ -32,15 +35,13 @@ tasks:
       # the ADC at 40 (10.6% of samples clipped, measured 2026-08-16). Montreal is
       # a stronger field than Ottawa, so expect to go lower still at the venue.
       - >-
-        rtl_sdr -f $(echo '{{.FREQ | default "97.7"}} * 1000000' | bc | cut -d. -f1)
-        -s 960000 -g {{.GAIN | default "30"}} - | bin/fm-single {{.WAV}}
+        rtl_sdr -f $(echo '{{.FREQ | default "97.7"}} * 1000000' | bc | cut -d. -f1) -s 960000 -g {{.GAIN | default "30"}} - | bin/fm-single {{.WAV}}
     dir: demos
     env:
       DYLD_LIBRARY_PATH: /opt/homebrew/lib
     preconditions:
       - sh: test -x bin/fm-single
         msg: "bin/fm-single is missing — run `task alias` before the session, not on stage"
-
   fm-file:
     desc: Play a recorded IQ file through fm-single, paced and looping (FILE, WAV to record)
     cmds:
@@ -53,50 +54,41 @@ tasks:
         msg: "bin/iq-play is missing — run `task alias` before the session, not on stage"
       - sh: test -f {{.FILE | default "fm.iq"}}
         msg: "no such IQ file: {{.FILE | default \"fm.iq\"}} — record one with `task capture`"
-
   capture:
     desc: Record IQ at the fm-single rate (FREQ MHz, SECS, OUT, GAIN dB, DEV index)
     cmds:
       # Check the result with `task capture-check OUT=<file>` before trusting it —
       # a clipped capture is a distorted fallback, and it looks fine as a file size.
       - >-
-        rtl_sdr -d {{.DEV | default "0"}}
-        -f $(echo '{{.FREQ | default "106.1"}} * 1000000' | bc | cut -d. -f1)
-        -s 960000 -g {{.GAIN | default "30"}} -n $(echo '{{.SECS | default "10"}} * 960000' | bc | cut -d. -f1)
-        {{.OUT | default "fm.iq"}}
+        rtl_sdr -d {{.DEV | default "0"}} -f $(echo '{{.FREQ | default "106.1"}} * 1000000' | bc | cut -d. -f1) -s 960000 -g {{.GAIN | default "30"}} -n $(echo '{{.SECS | default "10"}} * 960000' | bc | cut -d. -f1) {{.OUT | default "fm.iq"}}
       - ls -lh {{.OUT | default "fm.iq"}}
     dir: demos
     env:
       DYLD_LIBRARY_PATH: /opt/homebrew/lib
-
   capture-check:
     desc: Report level and clipping for a recorded IQ file (OUT=file.iq)
     cmds:
       - python3 capture-check.py {{.OUT | default "fm.iq"}}
     dir: demos
-
   am:
     desc: Listen to AM radio (set FREQ in MHz, e.g. 121.5 for aviation)
     cmds:
       - cargo run -p am-receiver -- --frequency {{.FREQ | default "121.5"}}
     dir: demos
-
   am-single:
     desc: Same AM radio, one file, piped from rtl_sdr (FREQ in MHz). WAV=out.wav to record
     cmds:
-      - >-
+      - ""
       # GAIN stays high here: aviation AM is a weak, intermittent signal, the
       # opposite problem to broadcast FM. Do not copy the FM value across.
       - >-
-        rtl_sdr -f $(echo '{{.FREQ | default "119.9"}} * 1000000' | bc | cut -d. -f1)
-        -s 960000 -g {{.GAIN | default "40"}} - | bin/am-single {{.WAV}}
+        rtl_sdr -f $(echo '{{.FREQ | default "119.9"}} * 1000000' | bc | cut -d. -f1) -s 960000 -g {{.GAIN | default "40"}} - | bin/am-single {{.WAV}}
     dir: demos
     env:
       DYLD_LIBRARY_PATH: /opt/homebrew/lib
     preconditions:
       - sh: test -x bin/am-single
         msg: "bin/am-single is missing — run `task alias` before the session, not on stage"
-
   am-file:
     desc: Play a recorded IQ file through am-single, paced and looping (FILE, WAV to record)
     cmds:
@@ -109,7 +101,6 @@ tasks:
         msg: "bin/iq-play is missing — run `task alias` before the session, not on stage"
       - sh: test -f {{.FILE | default "atc.iq"}}
         msg: "no such IQ file: {{.FILE | default \"atc.iq\"}} — record one with `task capture`"
-
   fm-remote:
     desc: FM from a remote rtl_tcp — a Pi where the signal is (HOST required, FREQ MHz, GAIN dB)
     cmds:
@@ -117,9 +108,7 @@ tasks:
       # socket instead of a USB port. `fm-single` is byte-for-byte the file on
       # the slide; it never learns that the samples came over a network.
       - >-
-        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}}
-        --frequency {{.FREQ | default "97.7"}} --gain {{.GAIN | default "30"}}
-        | bin/fm-single {{.WAV}}
+        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}} --frequency {{.FREQ | default "97.7"}} --gain {{.GAIN | default "30"}} | bin/fm-single {{.WAV}}
     dir: demos
     preconditions:
       - sh: test -n "{{.HOST}}"
@@ -128,16 +117,13 @@ tasks:
         msg: "bin/iq-tcp is missing — run `task alias` before the session, not on stage"
       - sh: test -x bin/fm-single
         msg: "bin/fm-single is missing — run `task alias` before the session, not on stage"
-
   am-remote:
     desc: AM from a remote rtl_tcp (HOST required, FREQ MHz, GAIN dB). WAV=out.wav to record
     cmds:
       # GAIN stays high, as in `am-single`: aviation AM is weak and
       # intermittent, the opposite problem to broadcast FM.
       - >-
-        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}}
-        --frequency {{.FREQ | default "119.9"}} --gain {{.GAIN | default "40"}}
-        | bin/am-single {{.WAV}}
+        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}} --frequency {{.FREQ | default "119.9"}} --gain {{.GAIN | default "40"}} | bin/am-single {{.WAV}}
     dir: demos
     preconditions:
       - sh: test -n "{{.HOST}}"
@@ -146,34 +132,29 @@ tasks:
         msg: "bin/iq-tcp is missing — run `task alias` before the session, not on stage"
       - sh: test -x bin/am-single
         msg: "bin/am-single is missing — run `task alias` before the session, not on stage"
-
   link-check:
     desc: Measure whether the network to the remote receiver carries 1.92 MB/s (HOST, SECS)
     cmds:
       # Run this at the venue, on venue infrastructure, before the session.
       # Exits non-zero if the link cannot keep up, so it is a real gate.
       - >-
-        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}}
-        --frequency {{.FREQ | default "97.7"}} --probe {{.SECS | default "10"}}
+        bin/iq-tcp --host {{.HOST}} --port {{.PORT | default "1234"}} --frequency {{.FREQ | default "97.7"}} --probe {{.SECS | default "10"}}
     dir: demos
     preconditions:
       - sh: test -n "{{.HOST}}"
         msg: "set HOST to the remote receiver, e.g. `task link-check HOST=radio.local`"
       - sh: test -x bin/iq-tcp
         msg: "bin/iq-tcp is missing — run `task alias` first"
-
   pi-serve:
     desc: Start rtl_tcp on the remote receiver over ssh (HOST required, USER, GAIN dB)
     cmds:
       # Leave this running in its own terminal. rtl_tcp must bind 0.0.0.0, not
       # its default 127.0.0.1, or it is only reachable from the Pi itself.
       - >-
-        ssh {{.USER | default "pi"}}@{{.HOST}}
-        'rtl_tcp -a 0.0.0.0 -s 960000 -f $(echo "{{.FREQ | default "97.7"}} * 1000000" | bc | cut -d. -f1) -g {{.GAIN | default "30"}}'
+        ssh {{.USER | default "pi"}}@{{.HOST}} 'rtl_tcp -a 0.0.0.0 -s 960000 -f $(echo "{{.FREQ | default "97.7"}} * 1000000" | bc | cut -d. -f1) -g {{.GAIN | default "30"}}'
     preconditions:
       - sh: test -n "{{.HOST}}"
         msg: "set HOST to the remote receiver, e.g. `task pi-serve HOST=radio.local`"
-
   fake-pi:
     desc: Rehearse the remote path with no Pi — serves a recorded IQ file as rtl_tcp (FILE)
     cmds:
@@ -184,13 +165,11 @@ tasks:
     preconditions:
       - sh: test -x bin/rtl-tcp-fake
         msg: "bin/rtl-tcp-fake is missing — run `task alias` first"
-
   adsb:
     desc: Decode ADS-B aircraft signals at 1090 MHz
     cmds:
       - cargo run -p adsb-decoder
     dir: demos
-
   tracker:
     desc: Show tracked aircraft on a map (run adsb task first). REGION=ottawa|montreal
     cmds:
@@ -198,37 +177,31 @@ tasks:
     dir: demos
     vars:
       REGION: '{{.REGION | default "montreal"}}'
-
   adsb-api:
     desc: Serve tracked aircraft over HTTP as JSON (run adsb task first)
     cmds:
       - cargo run -p adsb-api -- --bind {{.BIND | default "0.0.0.0:8080"}}
     dir: demos
-
   iq-print:
     desc: Print raw IQ samples from the SDR
     cmds:
       - cargo run -p iq-print -- --frequency {{.FREQ | default "100.3"}}
     dir: demos
-
   wave:
     desc: Visualize EM wave propagation (no hardware needed)
     cmds:
       - cargo run -p wave-demo
     dir: demos
-
   iq:
     desc: Interactive IQ complex plane visualization (no hardware needed)
     cmds:
       - cargo run -p iq-demo
     dir: demos
-
   build:
     desc: Build all demos
     cmds:
       - cargo build --release
     dir: demos
-
   alias:
     desc: Symlink release binaries to short names in demos/bin/
     deps: [build]
