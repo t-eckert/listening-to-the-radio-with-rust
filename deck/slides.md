@@ -294,9 +294,13 @@ Let's look at that wave again. The distance between two crests is the wavelength
 
 [click] The station you were listening to a minute ago is at ninety-seven point seven. That wave is about three meters long, so a quarter of it is seventy-seven centimeters — and on a dipole like this one, that's each arm.
 
-[POINT at the antenna on stage.] This one is a little short of that, even fully extended. On a station this strong it makes no audible difference — but seventy-seven is what it should be.
+[POINT at the antenna on stage.] Seventy-seven centimetres an arm — and that is what this one is set to.
 
 [click] **Same rule on every band. Only the number changes.** Hold onto that — it's why the third demo isn't in this room.
+
+***
+
+SET THE ARMS TO 77 cm BEFORE YOU WALK ON, and check them after anyone moves the podium. The long elements extend well past 77, so this is a number you set rather than one you assume. The previous version of this line said the antenna was "a little short of that, even fully extended" -- true of the SHORT element pair, false of the long pair that is on it now, which is what 97.7 needs.
 -->
 
 ---
@@ -383,7 +387,7 @@ There are two ways to get the raw IQ bytes into your code.
 
 <TransportConverge class="my-10" />
 
-Use the **`rtl_sdr`** crate to read from USB, or run **`rtl_tcp`** as a separate process to serve the IQ bytestream over TCP.
+Use the **`rtl-sdr-rs`** crate to read from USB, or run **`rtl_tcp`** as a separate process to serve the IQ bytestream over TCP.
 
 <!--
 [0:40 · 9:05]
@@ -833,6 +837,8 @@ Inside of our main function, this is the loop where we call these functions.
 
 [click] And push it at the speakers.
 
+[BRING THE AUDIO UP AGAIN. Say nothing for a few seconds and let it play.]
+
 **That is the receiver. Everything else in that file is reading bytes and talking to the sound card.**
 
 ***
@@ -860,7 +866,7 @@ ring.push(&audio);                                    // decode thread fills
 - Two threads sharing one buffer. `Send` and `Sync` make that a **compile error**
   or a guarantee — never a 3 a.m. crackle.
 - **No garbage collector.** At a microsecond a sample, a garbage collector pause is a gap in the audio.
-- Two dependencies. Ten crates in the entire tree. Nothing to `apt install`.
+- Two dependencies. Ten crates to run it. Nothing to `apt install`.
 
 </v-clicks>
 
@@ -875,13 +881,13 @@ Nine hundred and sixty thousand samples a second. That's about a microsecond eac
 
 [click] No garbage collector — which matters more here than in almost anything else I write. A pause of a few milliseconds in a web service is a slow request. A pause of a few milliseconds here is a hole in the music.
 
-[click] And two dependencies. Ten crates in the whole tree. Nothing to install, no build system to fight — which is why this stayed fun long enough to become a talk.
+[click] And two dependencies. Ten crates to run it. Nothing to install, no build system to fight — which is why this stayed fun long enough to become a talk.
 
 ***
 
 NINETY SECONDS MAX. This is RustConf; nobody needs converting. The point is what the *constraint* is, not that Rust is nice.
 
-TIME CHECK: about 20:55 leaving this slide. Past 22:05, drop the third bullet (dependency count) — "The Crates" makes that point again at the end anyway. Numbers verified 2026-08-24: `cargo tree -p fm-single` = 2 direct deps, 10 crates. The 2.4 MHz / 400 ns figures belong to ADS-B on the Pi, NOT this receiver.
+TIME CHECK: about 20:55 leaving this slide. Past 22:05, drop the third bullet (dependency count) — "The Crates" makes that point again at the end anyway. Numbers verified 2026-08-24, re-checked 2026-09-08: 2 direct deps (cpal, hound) and 10 crates AT RUNTIME -- `cargo tree -e normal -p fm-single`. Plain `cargo tree` reports 30, because cpal pulls bindgen, clang-sys, syn and regex as BUILD dependencies. Say "ten crates to run it", never "in the whole tree" -- this room will check. The 2.4 MHz / 400 ns figures belong to ADS-B on the Pi, NOT this receiver.
 -->
 
 ---
@@ -1256,11 +1262,9 @@ After the first stage, it's all bit-twiddling.
 
 This application is more complicated, but it relies on the same fundamentals.
 
-We demodulate the magnitude of the signal, just like we did with AM. But instead of being an analog signal.
+We demodulate the magnitude of the signal, just like we did with AM. But instead of that magnitude being a voice, it is a pattern of pulses — and the pattern is bits.
 
-
-
- Find the preamble. Slice out the bits. Check the CRC. Then track the aircraft and serve it over HTTP.
+Find the preamble. Slice out the bits. Check the CRC. Then track the aircraft and serve it over HTTP.
 
 [click] Each message is a hundred and twelve bits, and the whole burst is over in a hundred and twenty microseconds. **Four stages, and only the first one is radio.**
 
@@ -1369,7 +1373,9 @@ We're sampling at two point four megahertz, so each half-slot is about one point
 
 ***
 
-us_to_sample is real — the floating-point µs→index map in demod.rs.
+The code on this slide is a SIMPLIFICATION -- say so if anyone asks. There is no `us_to_sample` and no demod.rs. The real slicer is `NaiveSlicer::new` in skyward/crates/adsb-dsp/src/slice.rs, which precomputes one BitWindow per bit from `t = PREAMBLE_US + bit`, rounding `t` and `t + 0.5` to sample indices.
+
+The claim on the slide is exactly right, though: every window is measured from the preamble start, so rounding error cannot accumulate across 112 bits. One honest difference -- the shipped naive slicer reads at the two half BOUNDARIES, not the midpoints the slide shows. Reading properly between samples is what the `interp` slicer adds, and it is part of why the naive pipeline leaves so much on the table.
 -->
 
 ---
@@ -1567,7 +1573,7 @@ These are the crates it all leans on. This slide exists to be photographed, not 
 
 If I call out two: num-complex, because I plus jQ just works. And cpal, because it gets audio out on any OS.
 
-And notice how short it is. The FM receiver is two dependencies — ten crates in the whole tree. There's no SDK, no C library to install first, no build system to fight. **That's the part that let this stay a hobby.**
+And notice how short it is. The FM receiver is two dependencies — ten crates to run it. There's no SDK, no C library to install first, no build system to fight. **That's the part that let this stay a hobby.**
 
 ***
 
