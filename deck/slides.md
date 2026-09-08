@@ -878,8 +878,6 @@ Nine hundred and sixty thousand samples a second. That's about a microsecond eac
 NINETY SECONDS MAX. This is RustConf; nobody needs converting. The point is what the *constraint* is, not that Rust is nice.
 
 TIME CHECK: about 20:55 leaving this slide. Past 22:05, drop the third bullet (dependency count) — "The Crates" makes that point again at the end anyway. Numbers verified 2026-08-24: `cargo tree -p fm-single` = 2 direct deps, 10 crates. The 2.4 MHz / 400 ns figures belong to ADS-B on the Pi, NOT this receiver.
-
-[OPTIONAL, if the room feels like an audio crowd] "And before someone finds me at the reception — yes, that's a mutex inside an audio callback, which is the one thing you're told never to do. A real engineer would use a lock-free queue. It's forty lines and it hasn't dropped a sample yet." Costs 15 s, buys a lot of goodwill from the people most likely to be checking.
 -->
 
 ---
@@ -1090,8 +1088,6 @@ This one turns radio into a **clock**.
 Time signal stations broadcast the current time, continuously, straight from a
 caesium atomic clock.
 
-One-way, no network, no handshake — nothing to log into.
-
 </v-click>
 
 <!--
@@ -1112,9 +1108,7 @@ Keep this short — it's the turn, not the story. The story is the next slide.
 
 # CHU: Ottawa, 1938–2026
 
-Fifteen kilometres from my desk in Ottawa: **CHU**, run by the National Research Council.
-
-3.330, 7.850, 14.670 MHz. Caesium clocks. Broadcasting since **1938**.
+Fifteen kilometers from where I live in Ottawa: **CHU**, run by the National Research Council has been broadcasting the time since **1938**.
 
 <v-click>
 
@@ -1124,7 +1118,7 @@ I wrote a decoder for it: Bell 103 FSK, 300 baud, BCD time code.
 
 <v-click>
 
-On **22 June 2026**, the NRC shut it off. After 88 years.
+On **22 June 2026**, after 88 years, the NRC shut it off.
 
 </v-click>
 
