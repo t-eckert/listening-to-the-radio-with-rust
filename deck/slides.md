@@ -487,12 +487,6 @@ These points trace rotation around the origin.
 
 </v-click>
 
-<v-click>
-
-Everything in SDR comes back to these two: how fast it turns, how far out it sits.
-
-</v-click>
-
 <!--
 [1:00 · 11:15]
 
@@ -503,8 +497,6 @@ The dongle gives you pairs of bytes. I, Q, I, Q, forever. **Each pair is a point
 [click] How fast it turns is the frequency of the wave.
 
 [click] How far out it sits is the amplitude.
-
-[click] **Everything in software radio comes back to these two questions: how fast is it turning, and how far out does it sit.**
 
 ***
 
@@ -629,7 +621,7 @@ How far is it from the origin? That's amplitude modulation.
 
 Or: how fast is it turning? That's frequency modulation.
 
-**All demodulation comes back to measuring rotation speed or distance from the origin.** Ships, pagers, weather satellites, garage door openers, the pressure sensor in your car tire. Every one of them is one of those two questions.
+Ships, pagers, weather satellites, garage door openers, the pressure sensor in your car tire. Every one of them is one of those two questions.
 
 ***
 
@@ -745,7 +737,7 @@ if self.countdown >= self.decimation {
 <!--
 [0:50 · 17:05]
 
-The antenna does not tune. It hears every station at once and the dongle sends you all of it — that's the wide band on the diagram. **Tuning happens here, in software.** A low-pass filter keeps the two hundred kilohertz that is our station and drops everything either side of it.
+The antenna hears every station at once and the dongle sends you all of it — that's the wide band on the diagram. In software, a low-pass filter keeps the two hundred kilohertz that is our station and drops everything either side of it.
 
 [click] It also decimates in the same pass. We only do the expensive work on the samples we're going to keep.
 
