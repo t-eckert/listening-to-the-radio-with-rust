@@ -16,10 +16,10 @@ const chain = [
   { title: 'Demodulation', sub: 'extract the signal' },
 ]
 
-// Where the one path leads: three demos, each its own colour.
+// Where the one path leads: three applications, each its own colour.
 const apps = [
   { title: 'FM Radio', sub: 'music', fill: '#fff7ed', stroke: '#fb923c', ink: '#9a3412' },
-  { title: 'AM / Aviation', sub: 'voice', fill: '#eff6ff', stroke: '#60a5fa', ink: '#1e40af' },
+  { title: 'AM Radio', sub: 'voice', fill: '#eff6ff', stroke: '#60a5fa', ink: '#1e40af' },
   { title: 'Aircraft Tracking', sub: 'ADS-B · 1090 MHz', fill: '#ecfdf5', stroke: '#34d399', ink: '#065f46' },
 ]
 
@@ -63,7 +63,7 @@ const branches = APP_CY.map((cy) => {
 
 <template>
   <svg viewBox="0 0 1140 384" class="coverage-flow" role="img"
-       aria-label="Signal path from antenna through the RTL-SDR, IQ signals and demodulation, fanning out into FM, AM aviation, and aircraft tracking">
+       aria-label="Signal path from antenna through the RTL-SDR, IQ signals and demodulation, fanning out into FM radio, AM radio, and aircraft tracking">
     <defs>
       <marker id="cf-arrow" viewBox="0 0 10 10" refX="8" refY="5"
               markerWidth="7" markerHeight="7" orient="auto-start-reverse">

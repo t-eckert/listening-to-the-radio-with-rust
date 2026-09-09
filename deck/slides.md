@@ -100,7 +100,7 @@ While I've been building distributed systems for years, software defined radio i
 <!--
 [0:40 · 1:45]
 
-What I want to do today is introduce you to building applications in Rust that take radio as their input. We'll talk about three of them: FM radio, AM radio, and aircraft tracking with the ADS-B.
+What I want to do today is introduce you to building applications in Rust that take radio as their input. We'll talk about three of them: FM radio, AM radio, and aircraft tracking with ADS-B.
 
 While these applications look very different, they sit on the same foundation of demodulating signals from a receiver.
 -->
@@ -120,8 +120,6 @@ Now playing:
 Let's begin by listening to some FM radio.
 
 [BRING THE AUDIO UP. Say nothing for a few seconds. Let it play.]
-
-That is ninety-seven point seven FM.
 
 There's an antenna on stage. It's picking up a broadcast from a transmitter on Mount Royal. That goes into a USB dongle, the dongle sends my laptop a stream of numbers, and everything after that is Rust code that I wrote.
 
@@ -147,9 +145,9 @@ Here's the pipeline for processing radio signals.
 
 The antenna picks up electromagnetic waves out of the air. Those waves push the electrons in the metal up and down, and that motion is a current. The dongle tunes to one slice of the spectrum and digitizes it, and what comes out the other side is a stream of pairs of numbers. We call those IQ samples.
 
-Everything up until demodulation is the same for every application. The difference is in how the signals are demodulated.
+Everything up until demodulation is the same for every application. The difference is in what part of the spectrum you're looking at and how the signals are demodulated.
 
-Change the demodulation code, and change the length of your antenna, and the same hardware gives you music, or a controller's voice, or the position of an aircraft. Those three are what we'll look at today.
+Change the demodulation code, and change the length of your antenna, and the same hardware gives you music, or a tire pressure sensor, or the position of an aircraft.
 
 [FADE THE MUSIC OUT as you finish. The next slide happens in silence.]
 -->
@@ -273,7 +271,7 @@ Look at the wave running between them. The distance between two crests is the wa
 
 [POINT at the antenna on stage.] Seventy-seven centimetres an arm — and that is what this one is set to.
 
-[click] **Same rule on every band. Only the number changes.** Hold onto that — it's why the third demo isn't in this room.
+[click] **Same rule on every band. Only the number changes.** Hold onto that — it's why the last demo isn't in this room.
 
 ***
 
@@ -1019,7 +1017,7 @@ That is the same five lines as the FM receiver, with two words changed.
 
 <v-click>
 
-Point it at 119.9 MHz and it is an aviation radio, listening to Montréal-Trudeau tower.
+Point it at 119.9 MHz and the same program is an aviation radio for Montréal-Trudeau tower.
 
 </v-click>
 
@@ -1032,7 +1030,7 @@ Here's the AM loop.
 
 [click] **That's the whole diff between a music radio and an aviation radio.**
 
-[click] Point it at a hundred and nineteen point nine megahertz, and you are listening to Montréal-Trudeau tower.
+[click] Change one number — a hundred and nineteen point nine megahertz — and that same program is an aviation radio for Montréal-Trudeau tower.
 -->
 
 ---
@@ -1147,7 +1145,7 @@ This is the emotional beat of the talk and it's why the section survived the cut
 
 # ADS-B
 
-The third demo. FM gave us music, AM gave us a voice. This one gives us information about the aircraft above us.
+The third application. FM we heard, AM we wrote — this one gives us the aircraft above us.
 
 <v-click>
 
@@ -1160,15 +1158,15 @@ Every plane with an ADS-B transponder broadcasts its **position, altitude, speed
 
 [HARD TURN. You've just come off the CHU elegy. Let one full beat of silence sit before you speak, and drop the tone rather than bouncing straight into enthusiasm.]
 
-Two demos down. FM gave us music. AM gave us a voice. The third one is my favourite, and it gives us aircraft.
+FM we heard. AM we wrote. The third one is my favourite, and it gives us aircraft.
 
 [click] Every plane with an ADS-B transponder is broadcasting its position, its altitude, its speed and its callsign, on ten-ninety megahertz. Twice a second. Unencrypted.
 
-[click] No request, no login, no API key. **It's just in the air.**
+No request, no login, no API key. **It's just in the air.**
 
 ***
 
-This is the third of the three you promised at the top: music, a voice, aircraft. Say it that way — the promise is being closed.
+This is the third of the three you promised at the top: music, a voice, aircraft. The promise is being closed — just don't say they heard the voice, because they didn't.
 -->
 
 ---
@@ -1321,7 +1319,7 @@ message starts here, and exactly where every bit slot after it begins.
 
 There's no volume to read here, and no phase to read. The only thing carrying information is timing — which half of the microsecond the pulse lands in.
 
-Each bit is one microsecond, split in half. A pulse in the first half is a one. A pulse in the second half is a zero. That's pulse-position modulation, and it's about the crudest encoding there is.
+Each bit is one microsecond, split in half. A pulse in the first half is a one. A pulse in the second half is a zero. That's pulse-position modulation.
 
 [WALK THE DIAGRAM left to right.] Early, late, early, late. One, zero, one, zero.
 
@@ -1358,13 +1356,13 @@ it and throws the whole 112-bit message away**. We'd rather lose a message than 
 <!--
 [0:40 · 30:20]
 
-We're sampling at two point four megahertz, so each half-slot is about one point two samples wide. That's the whole problem with this decoder.
+We're sampling at two point four megahertz, so each half-slot is about one point two samples wide.
 
-[click] **Every bit is measured from the start of the frame, never from the previous bit.** Measure bit-to-bit and the rounding error compounds — by bit a hundred and twelve you're reading the wrong half of the slot.
+[click] **Every bit is measured from the start of the frame.** Measure bit-to-bit and the rounding error compounds.
 
 [click] Then sample the middle of each half. Whichever is louder is the bit.
 
-[click] And there's a backstop: a twenty-four bit CRC. If the timing slipped, or two aircraft talked over each other, the checksum fails and we throw the whole message away. **A dropped position is invisible. A wrong altitude is dangerous.**
+[click] And there's a backstop: a twenty-four bit CRC. If the timing slipped, or two aircraft talked over each other, the checksum fails and we throw the whole message away.
 
 ***
 
@@ -1389,13 +1387,6 @@ pub enum Message {
 }
 ```
 
-<v-click>
-
-`Knots`, `TrackDeg`, `FeetPerMinute` — not `f32`. **Track is not heading**; they
-differ by the wind correction angle, sometimes by fifteen degrees.
-
-</v-click>
-
 <!--
 [1:15 · 31:35]
 
@@ -1405,19 +1396,11 @@ This is the type they turn into. This is everything an aircraft can say.
 
 [click] Type codes one to four are identification — the callsign it filed its flight plan under. That's the "AIR CANADA eight-seven-two" you see on the map.
 
-[click] Nine to eighteen are position. Altitude, and a compressed pair of coordinates I have to combine two messages to unpack.
+[click] Nine to eighteen are position. Altitude, and a compressed pair of coordinates.
 
 [click] Nineteen is velocity. How fast it's going over the ground, which direction, and whether it's climbing or descending.
 
-[click] And then this one, which is my favourite line in the file. Unsupported — recognised, not decoded. It's every message type I haven't gotten to yet, kept visible instead of quietly dropped, so the thing can tell me what I'm still missing.
-
-[click] Now look at the field types. Not f32 — Knots, TrackDeg, FeetPerMinute. The first version of this passed bare floats around for both heading and track, and those are different things. Track is the direction you're moving. Heading is where the nose points. In a crosswind they can be fifteen degrees apart, and ADS-B sends you track.
-
-Rust makes that distinction free. One line, a newtype, and the compiler stops me from ever putting a heading where a track belongs. The comment I left in that file says it better than I can: **"naming it wrong is the kind of error that survives all the way onto a conference slide."**
-
-***
-
-DOUBLE DUTY: this is the "what's in the message" slide and the "why Rust" slide at once. Lead with the aircraft, land on the types. Source: skyward/crates/adsb-core/src/decode.rs and units.rs. The `..` in Velocity elides gnss_vertical_rate; SurfacePosition and Airspeed are elided entirely for legibility — say "there are a couple more" if asked. The quoted comment is real, at the top of units.rs.
+[click] And then this one, unsupported — recognised, not decoded. It's every message type I haven't gotten to yet, kept visible instead of quietly dropped, so the thing can tell me what I'm still missing.
 -->
 
 ---
@@ -1436,8 +1419,8 @@ Pipeline::new(
 <v-click>
 
 Every stage has a naive baseline and a registry of alternatives, scored on the
-same capture. The baseline detector finds **517** valid messages; a smarter one
-finds **2,403** on the same bytes. The naive detector is finding about a fifth of what's there.
+same capture. The baseline pipeline finds **517** valid messages; the best one
+finds **3,310** on the same bytes. The naive pipeline is finding about a sixth of what's there.
 
 </v-click>
 
@@ -1453,17 +1436,33 @@ frame that failed CRC **can't reach the map**, because the decoder's argument ty
 
 Four stages — and every one of them is swappable.
 
-[click] Each has a deliberately naive version and a registry of alternatives, all scored against each other on the same golden capture. The baseline detector pulls five hundred and seventeen valid messages out of one file. Swap in a smarter detector and you get two thousand four hundred and three, from exactly the same bytes.
+[click] Each has a deliberately naive version and a registry of alternatives, all scored against each other on the same golden capture. The baseline pipeline pulls five hundred and seventeen valid messages out of one file. Swap in a better detector and a better bit slicer, and you get three thousand three hundred and ten, from exactly the same bytes.
 
-The naive pipeline works, and it's finding about a fifth of what's there. I'm nowhere near done with this decoder.
+The naive pipeline works, and it's finding about a sixth of what's there. I'm nowhere near done with this decoder.
 
-[click] And one more thing the types do for me. Each stage hands the next one a different type. A Candidate is somewhere the detector *thinks* a message starts, a RawFrame is sliced but unchecked, and a Validated is one that passed CRC. The decoder will only accept the last one.
-
-So the thing I said two slides ago — that a wrong altitude is worse than no altitude — isn't me remembering to check. **A frame that failed its checksum cannot reach that map, because there's no type that would carry it there.**
+[click] Each stage hands the next one a different type. A Candidate is somewhere the detector *thinks* a message starts, a RawFrame is sliced but unchecked, and a Validated is one that passed CRC. The decoder will only accept the last one.
 
 ***
 
-Don't re-walk the pipeline; you did that already. Go straight to the registry. Numbers are from skyward/fixtures/raw/golden.toml [headroom]. Land the stat and move to the payoff — don't oversell it.
+Don't re-walk the pipeline; you did that already. Go straight to the registry. Land the stat and move to the payoff — don't oversell it.
+
+Numbers measured 2026-09-08 on this laptop, `skyward bench --detect X --slice Y fixtures/raw/golden.cu8` (golden.cu8 is 180 s at 2.4 MS/s). Do NOT quote the old 2,403 figure: it came from an exploratory lab tool recorded in golden.toml [headroom], not from anything in the registry, so there is no implementation to name if someone asks.
+
+IF ASKED "which improvements have you actually made?" —
+
+Stage 2, the detector. Four alternatives, all registered:
+- `snr` — threshold on a tracked noise floor instead of a constant. 517 → 518 messages, so almost nothing. Kept because it makes sensitivity independent of tuner gain, which an absolute threshold is not.
+- `scored` — the baseline's rule is `min(pulses) > 2 × max(silences)`, which is a VETO: one noisy sample in any of twelve silence slots kills an otherwise perfect match. Score each pulse against its adjacent silences and accumulate instead. 517 → 1792. This is the big one.
+- `peak` — suppress a candidate when a stronger one sits within a preamble of it. Same 1792 messages, but candidates fall 280,592 → 120,876, 57% fewer, without losing one.
+- `corr` — the full 8 µs matched filter, the textbook answer. A MEASURED FAILURE: about 1% more messages for seven times the CPU (412× realtime → 43×), and the ghost ratio goes 0 → 0.111, meaning it starts inventing aircraft. Kept in the registry on purpose, because a measured negative result is worth more than a deleted branch. It also disproved the assumption that correlation wouldn't fit on a Pi: it fits, it simply isn't worth doing.
+
+Stage 3, the slicer:
+- `interp` — interpolate at fractional half-bit centres instead of taking one raw sample per half, and report a real confidence. Alone on the naive detector: 517 → 626, up 21%. Stacked on a good detector: 1792 → 3262.
+
+Stages 1 and 4 have one implementation each, deliberately. That's where the headroom isn't, and `crc-only` validation is what makes ghosts structurally impossible.
+
+Best clean combination is `scored` + `interp`: 3310 messages, 10 aircraft, zero ghosts, 299× realtime.
+It also holds on the HARD capture, which is the honest test — desk.cu8, weak signal off my desk: 167 → 866 messages, 3 → 4 aircraft.
 -->
 
 ---
@@ -1510,7 +1509,7 @@ This is the slide I put up half an hour ago and asked you to take on faith.
 
 Waves push electrons. The dongle digitizes. IQ points on a plane. And then the fork — rotation gave us FM, distance gave us AM and ADS-B.
 
-**Every box on it is now something you've watched run.**
+**Every box on it is now something we've built.**
 
 ***
 
@@ -1597,7 +1596,7 @@ The dongle is about thirty dollars, the dipole kit about ten. **Everything I sho
 
 No hardware yet? The wave demo and the IQ demo need none — those are the two visualizations you saw. And all of it is open source.
 
-[click] **The hardware is on the table at the front. Come and hold it.**
+**The hardware is on the table at the front. Come and hold it.**
 
 I'm not taking questions from the stage — I traded that time for the talk — but I'll be here until they throw us out, and then at the reception.
 
