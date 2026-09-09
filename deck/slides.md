@@ -236,33 +236,10 @@ If there is a second bobber in the same pool, some distance away...
 -->
 
 ---
-layout: center
-class: text-center
----
-
-Electrons moving up and down in a *transmitting* antenna create waves.
-
-<v-click>
-
-Those waves *push* electrons up and down in a receiving antenna.
-
-</v-click>
-
-<!--
-[0:40 · 5:50]
-
-So: electrons moving up and down in a transmitting antenna make waves.
-
-[click] And those waves push electrons up and down in a receiving antenna.
-
-That's the whole physical link. **Everything else in this talk is about what you do with that current once you have it.**
--->
-
----
 
 # How Long Is an Antenna?
 
-<Bobbers class="my-6" />
+<Bobbers receiver class="my-6" />
 
 The distance between two crests is the **wavelength**.
 
@@ -286,9 +263,9 @@ Same rule on every band. Only the number changes.
 </v-click>
 
 <!--
-[0:35 · 6:25]
+[0:35 · 5:45]
 
-Let's look at that wave again. The distance between two crests is the wavelength, and it turns out to be the number that decides how long your antenna needs to be.
+Look at the wave running between them. The distance between two crests is the wavelength, and it turns out to be the number that decides how long your antenna needs to be.
 
 [click] **An antenna works best when it's a quarter of the wavelength long.** At that length it resonates, and the electrons oscillate with maximum efficiency.
 
@@ -301,6 +278,29 @@ Let's look at that wave again. The distance between two crests is the wavelength
 ***
 
 SET THE ARMS TO 77 cm BEFORE YOU WALK ON, and check them after anyone moves the podium. The long elements extend well past 77, so this is a number you set rather than one you assume. The previous version of this line said the antenna was "a little short of that, even fully extended" -- true of the SHORT element pair, false of the long pair that is on it now, which is what 97.7 needs.
+-->
+
+---
+layout: center
+class: text-center
+---
+
+Electrons moving up and down in a *transmitting* antenna create waves.
+
+<v-click>
+
+Those waves *push* electrons up and down in a receiving antenna.
+
+</v-click>
+
+<!--
+[0:40 · 6:25]
+
+So: electrons moving up and down in a transmitting antenna make waves.
+
+[click] And those waves push electrons up and down in a receiving antenna.
+
+That's the whole physical link. **Everything else in this talk is about what you do with that current once you have it.**
 -->
 
 ---
@@ -604,7 +604,9 @@ Every demodulation asks one of two questions.
 <!--
 [0:40 · 14:10]
 
-Every demodulator asks one of two questions about that point.
+At this point, we have our IQ values and we can begin demodulation.
+
+Every demodulator asks one of two questions about the point represented by IQ.
 
 How far is it from the origin? That's amplitude modulation.
 
@@ -649,9 +651,9 @@ This is the turn. Everything before it was setup; lift the energy here.
 <!--
 [1:10 · 15:35]
 
-Here's the pipeline. We start with a firehose of IQ samples, and we end with audio that the sound card can play.
+Here's the pipeline, beginning to end: IQ samples in, audio out.
 
-The dongle produces about a million IQ points a second, and the width of that firehose is how much spectrum I can see at once.
+The dongle produces nine hundred and sixty thousand IQ points a second — and that same number is how much spectrum arrives at once: nine hundred and sixty kilohertz of the dial. Five FM channels fit inside that, all in the same stream.
 
 [click] Three steps get us from one end to the other. Filter, to pick one station out of everything else. Demodulate, to turn rotation into sound. And de-emphasis, to fix the treble. Those are the next three slides.
 
@@ -864,7 +866,7 @@ ring.push(&audio);                                    // decode thread fills
 <v-clicks>
 
 - Two threads sharing one buffer. `Send` and `Sync` make that a **compile error**
-  or a guarantee — never a 3 a.m. crackle.
+  or a guarantee.
 - **No garbage collector.** At a microsecond a sample, a garbage collector pause is a gap in the audio.
 - Two dependencies. Ten crates to run it. Nothing to `apt install`.
 
@@ -881,7 +883,7 @@ Nine hundred and sixty thousand samples a second. That's about a microsecond eac
 
 [click] No garbage collector — which matters more here than in almost anything else I write. A pause of a few milliseconds in a web service is a slow request. A pause of a few milliseconds here is a hole in the music.
 
-[click] And two dependencies. Ten crates to run it. Nothing to install, no build system to fight — which is why this stayed fun long enough to become a talk.
+[click] And two dependencies. Ten crates to run it. Nothing to install.
 
 ***
 
@@ -902,8 +904,6 @@ TIME CHECK: about 20:55 leaving this slide. Past 22:05, drop the third bullet (d
 
 <!--
 [0:40 · 21:35]
-
-[STOP fm-single NOW: Ctrl-C in its terminal. Nothing after this needs the dongle — ADS-B comes off the Pi over HTTP — but the FM audio must not run underneath this section.]
 
 Now AM. And here's the same map — same endpoints, same three rates, same two divisions.
 
@@ -1003,12 +1003,12 @@ Don't over-explain the DC offset. Envelope never goes negative, speakers want ze
 # AM: The Whole Loop
 
 ```rust {all|2,4}
-let tuned     = iq_filter.process(&iq);                 // step 1
-let raw_audio = am_demod.process(&tuned);               // step 2
+let tuned     = iq_filter.process(&iq);                 // Pick the station
+let raw_audio = am_demod.process(&tuned);               // Get the audio
 let mut audio = audio_filter.process_real(&raw_audio);
-dc_block.process(&mut audio);                           // step 3
+dc_block.process(&mut audio);                           // Subtract the offset
 
-ring.push(&audio);                                      // speakers
+ring.push(&audio);                                      // Play the audio!
 ```
 
 <v-click>
@@ -1033,10 +1033,6 @@ Here's the AM loop.
 [click] **That's the whole diff between a music radio and an aviation radio.**
 
 [click] Point it at a hundred and nineteen point nine megahertz, and you are listening to Montréal-Trudeau tower.
-
-***
-
-NO DEMO HERE. Cut 2026-09-08 at the venue test and re-verified with the antenna properly seated: 119.9, 119.3 and 118.9 all sit within 3 dB of the noise floor, and 133.7 (ATIS) shows nothing at all. A 20-second listen demodulated to flat noise with no speech in it. FM at 97.7, off the same antenna in the same spot, was clipping the ADC. Do not improvise a live listen — the risk is dead air. Say the line and go to the contrast slide.
 -->
 
 ---
