@@ -88,7 +88,7 @@ Before getting into tech, I studied physics.
 
 And I write about what I learn at fieldtheories.blog.
 
-While I've been building distributed systems for years, software defined radio is a pretty new hobby for me. This talk is primarily about what you can do with SDR and Rust and what terms you'll encounter as you get started.
+While I've been building distributed systems for years, software defined radio is a pretty new hobby for me. This talk is primarily about what you can do with SDR and Rust and the things you'll need to know to get started.
 -->
 
 ---
@@ -100,7 +100,7 @@ While I've been building distributed systems for years, software defined radio i
 <!--
 [0:40 · 1:45]
 
-What I want to do today is introduce you to building applications in Rust that take radio as their input. We'll build three of them: a radio that plays music, a radio that picks up air traffic control, and a receiver that tracks the aircraft flying overhead.
+What I want to do today is introduce you to building applications in Rust that take radio as their input. We'll talk about three of them: FM radio, AM radio, and aircraft tracking with the ADS-B.
 
 While these applications look very different, they sit on the same foundation of demodulating signals from a receiver.
 -->
@@ -116,6 +116,8 @@ Now playing:
 
 <!--
 [0:45 · 2:30]
+
+Let's begin by listening to some FM radio.
 
 [BRING THE AUDIO UP. Say nothing for a few seconds. Let it play.]
 
@@ -145,9 +147,9 @@ Here's the pipeline for processing radio signals.
 
 The antenna picks up electromagnetic waves out of the air. Those waves push the electrons in the metal up and down, and that motion is a current. The dongle tunes to one slice of the spectrum and digitizes it, and what comes out the other side is a stream of pairs of numbers. We call those IQ samples.
 
-Everything up to that point is the same for every application. The difference is in how the signals are demodulated.
+Everything up until demodulation is the same for every application. The difference is in how the signals are demodulated.
 
-Change the demodulation code, and change the length of your antenna, and the same hardware gives you music, or a controller's voice, or the position of an aircraft. Those three are what we're building today. The list doesn't stop there: ships, weather satellites, pagers, the tire pressure sensor in your car.
+Change the demodulation code, and change the length of your antenna, and the same hardware gives you music, or a controller's voice, or the position of an aircraft. Those three are what we'll look at today.
 
 [FADE THE MUSIC OUT as you finish. The next slide happens in silence.]
 -->
@@ -157,12 +159,12 @@ layout: center
 class: text-center
 ---
 
-## Let's begin with the physics.
+## Let's talk about the physics.
 
 <!--
 [0:10 · 3:45]
 
-Let's begin with the physics.
+Let's talk about the physics.
 
 [PAUSE. In silence, with the music gone. Let it sit before you move on.]
 -->
@@ -174,25 +176,24 @@ Let's begin with the physics.
 
 <Bobbers class="my-6" />
 
-Imagine a bobber sitting in a pool of still water.
+Imagine a bobber sitting in a pool of water.
 
 <v-click>
 
-You push it up and down. It oscillates. Waves radiate outward across the surface.
+As it moves up and down, waves radiate outward across the surface.
 
 </v-click>
 
 <v-click>
 
-This is what happens when charged particles accelerate. Electrons moving up and
-down in a wire create **electromagnetic waves** that radiate outward through space.
+This is what happens when charged particles accelerate. Electrons moving up and down in a wire create **electromagnetic waves** that radiate outward through space.
 
 </v-click>
 
 <!--
 [0:45 · 4:30]
 
-**Imagine a bobber sitting in a pool of still water.** Nothing's moving. The surface is flat.
+**I want you to imagine a bobber floating in a pool of water.**
 
 [click] You push it down and let it go. It oscillates. And waves spread out from it, across the surface of the pool, in every direction.
 
@@ -210,27 +211,26 @@ SLOW DOWN. This image carries the next three slides; give them time to build it.
 
 <Bobbers receiver class="my-6" />
 
-Now imagine a second bobber, sitting in the same pool some distance away.
+If there is a second bobber, sitting in the same pool some distance away...
 
 <v-click>
 
-The waves reach it. It begins to oscillate too, driven by the energy carried in the waves.
+when the waves reach it. It begins to oscillate too, driven by the energy carried in the waves.
 
 </v-click>
 
 <v-click>
 
-This is the receiving antenna. Electrons in the metal are pushed up and down by the
-incoming EM wave. The antenna converts the wave back into electrical current.
+This is the receiving antenna. Electrons in the metal are pushed up and down by the incoming EM wave. The antenna converts the wave back into electrical current.
 
 </v-click>
 
 <!--
 [0:40 · 5:10]
 
-Now put a second bobber in the same pool, some distance away.
+If there is a second bobber in the same pool, some distance away...
 
-[click] The waves reach it, and it starts to bob up and down too. The energy that moved the first bobber travelled across the pool and moved this one.
+[click] when the waves reach it, and it starts to bob up and down too. The energy that moved the first bobber travelled across the pool and moved this one.
 
 [click] That's a receiving antenna. The incoming wave pushes electrons in the metal up and down, and that motion is a current I can measure. **The antenna turns the wave back into electricity.**
 -->

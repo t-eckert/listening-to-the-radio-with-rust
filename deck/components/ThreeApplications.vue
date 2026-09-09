@@ -6,14 +6,14 @@
 const apps = [
   {
     title: 'FM Radio',
-    tag: 'music',
+    tag: 'Music',
     body: 'Broadcast FM, straight to your speakers.',
     fill: '#fff7ed', stroke: '#fb923c', ink: '#9a3412',
   },
   {
-    title: 'AM / Aviation',
-    tag: 'voice',
-    body: 'Pilots and towers on the aviation band.',
+    title: 'AM Radio',
+    tag: 'Voice',
+    body: 'News radio, pilots and towers on the aviation band.',
     fill: '#eff6ff', stroke: '#60a5fa', ink: '#1e40af',
   },
   {
