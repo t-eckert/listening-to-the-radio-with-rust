@@ -82,6 +82,10 @@ function adjFreq(d) { sweeping.value = false; frequency.value = round1(Math.min(
 function adjAmp(d) { sweeping.value = false; amplitude.value = round1(Math.min(AMP_MAX, Math.max(AMP_MIN, amplitude.value + d))) }
 
 function onKey(e) {
+  // Don't steal keys from the Slidev side editor or any other text field.
+  const t = e.target
+  if (t?.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t?.tagName))
+    return
   const map = { '[': () => adjFreq(-FREQ_STEP), ']': () => adjFreq(FREQ_STEP),
                 '-': () => adjAmp(-AMP_STEP), '=': () => adjAmp(AMP_STEP), '+': () => adjAmp(AMP_STEP) }
   if (map[e.key]) { e.preventDefault(); e.stopImmediatePropagation(); map[e.key]() }
