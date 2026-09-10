@@ -21,13 +21,23 @@ tasks:
       - cargo run -p fm-receiver -- --frequency {{.FREQ | default "100.3"}}
     dir: demos
   fm-stage:
-    # Venue-verified 2026-09-08 at the podium, antenna seated, long elements.
-    # NOT 107.3/19.7 -- those were measured off-stage; at the podium 107.3 is
-    # only +9.5 dB over the floor and gain 19.7 clips (14.4 already does).
-    # 97.7 at 3.7 measured RMS 0.0804 against 0.1118 for the recorded fm.iq.
-    desc: FM exactly as verified at this venue's podium
+    # Venue-verified 2026-09-09 ON STAGE, antenna seated, long elements.
+    # Confirmed by ear at 96.9/38.6: stdev 34.0, peak 59.5/127.5, 0% clipped,
+    # against 31.9 / 94.5 for the recorded fm.iq. Gain 40.2 also works but eats
+    # headroom (peak 86.5); 36.4 is the floor of usable (25.8).
+    #
+    # NOT 97.7/3.7 -- that was yesterday's podium spot and it is the noise floor
+    # from the stage: rms 0.79 at gain 19.7, 11.29 at 40.2 and that is band
+    # noise, not the station. NOT 107.3/19.7 -- measured off-stage, clips.
+    #
+    # If this fuzzes at a new venue, band-scan before touching hardware; a
+    # `[R82XX] PLL not locked!` line prints on EVERY open, working or not, and
+    # is not a fault. Scan: step rtl_sdr across 88-108 at gain 40.2, 1 s per
+    # step, and measure only the second half of each capture -- a shorter grab
+    # is dominated by the tune transient and ranks the band wrong.
+    desc: FM exactly as verified at this venue, from the stage
     cmds:
-      - "task fm-single FREQ=97.7 GAIN=3.7"
+      - "task fm-single FREQ=96.9 GAIN=38.6"
   fm-single:
     desc: Same radio, one file, piped from rtl_sdr (FREQ MHz, GAIN dB). WAV=out.wav to record
     cmds:
