@@ -147,7 +147,7 @@ The antenna picks up electromagnetic waves out of the air. Those waves push the 
 
 Everything up until demodulation is the same for every application. The difference is in what part of the spectrum you're looking at and how the signals are demodulated.
 
-Change the demodulation code, and change the length of your antenna, and the same hardware gives you music, or a tire pressure sensor, or the position of an aircraft.
+Change the demodulation code, and change the length of your antenna, and the same hardware gives you music, voice, or the position of an aircraft.
 
 [FADE THE MUSIC OUT as you finish. The next slide happens in silence.]
 -->
@@ -454,7 +454,7 @@ Together, `I + jQ` is a complex number that encodes both the **amplitude** and t
 
 A radio signal at a single frequency is a cosine wave. It has an amplitude — how strong it is — and a phase — where in its cycle it happens to be at this instant.
 
-[click] The tuner has already slid it down to zero. Now, to capture both of those things, the amplitude and the phase, it samples the signal on two axes instead of one.
+[click] The tuner has already slid it down to oscillate about zero. Now, to capture both of those things, the amplitude and the phase, it samples the signal on two axes instead of one.
 
 [click] I, for in-phase. That's the cosine component.
 
@@ -629,11 +629,7 @@ class: text-center
 <!--
 [0:15 · 14:25]
 
-Let's build an FM radio tuner.
-
-[PAUSE.]
-
-That music you were listening to when we started — we're about to write the thing that produced it.
+So, using this knowledge, let's build the FM tuner that produced the audio we listened to at the beginning.
 
 ***
 
@@ -773,8 +769,6 @@ FM encodes the audio as frequency, which we see in the IQ values as the speed of
 
 [click] **Multiply by the conjugate of the previous sample. Take the angle. That is FM demodulation.**
 
-That's the whole demodulator, in three lines.
-
 ***
 
 NEVER CUT THIS SLIDE. It's the one the whole talk is pointed at — give the three lines room to breathe and let the silence do some work. If you drift: phase change is audio.
@@ -798,9 +792,9 @@ fn process(&mut self, samples: &mut [f32]) {
 <!--
 [0:35 · 18:50]
 
-One more step, and it's a small one.
+Then we have one more step.
 
-Stations boost their treble before they transmit, because hiss lives up at the top end and a boosted signal survives it better. So we undo the boost on the way out. That's the whole step: a running average that keeps the slow-moving part.
+FM stations boost their treble before they transmit, because hiss lives up at the top end and a boosted signal survives it better. So we undo the boost on the way out.
 
 Seventy-five microseconds in North America, fifty in Europe. **Skip it and every station sounds harsh and thin.**
 
@@ -826,6 +820,8 @@ ring.push(&audio);                                      // Play the audio!
 
 <!--
 [0:50 · 19:40]
+
+Let's put it all together.
 
 Inside of our main function, this is the loop where we call these functions.
 
@@ -903,7 +899,7 @@ TIME CHECK: about 20:55 leaving this slide. Past 22:05, drop the third bullet (d
 <!--
 [0:40 · 21:35]
 
-Now AM. And here's the same map — same endpoints, same three rates, same two divisions.
+Now AM. And here's the same map as we saw in FM — same endpoints, same three rates, same two divisions.
 
 [click] Step one is the same filter.
 
@@ -985,9 +981,7 @@ The envelope never goes negative — it rides on top of the carrier. And speaker
 
 Step three in the FM receiver kept the slow-moving part.
 
-[click] Step three here subtracts it.
-
-[click] And that's the entire difference. These two lines.
+Step three here subtracts it.
 
 [click] Same tracker, same three lines. **One character apart, and one of them is a low-pass and the other is a high-pass.**
 
@@ -1028,7 +1022,7 @@ Here's the AM loop.
 
 [click] Two words changed. am_demod instead of fm_demod. dc_block instead of deemphasis.
 
-[click] **That's the whole diff between a music radio and an aviation radio.**
+[click] **That's the whole diff between a music radio and talk radio.**
 
 [click] Change one number — a hundred and nineteen point nine megahertz — and that same program is an aviation radio for Montréal-Trudeau tower.
 -->
@@ -1061,7 +1055,7 @@ So: both of those produce audio, out of the same stream of numbers.
 
 [click] FM used the speed of rotation around the origin. AM used the distance from the origin.
 
-[click] Same IQ data. Different question. **That is the entire difference between the two receivers.**
+[click] Same IQ data. Different question.
 -->
 
 ---
@@ -1072,7 +1066,7 @@ Everything so far turned radio into **sound**.
 
 <v-click>
 
-This one turns radio into a **clock**.
+For this talk, I wrote a demo that turns radio into a **clock**.
 
 </v-click>
 
@@ -1088,7 +1082,7 @@ caesium atomic clock.
 
 Everything we've built so far turns radio into sound.
 
-[click] This one turns it into a clock.
+[click] For this talk, I wrote a demo that turns radio into a **clock**.
 
 [click] There are stations whose entire job is to broadcast what time it is, continuously, straight off a caesium atomic clock. It's one way. You don't connect to anything, you just listen. **Your receiver just listens, and it knows what time it is.**
 
@@ -1126,7 +1120,7 @@ I pointed the receiver at 7.850 MHz and found **noise where a station used to be
 
 Fifteen kilometres from my desk in Ottawa there was a station called CHU, run by the National Research Council. Three frequencies, caesium clocks, broadcasting since nineteen thirty-eight. It's shortwave, so it refracts off the ionosphere: that signal comes back down thousands of kilometres away. People set their clocks by it right across the continent.
 
-[click] I wrote a decoder for it. Bell one-oh-three FSK, three hundred baud, a BCD time code. And a quarter wavelength at seven point eight five megahertz is nine and a half metres of wire, which is why nobody has a good antenna for it.
+[click] I wrote a decoder for it. Bell one-oh-three FSK, three hundred baud, a BCD time code.
 
 [click] On the twenty-second of June, this year, the NRC shut it off. After eighty-eight years.
 
@@ -1145,7 +1139,7 @@ This is the emotional beat of the talk and it's why the section survived the cut
 
 # ADS-B
 
-The third application. FM we heard, AM we wrote — this one gives us the aircraft above us.
+This application gives us the aircraft above us.
 
 <v-click>
 
@@ -1156,11 +1150,13 @@ Every plane with an ADS-B transponder broadcasts its **position, altitude, speed
 <!--
 [0:50 · 26:30]
 
+But that's ok! We still have another demo.
+
 [HARD TURN. You've just come off the CHU elegy. Let one full beat of silence sit before you speak, and drop the tone rather than bouncing straight into enthusiasm.]
 
-FM we heard. AM we wrote. The third one is my favourite, and it gives us aircraft.
+This application gives details about the aircraft above us.
 
-[click] Every plane with an ADS-B transponder is broadcasting its position, its altitude, its speed and its callsign, on ten-ninety megahertz. Twice a second. Unencrypted.
+[click] Every plane with an ADS-B transponder broadcasts its **position, altitude, speed, and callsign** on **1090 MHz**. Twice a second. Unencrypted for any other aircraft, satellite, tower, or enthusiast to receive.
 
 No request, no login, no API key. **It's just in the air.**
 
@@ -1186,19 +1182,17 @@ The one on stage is set up for the FM band, and we are indoors.
 <!--
 [1:00 · 27:30]
 
-Remember the quarter wavelength, from the very beginning.
+For this demo, the antenna is not in this room. It's tiny and needs a view of the sky.
 
-Ten-ninety megahertz is a twenty-seven centimetre wave, so it wants a seven centimetre antenna. And a view of the sky.
+Remember that an antenna works best when it is a as long as one quarter of the wavelength.
 
-[POINT at the antenna.] This one is cut for a three metre wave — an order of magnitude too long. And we are indoors, in a concrete building.
+Ten-ninety megahertz is a twenty-seven centimetre wave, so it wants a seven centimetre antenna.
 
 So the ADS-B receiver isn't in this room.
 
-[click] There's a Raspberry Pi upstairs on the seventh floor, with a seven centimetre stub on it — and I'm going to talk to it over the network.
+[click] There's a Raspberry Pi upstairs on the seventh floor where we'll have our reception tonight, with a seven centimetre stub on it — and I'm going to talk to it over the network.
 
-Now, remember the two transports from earlier. rtl_tcp would let me put the dongle upstairs and run the decoder down here — and **that is not what I did.** Ten-ninety runs at two point four megahertz. That's nearly five megabytes a second of raw IQ, and I am not pushing that across conference WiFi.
-
-So the Pi does the whole decode, and all that comes down to the laptop is a list of aircraft.
+So the Pi does the whole decode and serves a UI in a single application I call "skyward".
 
 ***
 
