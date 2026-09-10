@@ -1,5 +1,11 @@
 # TODO — Lock-week actions from the 2026-08-15 assumptions audit
 
+> **Historical.** This is an internal working document from the run-up to the
+> RustConf talk on 9 September 2026, which has now been given. It is kept for the
+> record of what was checked and why. It is not a roadmap, and nothing here is a
+> request for contributions — if you're looking for how the demos work, start at
+> the [README](README.md).
+
 Source: devil's-advocate review of every assumption in the deck, production notes, and
 both repos. The talk's structure survived the audit; the safety nets did not. Items are
 ordered roughly by risk. Each item says how to verify it — a diff is not evidence.
